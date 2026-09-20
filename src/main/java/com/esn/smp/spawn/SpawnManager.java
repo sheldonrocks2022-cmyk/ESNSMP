@@ -20,7 +20,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public final class SpawnManager {
-    private static final int HUB_RADIUS = 80;
+    private static final int HUB_RADIUS = 120;
     private static final int CLEAR_HEIGHT = 10;
     private static final int LOGO_RADIUS = 26;
     private static final int BLOCKS_PER_TICK = 2400;
@@ -208,7 +208,7 @@ public final class SpawnManager {
         int cy = center.getBlockY();
         int cz = center.getBlockZ();
 
-        List<BlockChange> changes = new ArrayList<>(240000);
+        List<BlockChange> changes = new ArrayList<>(500000);
 
         // Massive circular plaza: 161 blocks across.
         for (int dx = -HUB_RADIUS; dx <= HUB_RADIUS; dx++) {
@@ -493,7 +493,7 @@ public final class SpawnManager {
 
             plugin.getConfig().set("spawn.generated", true);
             plugin.getConfig().set("spawn.build-incomplete", false);
-            plugin.getConfig().set("spawn.design-version", 3);
+            plugin.getConfig().set("spawn.design-version", 4);
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
             plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) {
