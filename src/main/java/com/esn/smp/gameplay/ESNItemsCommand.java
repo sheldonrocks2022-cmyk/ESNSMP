@@ -22,6 +22,10 @@ public final class ESNItemsCommand implements CommandExecutor {
   ITEMS.put("gaiablade",CustomItems::natureBlade); ITEMS.put("gaiaaxe",CustomItems::natureAxe); ITEMS.put("gaiapick",CustomItems::naturePick); ITEMS.put("gaiahelmet",CustomItems::natureHelmet); ITEMS.put("gaiachest",CustomItems::natureChest); ITEMS.put("gaiaboots",CustomItems::natureBoots);
   ITEMS.put("arcaneblade",CustomItems::arcaneBlade); ITEMS.put("arcanestaff",CustomItems::arcaneStaff); ITEMS.put("arcanepick",CustomItems::arcanePick); ITEMS.put("arcanehelmet",CustomItems::arcaneHelmet);
   ITEMS.put("lifecore",CustomItems::lifeApple);
+  ITEMS.put("abyssblade",CustomItems::abyssBlade); ITEMS.put("abyssaxe",CustomItems::abyssAxe); ITEMS.put("abysspick",CustomItems::abyssPick); ITEMS.put("abysshelmet",CustomItems::abyssHelmet); ITEMS.put("abysschest",CustomItems::abyssChest); ITEMS.put("abysslegs",CustomItems::abyssLegs); ITEMS.put("abyssboots",CustomItems::abyssBoots);
+  ITEMS.put("dragonblade",CustomItems::dragonBlade); ITEMS.put("dragonaxe",CustomItems::dragonAxe); ITEMS.put("dragonhelmet",CustomItems::dragonHelmet); ITEMS.put("dragonchest",CustomItems::dragonChest); ITEMS.put("dragonlegs",CustomItems::dragonLegs); ITEMS.put("dragonboots",CustomItems::dragonBoots);
+  ITEMS.put("cosmicblade",CustomItems::cosmicBlade); ITEMS.put("cosmicstaff",CustomItems::cosmicStaff); ITEMS.put("cosmichelmet",CustomItems::cosmicHelmet); ITEMS.put("cosmicchest",CustomItems::cosmicChest); ITEMS.put("cosmiclegs",CustomItems::cosmicLegs); ITEMS.put("cosmicboots",CustomItems::cosmicBoots);
+  ITEMS.put("voidshard",CustomItems::voidShard); ITEMS.put("titanfragment",CustomItems::titanFragment); ITEMS.put("celestialcrystal",CustomItems::celestialCrystal); ITEMS.put("bloodstone",CustomItems::bloodstone); ITEMS.put("arcanedust",CustomItems::arcaneDust); ITEMS.put("cosmiccore",CustomItems::cosmicCore);
  }
  public boolean onCommand(CommandSender s,Command c,String l,String[] a){
   if(!(s instanceof Player p)){s.sendMessage("Players only.");return true;}
