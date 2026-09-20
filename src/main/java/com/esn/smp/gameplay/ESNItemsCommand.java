@@ -8,7 +8,7 @@ import java.util.*;
 public final class ESNItemsCommand implements CommandExecutor {
  private static final Map<String,java.util.function.Supplier<ItemStack>> ITEMS=new LinkedHashMap<>();
  static {
-  ITEMS.put("key",LootDrops::key);
+  ITEMS.put("key",LootDrops::key); ITEMS.put("abysskey",LootDrops::abyssKey); ITEMS.put("dragonkey",LootDrops::dragonKey);
   ITEMS.put("titanblade",CustomItems::titanBlade); ITEMS.put("titancleaver",CustomItems::titanAxe); ITEMS.put("titandrill",CustomItems::minerDrill); ITEMS.put("titanhelmet",CustomItems::titanHelmet); ITEMS.put("titanchest",CustomItems::titanChestplate); ITEMS.put("titanlegs",CustomItems::titanLeggings); ITEMS.put("titanboots",CustomItems::titanBoots);
   ITEMS.put("voidblade",CustomItems::voidBlade); ITEMS.put("voidbreaker",CustomItems::voidPick); ITEMS.put("voidcrown",CustomItems::voidHelmet); ITEMS.put("voidchest",CustomItems::voidChestplate); ITEMS.put("voidlegs",CustomItems::voidLeggings); ITEMS.put("voidboots",CustomItems::voidBoots);
   ITEMS.put("infernal",CustomItems::infernalBlade); ITEMS.put("infernalaxe",CustomItems::infernalAxe); ITEMS.put("infernalpick",CustomItems::infernalPick); ITEMS.put("infernalhelmet",CustomItems::infernalHelmet); ITEMS.put("infernalchest",CustomItems::infernalChest); ITEMS.put("infernallegs",CustomItems::infernalLegs); ITEMS.put("infernalboots",CustomItems::infernalBoots);
