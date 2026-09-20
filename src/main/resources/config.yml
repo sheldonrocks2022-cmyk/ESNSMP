@@ -8,7 +8,7 @@ spawn:
   configured: false
   generated: false
   build-incomplete: false
-  design-version: 2
+  design-version: 3
   build-on-first-start: true
   protection-radius: 100
   teleport-new-players: true
@@ -16,6 +16,13 @@ spawn:
   disable-pvp: true
   disable-hostile-spawns: true
   disable-explosions: true
+
+economy:
+  starting-balance: 500
+
+auction:
+  max-listings-per-player: 10
+  max-price: 1000000000
 
 branding:
   title: "&6&lESN &f&lSMP"
