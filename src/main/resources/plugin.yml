@@ -1,5 +1,5 @@
 name: ESNSMP
-version: 1.3.0
+version: 1.4.0
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
@@ -40,13 +40,19 @@ commands:
 
   esnitems:
     description: Give ESN custom items and crate keys.
-    usage: /esnitems <key|titanblade|voidbreaker|titanchest|voidcrown>
+    usage: /esnitems <item>
     permission: esnsmp.items
 
   claim:
     description: Protect your base from griefing and theft.
     usage: /claim <pos1|pos2|create|remove>
     permission: esnsmp.claim
+
+  tpa: {description: Request teleport to a player, usage: /tpa <player>}
+  tpahere: {description: Send a teleport request, usage: /tpahere <player>}
+  tpaccept: {description: Accept a teleport request}
+  tpdeny: {description: Deny a teleport request}
+  back: {description: Return to your previous teleport location}
 
 permissions:
   esnsmp.spawn:
