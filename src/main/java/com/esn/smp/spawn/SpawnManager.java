@@ -230,6 +230,7 @@ public final class SpawnManager {
         addGateways(changes, cx, cy, cz);
         addTowers(changes, cx, cy, cz);
         addRoadLighting(changes, cx, cy, cz);
+        addServiceStations(changes, cx, cy, cz);
         addServiceDistrict(changes, cx, cy, cz);
 
         // Exact player landing spot.
@@ -440,6 +441,28 @@ public final class SpawnManager {
             for (int i = -3; i <= 3; i++) {
                 changes.add(new BlockChange(sx + i, cy, sz - 4, Material.YELLOW_TERRACOTTA));
             }
+        }
+    }
+
+    private void addServiceStations(List<BlockChange> changes, int cx, int cy, int cz) {
+        for (HubService service : HubService.values()) {
+            int sx=cx+service.offsetX(), sz=cz+service.offsetZ();
+            for(int dx=-4;dx<=4;dx++) for(int dz=-4;dz<=4;dz++)
+                changes.add(new BlockChange(sx+dx,cy,sz+dz,Math.abs(dx)==4||Math.abs(dz)==4?Material.DEEPSLATE_TILES:Material.POLISHED_ANDESITE));
+            for(int y=1;y<=6;y++) for(int side:new int[]{-4,4}) {
+                changes.add(new BlockChange(sx+side,cy+y,sz-4,Material.STONE_BRICKS));
+                changes.add(new BlockChange(sx+side,cy+y,sz+4,Material.STONE_BRICKS));
+            }
+            for(int x=-4;x<=4;x++) {
+                changes.add(new BlockChange(sx+x,cy+7,sz-4,Material.DEEPSLATE_BRICKS));
+                changes.add(new BlockChange(sx+x,cy+7,sz+4,Material.DEEPSLATE_BRICKS));
+            }
+            for(int z=-4;z<=4;z++) {
+                changes.add(new BlockChange(sx-4,cy+7,sz+z,Material.DEEPSLATE_BRICKS));
+                changes.add(new BlockChange(sx+4,cy+7,sz+z,Material.DEEPSLATE_BRICKS));
+            }
+            changes.add(new BlockChange(sx,cy+1,sz,service.coreMaterial()));
+            changes.add(new BlockChange(sx,cy+2,sz,Material.SEA_LANTERN));
         }
     }
 
