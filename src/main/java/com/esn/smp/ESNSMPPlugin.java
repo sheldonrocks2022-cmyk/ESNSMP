@@ -12,6 +12,7 @@ import com.esn.smp.gameplay.ESNItemsCommand;
 import com.esn.smp.gameplay.Claims;
 import com.esn.smp.gameplay.AntiCheat;
 import com.esn.smp.gameplay.Teleports;
+import com.esn.smp.gameplay.LootDrops;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -55,6 +56,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new SpawnProtectionListener(spawnManager),this);
         getServer().getPluginManager().registerEvents(auctions,this);
         getServer().getPluginManager().registerEvents(gameplay,this);
+        getServer().getPluginManager().registerEvents(new LootDrops(),this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
 
         getServer().getScheduler().runTask(this,()->{
