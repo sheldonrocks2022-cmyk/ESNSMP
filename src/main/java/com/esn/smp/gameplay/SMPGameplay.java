@@ -50,7 +50,10 @@ public final class SMPGameplay implements CommandExecutor, Listener {
  @EventHandler public void mine(BlockBreakEvent e){mined.merge(e.getPlayer().getUniqueId(),1,Integer::sum);}
  @EventHandler public void death(EntityDeathEvent e){if(e.getEntity().getKiller()!=null)kills.merge(e.getEntity().getKiller().getUniqueId(),1,Integer::sum);}
  private List<String> crateLore(String chance,String... rewards){List<String> lore=new ArrayList<>();lore.add(ChatColor.GRAY+"Requires: ESN Crate Key");lore.add(ChatColor.YELLOW+"Click to open");lore.add(ChatColor.DARK_GRAY+"--- Possible Rewards ---");for(String reward:rewards)lore.add(ChatColor.AQUA+chance+ChatColor.GRAY+" - "+ChatColor.WHITE+reward);return lore;}
+ 
  private int findNamedKey(Player p,String name){for(int i=0;i<p.getInventory().getSize();i++){ItemStack x=p.getInventory().getItem(i);if(x!=null&&x.hasItemMeta()&&name.equals(x.getItemMeta().getDisplayName()))return i;}return -1;}
+ 
  private List<String> crateLoreKey(String key,String chance,String... rewards){List<String> lore=new ArrayList<>();lore.add(ChatColor.GRAY+"Requires: "+key);lore.add(ChatColor.YELLOW+"Click to open");lore.add(ChatColor.DARK_GRAY+"--- Possible Rewards ---");for(String reward:rewards)lore.add(ChatColor.AQUA+chance+ChatColor.GRAY+" - "+ChatColor.WHITE+reward);return lore;}
+ 
  private ItemStack b(Material m,String n){return b(m,n,List.of());}private ItemStack b(Material m,String n,List<String> lore){ItemStack x=new ItemStack(m);ItemMeta im=x.getItemMeta();im.setDisplayName(n);im.setLore(lore);x.setItemMeta(im);return x;}
 }
