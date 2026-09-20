@@ -22,6 +22,7 @@ public final class ESNSpawnCommand implements CommandExecutor {
 
         if (args.length == 0) {
             sender.sendMessage(ChatColor.GOLD + "/esnspawn build");
+            sender.sendMessage(ChatColor.GOLD + "/esnspawn rebuild");
             sender.sendMessage(ChatColor.GOLD + "/esnspawn status");
             sender.sendMessage(ChatColor.GOLD + "/esnspawn rollback");
             return true;
@@ -29,9 +30,10 @@ public final class ESNSpawnCommand implements CommandExecutor {
 
         switch (args[0].toLowerCase()) {
             case "build" -> spawnManager.buildSpawn(sender);
+            case "rebuild" -> spawnManager.rebuildSpawn(sender);
             case "status" -> sender.sendMessage(ChatColor.AQUA + "ESN spawn: " + spawnManager.status());
             case "rollback" -> spawnManager.rollback(sender);
-            default -> sender.sendMessage(ChatColor.RED + "Unknown option. Use build, status, or rollback.");
+            default -> sender.sendMessage(ChatColor.RED + "Unknown option. Use build, rebuild, status, or rollback.");
         }
         return true;
     }
