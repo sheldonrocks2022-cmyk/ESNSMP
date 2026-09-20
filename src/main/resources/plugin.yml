@@ -35,7 +35,9 @@ commands:
   crates: {description: Open ESN loot crates}
   daily: {description: Claim daily ESN reward}
   quests: {description: View ESN quests}
-  leaderboard: {description: View ESN leaderboard, aliases: [top]}
+  leaderboard:
+    description: View ESN leaderboard
+    aliases: [top]
   warps: {description: List server warps}
   warp: {description: Teleport to a server warp, usage: /warp <name>}
   setwarp: {description: Set a server warp, usage: /setwarp <name>, permission: esnsmp.admin}
