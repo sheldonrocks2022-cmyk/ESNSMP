@@ -496,6 +496,9 @@ public final class SpawnManager {
             plugin.getConfig().set("spawn.design-version", 3);
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
             plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
+            if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) {
+                plugin.getConfig().set("spawn.protection-radius", 100);
+            }
             plugin.saveConfig();
 
             sender.sendMessage(ChatColor.GREEN + "Massive ESN SMP spawn build complete.");
