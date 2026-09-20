@@ -39,7 +39,7 @@ public final class SpawnListener implements Listener {
                     event.getPlayer().sendTitle(title, subtitle, 10, 70, 20);
                     event.getPlayer().sendMessage(color(plugin.getConfig().getString(
                             "branding.welcome-message", "&8[&6ESN&8] &fWelcome to &6ESN SMP&f!")));
-                    giveStarterKit(event.getPlayer(), spawn);
+                    // Starter kit is granted once before teleport; do not duplicate it here.
                 });
             }
         }
@@ -55,32 +55,4 @@ public final class SpawnListener implements Listener {
         p.sendMessage(ChatColor.GREEN+"Starter kit received: iron armor, iron tools, sword and ESN spawn compass!");
     }
 
-    private void giveStarterKit(org.bukkit.entity.Player p, Location spawn) {
-        p.getInventory().addItem(new ItemStack(Material.IRON_SWORD),new ItemStack(Material.IRON_PICKAXE),new ItemStack(Material.IRON_AXE),new ItemStack(Material.IRON_SHOVEL),CustomItems.spawnCompass(spawn));
-        p.getInventory().setHelmet(new ItemStack(Material.IRON_HELMET));p.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));p.getInventory().setLeggings(new ItemStack(Material.IRON_LEGGINGS));p.getInventory().setBoots(new ItemStack(Material.IRON_BOOTS));
-        p.setCompassTarget(spawn);p.sendMessage(ChatColor.GREEN+"Starter kit received: full iron armor, iron tools, sword, and ESN Spawn Compass!");
-    }
 
-    @EventHandler
-    public void giveSpawnCompass(PlayerJoinEvent event) {
-        Location spawn=spawnManager.getSpawn(); if(spawn==null)return;
-        boolean has=false; for(ItemStack i:event.getPlayer().getInventory().getContents()) if(i!=null&&i.getType()==Material.COMPASS&&i.hasItemMeta()&&(ChatColor.GOLD+"ESN World Spawn").equals(i.getItemMeta().getDisplayName())) {has=true;break;}
-        if(!has) event.getPlayer().getInventory().addItem(CustomItems.spawnCompass(spawn));
-        event.getPlayer().setCompassTarget(spawn);
-    }
-
-    @EventHandler
-    public void onRespawn(PlayerRespawnEvent event) {
-        if (!plugin.getConfig().getBoolean("spawn.teleport-on-respawn", true)) {
-            return;
-        }
-        Location spawn = spawnManager.getSpawn();
-        if (spawn != null) {
-            event.setRespawnLocation(spawn);
-        }
-    }
-
-    private String color(String input) {
-        return ChatColor.translateAlternateColorCodes('&', input == null ? "" : input);
-    }
-}
