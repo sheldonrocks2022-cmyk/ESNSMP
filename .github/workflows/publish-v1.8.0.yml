@@ -1,0 +1,35 @@
+name: Publish ESNSMP v1.8.0 Release
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/publish-v1.8.0.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B clean package
+      - name: Prepare JAR
+        run: |
+          JAR=$(find target -maxdepth 1 -type f -name '*.jar' ! -name 'original-*' | head -n 1)
+          test -n "$JAR"
+          cp "$JAR" ESNSMP-v1.8.0.jar
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.8.0 >/dev/null 2>&1; then
+            gh release upload v1.8.0 ESNSMP-v1.8.0.jar --clobber
+          else
+            gh release create v1.8.0 ESNSMP-v1.8.0.jar --target "${GITHUB_SHA}" --title "ESNSMP v1.8.0" --notes "ESNSMP v1.8.0 progression and competition update. Includes the v1.7 homes, warps, claims and teleport upgrades plus levels, teams, bounties, quests, streaks, combat tagging, trading, staff tools and other progression systems."
+          fi
