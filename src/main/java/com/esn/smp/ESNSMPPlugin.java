@@ -19,6 +19,7 @@ import com.esn.smp.gameplay.ProfileCommand;
 import com.esn.smp.gameplay.ESNScoreboard;
 import com.esn.smp.gameplay.V18Core;
 import com.esn.smp.gameplay.V19Core;
+import com.esn.smp.gameplay.ExpansionCore;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -33,6 +34,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
     private DiscordReminder discordReminder;
     private V18Core v18Core;
     private V19Core v19Core;
+    private ExpansionCore expansionCore;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -63,6 +65,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         Teleports teleports=new Teleports(this); for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back","tptoggle"}) registerCommand(name,teleports); getServer().getPluginManager().registerEvents(teleports,this);
         try { v18Core=new V18Core(this,dataStore); for(String name:new String[]{"level","achievements","streak","team","bounty","trade","grave","season","event","staff","invsee","ecsee","freeze","warn","mute","history"}) registerCommand(name,v18Core); getServer().getPluginManager().registerEvents(v18Core,this); } catch(Exception ex){ getLogger().severe("v1.8 optional systems failed to initialize; core will stay online: "+ex.getMessage()); }
         v19Core=new V19Core(this,dataStore); for(String name:new String[]{"pass","upgrade","tradegui","tutorial"}) registerCommand(name,v19Core); getServer().getPluginManager().registerEvents(v19Core,this);
+        try { expansionCore=new ExpansionCore(this,dataStore); for(String name:new String[]{"jobs","skills","prestige","titles","collections","bestiary","stats","afk","calendar","blacksmith","salvage","reforge","boss","dungeon","raid","party","koth","report","note"}) registerCommand(name,expansionCore); getServer().getPluginManager().registerEvents(expansionCore,this); } catch(Exception ex){ getLogger().severe("Expansion systems failed safely: "+ex.getMessage()); }
         Claims claims=new Claims(this); registerCommand("claim",claims); getServer().getPluginManager().registerEvents(claims,this); getServer().getPluginManager().registerEvents(new AntiCheat(),this);
 
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
@@ -90,6 +93,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         if(spawnManager!=null)spawnManager.shutdown();
         if(discordReminder!=null)discordReminder.shutdown();
         if(v18Core!=null)try{v18Core.close();}catch(Exception ex){getLogger().severe("v1.8 database close error: "+ex.getMessage());}
+        if(expansionCore!=null)try{expansionCore.close();}catch(Exception ex){getLogger().severe("Expansion database close error: "+ex.getMessage());}
         if(dataStore!=null)try{dataStore.close();}catch(Exception ex){getLogger().severe("Database close error: "+ex.getMessage());}
     }
 
