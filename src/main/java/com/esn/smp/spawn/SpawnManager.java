@@ -230,6 +230,7 @@ public final class SpawnManager {
         addGateways(changes, cx, cy, cz);
         addTowers(changes, cx, cy, cz);
         addRoadLighting(changes, cx, cy, cz);
+        addServiceDistrict(changes, cx, cy, cz);
 
         // Exact player landing spot.
         changes.add(new BlockChange(cx, cy, cz, Material.SMOOTH_STONE));
@@ -407,6 +408,41 @@ public final class SpawnManager {
         }
     }
 
+    private void addServiceDistrict(List<BlockChange> changes, int cx, int cy, int cz) {
+        for (HubService service : HubService.values()) {
+            int sx = cx + service.offsetX();
+            int sz = cz + service.offsetZ();
+
+            // Raised 11x11 service pad.
+            for (int dx = -5; dx <= 5; dx++) {
+                for (int dz = -5; dz <= 5; dz++) {
+                    Material floor = (Math.abs(dx) == 5 || Math.abs(dz) == 5)
+                            ? Material.DEEPSLATE_BRICKS : Material.SMOOTH_STONE;
+                    changes.add(new BlockChange(sx + dx, cy, sz + dz, floor));
+                }
+            }
+
+            // Four corner columns and a unique interactive core.
+            int[][] corners = {{-5,-5},{-5,5},{5,-5},{5,5}};
+            for (int[] corner : corners) {
+                for (int y = 1; y <= 5; y++) {
+                    changes.add(new BlockChange(sx + corner[0], cy + y, sz + corner[1], Material.STONE_BRICKS));
+                }
+                changes.add(new BlockChange(sx + corner[0], cy + 6, sz + corner[1], Material.LANTERN));
+            }
+
+            for (int y = 1; y <= 3; y++) {
+                changes.add(new BlockChange(sx, cy + y, sz, service.coreMaterial()));
+            }
+            changes.add(new BlockChange(sx, cy + 4, sz, Material.SEA_LANTERN));
+
+            // Gold trim makes service stations visible from the central hub.
+            for (int i = -3; i <= 3; i++) {
+                changes.add(new BlockChange(sx + i, cy, sz - 4, Material.YELLOW_TERRACOTTA));
+            }
+        }
+    }
+
     private synchronized void finishSuccessfulBuild(CommandSender sender, Location center, File backupFile) {
         try {
             closeActiveBackup();
@@ -414,7 +450,7 @@ public final class SpawnManager {
 
             plugin.getConfig().set("spawn.generated", true);
             plugin.getConfig().set("spawn.build-incomplete", false);
-            plugin.getConfig().set("spawn.design-version", 2);
+            plugin.getConfig().set("spawn.design-version", 3);
             plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
             plugin.saveConfig();
 
