@@ -45,3 +45,4 @@ jobs:
           else
             gh release create v1.8.4 ESNSMP-v1.8.4.jar --target "${GITHUB_SHA}" --title "ESNSMP v1.8.4" --notes "ESNSMP v1.8.4 line-43 YAML compatibility hotfix. Includes the v1.7 homes, warps, claims and teleport upgrades plus levels, teams, bounties, quests, streaks, combat tagging, trading, staff tools and other progression systems."
           fi
+
