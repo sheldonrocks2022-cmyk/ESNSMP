@@ -175,13 +175,28 @@ public final class SpawnManager {
             return;
         }
 
-        if (plugin.getConfig().getBoolean("spawn.generated", false)
-                || plugin.getConfig().getBoolean("spawn.build-incomplete", false)) {
-            sender.sendMessage(ChatColor.YELLOW + "Restoring the previous spawn before creating the larger design...");
+        boolean incomplete = plugin.getConfig().getBoolean("spawn.build-incomplete", false);
+        int designVersion = plugin.getConfig().getInt("spawn.design-version", 1);
+
+        if (incomplete) {
+            sender.sendMessage(ChatColor.YELLOW + "An interrupted build was detected. Restoring its rollback backup first...");
             if (!rollbackNow(sender)) {
-                sender.sendMessage(ChatColor.RED + "Rebuild cancelled because the old spawn could not be restored safely.");
+                sender.sendMessage(ChatColor.RED + "Rebuild cancelled because the interrupted build could not be restored safely.");
                 return;
             }
+        } else if (plugin.getConfig().getBoolean("spawn.generated", false) && designVersion >= 2) {
+            sender.sendMessage(ChatColor.YELLOW + "Restoring the previous generated design before rebuilding...");
+            if (!rollbackNow(sender)) {
+                sender.sendMessage(ChatColor.RED + "Rebuild cancelled because the current design could not be restored safely.");
+                return;
+            }
+        } else if (plugin.getConfig().getBoolean("spawn.generated", false)) {
+            // Legacy v1 backups can represent the terrain before the original small spawn, not the
+            // current 161x161 hub. Replaying one here can remove unrelated terrain. Preserve the
+            // current world and let the v3 build create a fresh rollback snapshot instead.
+            sender.sendMessage(ChatColor.GOLD + "Legacy v1 spawn detected. Upgrading in place to v3 with a fresh rollback backup.");
+            plugin.getConfig().set("spawn.generated", false);
+            plugin.saveConfig();
         }
 
         buildSpawn(sender);
@@ -473,7 +488,7 @@ public final class SpawnManager {
 
             plugin.getConfig().set("spawn.generated", true);
             plugin.getConfig().set("spawn.build-incomplete", false);
-            plugin.getConfig().set("spawn.design-version", 3);
+            plugin.getConfig().set("spawn.design-version", 3);\n            if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
             plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
             plugin.saveConfig();
 
