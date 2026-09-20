@@ -43,6 +43,11 @@ commands:
     usage: /esnitems <key|titanblade|voidbreaker|titanchest|voidcrown>
     permission: esnsmp.items
 
+  claim:
+    description: Protect your base from griefing and theft.
+    usage: /claim <pos1|pos2|create|remove>
+    permission: esnsmp.claim
+
 permissions:
   esnsmp.spawn:
     default: true
@@ -50,6 +55,12 @@ permissions:
     default: true
   esnsmp.economy:
     default: true
+  esnsmp.claim:
+    default: true
+  esnsmp.claim.bypass:
+    default: op
+  esnsmp.anticheat.alerts:
+    default: op
   esnsmp.items:
     default: op
   esnsmp.admin:
