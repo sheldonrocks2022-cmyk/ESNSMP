@@ -51,8 +51,8 @@ public final class ESNSMPPlugin extends JavaPlugin {
         registerCommand("pay",economy);
         for(String name:new String[]{"menu","shop","crates","daily","quests","leaderboard","warps"}) registerCommand(name,gameplay);
         registerCommand("esnitems",new ESNItemsCommand());
-        Teleports teleports=new Teleports(this); for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back"}) registerCommand(name,teleports);
-        Claims claims=new Claims(); registerCommand("claim",claims); getServer().getPluginManager().registerEvents(claims,this); getServer().getPluginManager().registerEvents(new AntiCheat(),this);
+        Teleports teleports=new Teleports(this); for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back","tptoggle"}) registerCommand(name,teleports); getServer().getPluginManager().registerEvents(teleports,this);
+        Claims claims=new Claims(this); registerCommand("claim",claims); getServer().getPluginManager().registerEvents(claims,this); getServer().getPluginManager().registerEvents(new AntiCheat(),this);
 
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
         getServer().getPluginManager().registerEvents(new SpawnProtectionListener(spawnManager),this);
