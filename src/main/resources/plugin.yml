@@ -38,6 +38,11 @@ commands:
   leaderboard: {description: View ESN leaderboard, aliases: [top]}
   warps: {description: View ESN warps}
 
+  esnitems:
+    description: Give ESN custom items and crate keys.
+    usage: /esnitems <key|titanblade|voidbreaker|titanchest|voidcrown>
+    permission: esnsmp.items
+
 permissions:
   esnsmp.spawn:
     default: true
@@ -45,6 +50,8 @@ permissions:
     default: true
   esnsmp.economy:
     default: true
+  esnsmp.items:
+    default: op
   esnsmp.admin:
     default: op
   esnsmp.spawn.bypass:
