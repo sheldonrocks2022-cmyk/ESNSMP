@@ -1,0 +1,47 @@
+name: Publish ESNSMP v1.8.3 Release
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/publish-v1.8.3.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B clean package
+      - name: Validate plugin descriptor in built JAR
+        run: |
+          unzip -p target/ESNSMP.jar plugin.yml > /tmp/plugin.yml
+          python3 - <<'PY'
+          import yaml
+          d=yaml.safe_load(open('/tmp/plugin.yml'))
+          assert d['name']=='ESNSMP'
+          assert str(d['version'])=='1.8.3'
+          assert d['main']=='com.esn.smp.ESNSMPPlugin'
+          assert isinstance(d.get('commands'),dict)
+          print('plugin.yml validated:', len(d['commands']), 'commands')
+          PY
+      - name: Prepare JAR
+        run: |
+          JAR=$(find target -maxdepth 1 -type f -name '*.jar' ! -name 'original-*' | head -n 1)
+          test -n "$JAR"
+          cp "$JAR" ESNSMP-v1.8.3.jar
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.8.3 >/dev/null 2>&1; then
+            gh release upload v1.8.3 ESNSMP-v1.8.3.jar --clobber
+          else
+            gh release create v1.8.3 ESNSMP-v1.8.3.jar --target "${GITHUB_SHA}" --title "ESNSMP v1.8.3" --notes "ESNSMP v1.8.3 strict plugin.yml compatibility hotfix. Includes the v1.7 homes, warps, claims and teleport upgrades plus levels, teams, bounties, quests, streaks, combat tagging, trading, staff tools and other progression systems."
+          fi
