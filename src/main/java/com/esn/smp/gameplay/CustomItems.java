@@ -14,4 +14,40 @@ public final class CustomItems{
  public static ItemStack celestialBow(){ItemStack i=gear(Material.BOW,"Celestial Bow",ChatColor.AQUA,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.POWER,12,true);m.addEnchant(Enchantment.INFINITY,1,true);m.addEnchant(Enchantment.FLAME,3,true);i.setItemMeta(m);return i;}
  public static ItemStack minerDrill(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Titan Drill",ChatColor.GOLD,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.EFFICIENCY,12,true);m.addEnchant(Enchantment.FORTUNE,7,true);i.setItemMeta(m);return i;}
  public static ItemStack lifeApple(){ItemStack i=new ItemStack(Material.ENCHANTED_GOLDEN_APPLE);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.LIGHT_PURPLE+"Life Core");m.setLore(List.of(ChatColor.GRAY+"Extremely rare ESN relic"));i.setItemMeta(m);return i;}
+ public static ItemStack celestialBlade(){ItemStack i=gear(Material.NETHERITE_SWORD,"Celestial Saber",ChatColor.AQUA,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,16,true);i.setItemMeta(x);return i;}
+ public static ItemStack celestialAxe(){ItemStack i=gear(Material.NETHERITE_AXE,"Celestial Reaver",ChatColor.AQUA,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,14,true);i.setItemMeta(x);return i;}
+ public static ItemStack celestialPick(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Celestial Excavator",ChatColor.AQUA,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,11,true);i.setItemMeta(x);return i;}
+ public static ItemStack celestialHelmet(){ItemStack i=gear(Material.NETHERITE_HELMET,"Celestial Halo",ChatColor.AQUA,28);return i;}
+ public static ItemStack celestialChest(){ItemStack i=gear(Material.NETHERITE_CHESTPLATE,"Celestial Aegis",ChatColor.AQUA,28);return i;}
+ public static ItemStack celestialLegs(){ItemStack i=gear(Material.NETHERITE_LEGGINGS,"Celestial Greaves",ChatColor.AQUA,28);return i;}
+ public static ItemStack celestialBoots(){ItemStack i=gear(Material.NETHERITE_BOOTS,"Celestial Walkers",ChatColor.AQUA,28);return i;}
+ public static ItemStack infernalAxe(){ItemStack i=gear(Material.NETHERITE_AXE,"Infernal Crusher",ChatColor.RED,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,13,true);i.setItemMeta(x);return i;}
+ public static ItemStack infernalPick(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Infernal Bore",ChatColor.RED,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,10,true);i.setItemMeta(x);return i;}
+ public static ItemStack infernalHelmet(){ItemStack i=gear(Material.NETHERITE_HELMET,"Infernal Helm",ChatColor.RED,25);return i;}
+ public static ItemStack infernalChest(){ItemStack i=gear(Material.NETHERITE_CHESTPLATE,"Infernal Plate",ChatColor.RED,25);return i;}
+ public static ItemStack infernalLegs(){ItemStack i=gear(Material.NETHERITE_LEGGINGS,"Infernal Legguards",ChatColor.RED,25);return i;}
+ public static ItemStack infernalBoots(){ItemStack i=gear(Material.NETHERITE_BOOTS,"Infernal Treads",ChatColor.RED,25);return i;}
+ public static ItemStack stormBlade(){ItemStack i=gear(Material.NETHERITE_SWORD,"Stormcaller",ChatColor.BLUE,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,13,true);i.setItemMeta(x);return i;}
+ public static ItemStack stormAxe(){ItemStack i=gear(Material.NETHERITE_AXE,"Thunder Splitter",ChatColor.BLUE,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,12,true);i.setItemMeta(x);return i;}
+ public static ItemStack stormPick(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Storm Drill",ChatColor.BLUE,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,10,true);i.setItemMeta(x);return i;}
+ public static ItemStack stormHelmet(){ItemStack i=gear(Material.DIAMOND_HELMET,"Storm Crown",ChatColor.BLUE,20);return i;}
+ public static ItemStack stormChest(){ItemStack i=gear(Material.DIAMOND_CHESTPLATE,"Storm Guard",ChatColor.BLUE,20);return i;}
+ public static ItemStack stormLegs(){ItemStack i=gear(Material.DIAMOND_LEGGINGS,"Storm Leggings",ChatColor.BLUE,20);return i;}
+ public static ItemStack stormBoots(){ItemStack i=gear(Material.DIAMOND_BOOTS,"Storm Striders",ChatColor.BLUE,20);return i;}
+ public static ItemStack shadowBlade(){ItemStack i=gear(Material.NETHERITE_SWORD,"Shadowfang",ChatColor.DARK_GRAY,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,15,true);i.setItemMeta(x);return i;}
+ public static ItemStack shadowAxe(){ItemStack i=gear(Material.NETHERITE_AXE,"Night Cleaver",ChatColor.DARK_GRAY,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,13,true);i.setItemMeta(x);return i;}
+ public static ItemStack shadowPick(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Abyss Miner",ChatColor.DARK_GRAY,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,11,true);i.setItemMeta(x);return i;}
+ public static ItemStack shadowHelmet(){ItemStack i=gear(Material.NETHERITE_HELMET,"Shadow Hood",ChatColor.DARK_GRAY,26);return i;}
+ public static ItemStack shadowChest(){ItemStack i=gear(Material.NETHERITE_CHESTPLATE,"Shadow Carapace",ChatColor.DARK_GRAY,26);return i;}
+ public static ItemStack shadowLegs(){ItemStack i=gear(Material.NETHERITE_LEGGINGS,"Shadow Legguards",ChatColor.DARK_GRAY,26);return i;}
+ public static ItemStack shadowBoots(){ItemStack i=gear(Material.NETHERITE_BOOTS,"Shadow Steps",ChatColor.DARK_GRAY,26);return i;}
+ public static ItemStack frostBlade(){ItemStack i=gear(Material.DIAMOND_SWORD,"Frostbite",ChatColor.AQUA,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,12,true);i.setItemMeta(x);return i;}
+ public static ItemStack frostAxe(){ItemStack i=gear(Material.DIAMOND_AXE,"Glacier Axe",ChatColor.AQUA,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,11,true);i.setItemMeta(x);return i;}
+ public static ItemStack frostPick(){ItemStack i=gear(Material.DIAMOND_PICKAXE,"Permafrost Pick",ChatColor.AQUA,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,9,true);i.setItemMeta(x);return i;}
+ public static ItemStack dragonBow(){ItemStack i=gear(Material.BOW,"Dragonspine Bow",ChatColor.DARK_GREEN,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.POWER,10,true);m.addEnchant(Enchantment.PUNCH,4,true);m.addEnchant(Enchantment.FLAME,2,true);i.setItemMeta(m);return i;}
+ public static ItemStack phantomCrossbow(){ItemStack i=gear(Material.CROSSBOW,"Phantom Repeater",ChatColor.GRAY,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.QUICK_CHARGE,5,true);m.addEnchant(Enchantment.MULTISHOT,1,true);i.setItemMeta(m);return i;}
+ public static ItemStack oceanTrident(){ItemStack i=gear(Material.TRIDENT,"Poseidon's Wrath",ChatColor.BLUE,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.IMPALING,10,true);m.addEnchant(Enchantment.LOYALTY,5,true);i.setItemMeta(m);return i;}
+ public static ItemStack reaperScythe(){return weapon(Material.NETHERITE_HOE,"Reaper's Scythe",ChatColor.DARK_PURPLE,17);}
+ public static ItemStack emeraldHammer(){return weapon(Material.NETHERITE_AXE,"Emerald Warhammer",ChatColor.GREEN,16);}
+ public static ItemStack treasureRod(){ItemStack i=gear(Material.FISHING_ROD,"Treasure Seeker",ChatColor.GOLD,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.LUCK_OF_THE_SEA,8,true);m.addEnchant(Enchantment.LURE,5,true);i.setItemMeta(m);return i;}
 }
