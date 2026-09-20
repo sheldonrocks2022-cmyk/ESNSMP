@@ -7,6 +7,7 @@ import com.esn.smp.command.SpawnCommand;
 import com.esn.smp.data.ESNDataStore;
 import com.esn.smp.economy.EconomyCommand;
 import com.esn.smp.listener.SpawnListener;
+import com.esn.smp.gameplay.SMPGameplay;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -33,6 +34,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         spawnManager=new SpawnManager(this);
         AuctionHouse auctions=new AuctionHouse(dataStore);
         EconomyCommand economy=new EconomyCommand(dataStore);
+        SMPGameplay gameplay=new SMPGameplay(dataStore);
 
         registerCommand("spawn",new SpawnCommand(spawnManager));
         registerCommand("setspawn",new SetSpawnCommand(spawnManager));
@@ -40,10 +42,12 @@ public final class ESNSMPPlugin extends JavaPlugin {
         registerCommand("ah",auctions);
         registerCommand("balance",economy);
         registerCommand("pay",economy);
+        for(String name:new String[]{"menu","shop","crates","daily","quests","leaderboard","warps"}) registerCommand(name,gameplay);
 
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
         getServer().getPluginManager().registerEvents(new SpawnProtectionListener(spawnManager),this);
         getServer().getPluginManager().registerEvents(auctions,this);
+        getServer().getPluginManager().registerEvents(gameplay,this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
 
         getServer().getScheduler().runTask(this,()->{
