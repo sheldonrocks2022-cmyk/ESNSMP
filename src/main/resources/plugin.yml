@@ -1,5 +1,5 @@
 name: ESNSMP
-version: 1.6.2
+version: 1.7.0
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
@@ -45,14 +45,14 @@ commands:
 
   claim:
     description: Protect your base from griefing and theft.
-    usage: /claim <pos1|pos2|create|remove>
+    usage: /claim <pos1|pos2|create|remove|trust|untrust|info>
     permission: esnsmp.claim
 
   tpa: {description: Request teleport to a player, usage: /tpa <player>}
   tpahere: {description: Send a teleport request, usage: /tpahere <player>}
   tpaccept: {description: Accept a teleport request}
   tpdeny: {description: Deny a teleport request}
-  back: {description: Return to your previous teleport location}
+  back: {description: Return to your previous teleport location}\n  tptoggle: {description: Toggle incoming teleport requests}
 
 permissions:
   esnsmp.spawn:
