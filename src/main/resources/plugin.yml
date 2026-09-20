@@ -1,0 +1,28 @@
+name: ESNSMP
+version: 1.0.0
+main: com.esn.smp.ESNSMPPlugin
+api-version: '1.21'
+author: ESN
+description: ESN SMP core spawn and protection plugin
+
+commands:
+  spawn:
+    description: Teleport to the ESN SMP spawn.
+    usage: /spawn
+    permission: esnsmp.spawn
+  setspawn:
+    description: Set the ESN SMP spawn at your location.
+    usage: /setspawn
+    permission: esnsmp.admin
+  esnspawn:
+    description: Build, inspect, or roll back the ESN SMP spawn.
+    usage: /esnspawn <build|status|rollback>
+    permission: esnsmp.admin
+
+permissions:
+  esnsmp.spawn:
+    default: true
+  esnsmp.admin:
+    default: op
+  esnsmp.spawn.bypass:
+    default: op
