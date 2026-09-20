@@ -1,5 +1,5 @@
 name: ESNSMP
-version: 1.2.1
+version: 1.3.0
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
@@ -29,6 +29,14 @@ commands:
     description: Pay ESN Coins to another online player.
     usage: /pay <player> <amount>
     permission: esnsmp.economy
+
+  menu: {description: Open ESN SMP menu}
+  shop: {description: Open ESN server shop}
+  crates: {description: Open ESN loot crates}
+  daily: {description: Claim daily ESN reward}
+  quests: {description: View ESN quests}
+  leaderboard: {description: View ESN leaderboard, aliases: [top]}
+  warps: {description: View ESN warps}
 
 permissions:
   esnsmp.spawn:
