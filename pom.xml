@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.esn</groupId>
   <artifactId>esnsmp</artifactId>
-  <version>1.6.2</version>
+  <version>1.7.0</version>
   <name>ESNSMP</name>
   <description>ESN SMP core Paper plugin</description>
 
