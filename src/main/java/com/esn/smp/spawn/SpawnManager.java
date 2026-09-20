@@ -247,6 +247,7 @@ public final class SpawnManager {
         addRoadLighting(changes, cx, cy, cz);
         addServiceStations(changes, cx, cy, cz);
         addServiceDistrict(changes, cx, cy, cz);
+        addFloatingIslandAndWaterfall(changes, cx, cy, cz);
 
         // Exact player landing spot: keep the configured feet position clear.
         for (int dx = -1; dx <= 1; dx++) {
@@ -486,6 +487,29 @@ public final class SpawnManager {
         }
     }
 
+    private void addFloatingIslandAndWaterfall(List<BlockChange> changes,int cx,int cy,int cz) {
+        // Layered natural island beneath the hub so the spawn no longer looks like a floating flat disc.
+        for(int dx=-118;dx<=118;dx++) for(int dz=-118;dz<=118;dz++) {
+            double d=Math.sqrt(dx*dx+dz*dz); if(d>118)continue;
+            int depth=Math.max(2,(int)((118-d)/10)+3);
+            for(int y=2;y<=depth;y++) {
+                Material m=y==depth?Material.STONE:(y<4?Material.MOSS_BLOCK:Material.DEEPSLATE);
+                changes.add(new BlockChange(cx+dx,cy-y,cz+dz,m));
+            }
+        }
+        // Large south waterfall/elevator: players can swim from terrain level to the hub.
+        for(int x=-7;x<=7;x++) for(int z=103;z<=112;z++) {
+            for(int y=cy-28;y<=cy-1;y++) {
+                boolean rim=Math.abs(x)==7||z==112;
+                changes.add(new BlockChange(cx+x,y,cz+z,rim?Material.STONE_BRICKS:Material.WATER));
+            }
+        }
+        // Landmark arch over the waterfall entrance.
+        for(int x=-10;x<=10;x++) for(int y=0;y<=13;y++) {
+            if(Math.abs(x)>=8 || y>=11) changes.add(new BlockChange(cx+x,cy+y,cz+106,Material.DEEPSLATE_BRICKS));
+        }
+    }
+
     private synchronized void finishSuccessfulBuild(CommandSender sender, Location center, File backupFile) {
         try {
             closeActiveBackup();
@@ -493,7 +517,7 @@ public final class SpawnManager {
 
             plugin.getConfig().set("spawn.generated", true);
             plugin.getConfig().set("spawn.build-incomplete", false);
-            plugin.getConfig().set("spawn.design-version", 4);
+            plugin.getConfig().set("spawn.design-version", 5);
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
             plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) {
