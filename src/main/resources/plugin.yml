@@ -151,6 +151,48 @@ commands:
   tutorial:
     description: 'View the ESN SMP quick-start tutorial'
 
+  jobs:
+    description: 'View ESN jobs and job progress'
+  skills:
+    description: 'View ESN skill progression'
+  prestige:
+    description: 'Prestige your ESN skills'
+  titles:
+    description: 'View unlockable player titles'
+  collections:
+    description: 'View ESN collections'
+  bestiary:
+    description: 'View ESN mob and boss collection progress'
+  stats:
+    description: 'View ESN career statistics'
+  afk:
+    description: 'Toggle AFK status'
+  calendar:
+    description: 'View ESN event calendar'
+  blacksmith:
+    description: 'Open ESN blacksmith information'
+  salvage:
+    description: 'Access ESN salvage system'
+  reforge:
+    description: 'Access ESN reforge system'
+  boss:
+    description: 'Access ESN boss system'
+  dungeon:
+    description: 'Access ESN dungeon system'
+  raid:
+    description: 'Access ESN raid system'
+  party:
+    description: 'Access ESN party system'
+  koth:
+    description: 'View ESN King of the Hill system'
+  report:
+    description: 'Report a player to ESN staff'
+    usage: '/report <player> <reason>'
+  note:
+    description: 'Add a persistent staff note'
+    usage: '/note <player> <note>'
+    permission: esnsmp.staff
+
 permissions:
   esnsmp.spawn:
     default: true
