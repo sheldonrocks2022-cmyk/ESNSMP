@@ -7,8 +7,10 @@ spawn:
   pitch: 0.0
   configured: false
   generated: false
+  build-incomplete: false
+  design-version: 2
   build-on-first-start: true
-  protection-radius: 36
+  protection-radius: 100
   teleport-new-players: true
   teleport-on-respawn: true
   disable-pvp: true
