@@ -248,10 +248,15 @@ public final class SpawnManager {
         addServiceStations(changes, cx, cy, cz);
         addServiceDistrict(changes, cx, cy, cz);
 
-        // Exact player landing spot.
-        changes.add(new BlockChange(cx, cy, cz, Material.SMOOTH_STONE));
-        changes.add(new BlockChange(cx, cy + 1, cz, Material.AIR));
-        changes.add(new BlockChange(cx, cy + 2, cz, Material.AIR));
+        // Exact player landing spot: keep the configured feet position clear.
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                changes.add(new BlockChange(cx + dx, cy - 1, cz + dz, Material.SMOOTH_STONE));
+                changes.add(new BlockChange(cx + dx, cy, cz + dz, Material.AIR));
+                changes.add(new BlockChange(cx + dx, cy + 1, cz + dz, Material.AIR));
+                changes.add(new BlockChange(cx + dx, cy + 2, cz + dz, Material.AIR));
+            }
+        }
 
         return changes;
     }
