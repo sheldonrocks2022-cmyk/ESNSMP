@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '1.8.2'
+version: '1.8.3'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
@@ -30,41 +30,90 @@ commands:
     usage: /pay <player> <amount>
     permission: esnsmp.economy
 
-  menu: {description: Open ESN SMP menu}
-  shop: {description: Open ESN server shop}
-  crates: {description: Open ESN loot crates}
-  daily: {description: Claim daily ESN reward}
-  quests: {description: View ESN quests}
+  menu:
+    description: 'Open ESN SMP menu'
+  shop:
+    description: 'Open ESN server shop'
+  crates:
+    description: 'Open ESN loot crates'
+  daily:
+    description: 'Claim daily ESN reward'
+  quests:
+    description: 'View ESN quests'
   leaderboard:
     description: View ESN leaderboard
     aliases: [top]
-  warps: {description: List server warps}
-  warp: {description: Teleport to a server warp, usage: /warp <name>}
-  setwarp: {description: Set a server warp, usage: /setwarp <name>, permission: esnsmp.admin}
-  delwarp: {description: Delete a server warp, usage: /delwarp <name>, permission: esnsmp.admin}
-  sethome: {description: Set a home, usage: /sethome [name]}
-  home: {description: Teleport home, usage: /home [name]}
-  delhome: {description: Delete a home, usage: /delhome [name]}
-  homes: {description: List your homes}
-  rtp: {description: Random teleport}
-  profile: {description: View your ESN profile}
+  warps:
+    description: 'List server warps'
+  warp:
+    description: 'Teleport to a server warp'
+    usage: '/warp <name>'
+  setwarp:
+    description: 'Set a server warp'
+    usage: '/setwarp <name>'
+    permission: esnsmp.admin
+  delwarp:
+    description: 'Delete a server warp'
+    usage: '/delwarp <name>'
+    permission: esnsmp.admin
+  sethome:
+    description: 'Set a home'
+    usage: '/sethome [name]'
+  home:
+    description: 'Teleport home'
+    usage: '/home [name]'
+  delhome:
+    description: 'Delete a home'
+    usage: '/delhome [name]'
+  homes:
+    description: 'List your homes'
+  rtp:
+    description: 'Random teleport'
+  profile:
+    description: 'View your ESN profile'
 
-  level: {description: View ESN level and rank}
-  achievements: {description: View ESN achievements}
-  streak: {description: View daily login streak}
-  team: {description: Manage ESN teams, usage: /team <create|join|leave|info>}
-  bounty: {description: View or place player bounties, usage: /bounty [player] [coins]}
-  trade: {description: Securely trade held items, usage: /trade <player>}
-  grave: {description: View your last death location}
-  season: {description: View ESN season progress}
-  event: {description: View the current ESN event}
-  staff: {description: Open ESN staff command help, permission: esnsmp.staff}
-  invsee: {description: View a player's inventory, permission: esnsmp.staff}
-  ecsee: {description: View a player's ender chest, permission: esnsmp.staff}
-  freeze: {description: Freeze a player, permission: esnsmp.staff}
-  warn: {description: Warn a player, permission: esnsmp.staff}
-  mute: {description: Mute a player, permission: esnsmp.staff}
-  history: {description: View moderation history, permission: esnsmp.staff}
+  level:
+    description: 'View ESN level and rank'
+  achievements:
+    description: 'View ESN achievements'
+  streak:
+    description: 'View daily login streak'
+  team:
+    description: 'Manage ESN teams'
+    usage: '/team <create|join|leave|info>'
+  bounty:
+    description: 'View or place player bounties'
+    usage: '/bounty [player] [coins]'
+  trade:
+    description: 'Securely trade held items'
+    usage: '/trade <player>'
+  grave:
+    description: 'View your last death location'
+  season:
+    description: 'View ESN season progress'
+  event:
+    description: 'View the current ESN event'
+  staff:
+    description: 'Open ESN staff command help'
+    permission: esnsmp.staff
+  invsee:
+    description: 'View a player''s inventory'
+    permission: esnsmp.staff
+  ecsee:
+    description: 'View a player''s ender chest'
+    permission: esnsmp.staff
+  freeze:
+    description: 'Freeze a player'
+    permission: esnsmp.staff
+  warn:
+    description: 'Warn a player'
+    permission: esnsmp.staff
+  mute:
+    description: 'Mute a player'
+    permission: esnsmp.staff
+  history:
+    description: 'View moderation history'
+    permission: esnsmp.staff
 
   esnitems:
     description: Give ESN custom items and crate keys.
@@ -76,12 +125,20 @@ commands:
     usage: /claim <pos1|pos2|create|remove|trust|untrust|info>
     permission: esnsmp.claim
 
-  tpa: {description: Request teleport to a player, usage: /tpa <player>}
-  tpahere: {description: Send a teleport request, usage: /tpahere <player>}
-  tpaccept: {description: Accept a teleport request}
-  tpdeny: {description: Deny a teleport request}
-  back: {description: Return to your previous teleport location}
-  tptoggle: {description: Toggle incoming teleport requests}
+  tpa:
+    description: 'Request teleport to a player'
+    usage: '/tpa <player>'
+  tpahere:
+    description: 'Send a teleport request'
+    usage: '/tpahere <player>'
+  tpaccept:
+    description: 'Accept a teleport request'
+  tpdeny:
+    description: 'Deny a teleport request'
+  back:
+    description: 'Return to your previous teleport location'
+  tptoggle:
+    description: 'Toggle incoming teleport requests'
 
 permissions:
   esnsmp.spawn:
