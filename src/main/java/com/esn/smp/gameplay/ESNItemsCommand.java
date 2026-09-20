@@ -1,0 +1,5 @@
+package com.esn.smp.gameplay;
+import org.bukkit.ChatColor;import org.bukkit.command.*;import org.bukkit.entity.Player;import org.bukkit.inventory.ItemStack;
+public final class ESNItemsCommand implements CommandExecutor {
+ public boolean onCommand(CommandSender s,Command c,String l,String[] a){if(!(s instanceof Player p)){s.sendMessage("Players only.");return true;}if(!p.hasPermission("esnsmp.items")){p.sendMessage(ChatColor.RED+"No permission.");return true;}if(a.length==0){p.sendMessage(ChatColor.GOLD+"/esnitems <key|titanblade|voidbreaker|titanchest|voidcrown>");return true;}ItemStack i=switch(a[0].toLowerCase()){case "key"->new SMPGameplay(null).key();case "titanblade"->CustomItems.titanBlade();case "voidbreaker"->CustomItems.voidPick();case "titanchest"->CustomItems.titanChestplate();case "voidcrown"->CustomItems.voidHelmet();default->null;};if(i==null){p.sendMessage(ChatColor.RED+"Unknown ESN item.");return true;}p.getInventory().addItem(i);p.sendMessage(ChatColor.GREEN+"Added "+i.getItemMeta().getDisplayName()+ChatColor.GREEN+" to your inventory.");return true;}
+}
