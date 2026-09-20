@@ -13,6 +13,7 @@ import com.esn.smp.gameplay.Claims;
 import com.esn.smp.gameplay.AntiCheat;
 import com.esn.smp.gameplay.Teleports;
 import com.esn.smp.gameplay.LootDrops;
+import com.esn.smp.gameplay.DiscordReminder;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -24,6 +25,7 @@ import java.util.Objects;
 public final class ESNSMPPlugin extends JavaPlugin {
     private SpawnManager spawnManager;
     private ESNDataStore dataStore;
+    private DiscordReminder discordReminder;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -57,6 +59,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(auctions,this);
         getServer().getPluginManager().registerEvents(gameplay,this);
         getServer().getPluginManager().registerEvents(new LootDrops(),this);
+        discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
 
         getServer().getScheduler().runTask(this,()->{
@@ -74,6 +77,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
 
     @Override public void onDisable(){
         if(spawnManager!=null)spawnManager.shutdown();
+        if(discordReminder!=null)discordReminder.shutdown();
         if(dataStore!=null)try{dataStore.close();}catch(Exception ex){getLogger().severe("Database close error: "+ex.getMessage());}
     }
 
