@@ -18,6 +18,7 @@ import com.esn.smp.gameplay.HomesWarps;
 import com.esn.smp.gameplay.ProfileCommand;
 import com.esn.smp.gameplay.ESNScoreboard;
 import com.esn.smp.gameplay.V18Core;
+import com.esn.smp.gameplay.V19Core;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -31,6 +32,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
     private ESNDataStore dataStore;
     private DiscordReminder discordReminder;
     private V18Core v18Core;
+    private V19Core v19Core;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -60,6 +62,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         registerCommand("esnitems",new ESNItemsCommand());
         Teleports teleports=new Teleports(this); for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back","tptoggle"}) registerCommand(name,teleports); getServer().getPluginManager().registerEvents(teleports,this);
         try { v18Core=new V18Core(this,dataStore); for(String name:new String[]{"level","achievements","streak","team","bounty","trade","grave","season","event","staff","invsee","ecsee","freeze","warn","mute","history"}) registerCommand(name,v18Core); getServer().getPluginManager().registerEvents(v18Core,this); } catch(Exception ex){ getLogger().severe("v1.8 optional systems failed to initialize; core will stay online: "+ex.getMessage()); }
+        v19Core=new V19Core(this,dataStore); for(String name:new String[]{"pass","upgrade","tradegui","tutorial"}) registerCommand(name,v19Core); getServer().getPluginManager().registerEvents(v19Core,this);
         Claims claims=new Claims(this); registerCommand("claim",claims); getServer().getPluginManager().registerEvents(claims,this); getServer().getPluginManager().registerEvents(new AntiCheat(),this);
 
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
