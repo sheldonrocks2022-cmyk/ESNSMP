@@ -36,7 +36,7 @@ commands:
   daily: {description: Claim daily ESN reward}
   quests: {description: View ESN quests}
   leaderboard: {description: View ESN leaderboard, aliases: [top]}
-  warps: {description: View ESN warps}
+  warps: {description: List server warps}\n  warp: {description: Teleport to a server warp, usage: /warp <name>}\n  setwarp: {description: Set a server warp, usage: /setwarp <name>, permission: esnsmp.admin}\n  delwarp: {description: Delete a server warp, usage: /delwarp <name>, permission: esnsmp.admin}\n  sethome: {description: Set a home, usage: /sethome [name]}\n  home: {description: Teleport home, usage: /home [name]}\n  delhome: {description: Delete a home, usage: /delhome [name]}\n  homes: {description: List your homes}\n  rtp: {description: Random teleport}\n  profile: {description: View your ESN profile}
 
   esnitems:
     description: Give ESN custom items and crate keys.
