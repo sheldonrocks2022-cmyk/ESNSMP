@@ -1,0 +1,6 @@
+package com.esn.smp.gameplay;
+import org.bukkit.*;import org.bukkit.entity.*;import org.bukkit.event.*;import org.bukkit.event.entity.EntityDeathEvent;import org.bukkit.inventory.*;import org.bukkit.inventory.meta.ItemMeta;import java.util.concurrent.ThreadLocalRandom;
+public final class LootDrops implements Listener{
+ @EventHandler public void death(EntityDeathEvent e){LivingEntity mob=e.getEntity();if(mob.getKiller()==null)return;boolean hostile=mob instanceof Monster||mob instanceof Slime||mob instanceof Phantom||mob instanceof Hoglin||mob instanceof Zoglin||mob instanceof Shulker||mob instanceof IronGolem;if(!hostile)return;if(ThreadLocalRandom.current().nextDouble()<0.35){e.getDrops().add(key());mob.getKiller().sendMessage(ChatColor.GOLD+"Rare drop: ESN Crate Key!");}}
+ public static ItemStack key(){ItemStack i=new ItemStack(Material.TRIPWIRE_HOOK);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.GOLD+"ESN Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens ESN and Celestial crates"));i.setItemMeta(m);return i;}
+}
