@@ -11,6 +11,7 @@ import com.esn.smp.gameplay.SMPGameplay;
 import com.esn.smp.gameplay.ESNItemsCommand;
 import com.esn.smp.gameplay.Claims;
 import com.esn.smp.gameplay.AntiCheat;
+import com.esn.smp.gameplay.Teleports;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -47,6 +48,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         registerCommand("pay",economy);
         for(String name:new String[]{"menu","shop","crates","daily","quests","leaderboard","warps"}) registerCommand(name,gameplay);
         registerCommand("esnitems",new ESNItemsCommand());
+        Teleports teleports=new Teleports(this); for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back"}) registerCommand(name,teleports);
         Claims claims=new Claims(); registerCommand("claim",claims); getServer().getPluginManager().registerEvents(claims,this); getServer().getPluginManager().registerEvents(new AntiCheat(),this);
 
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
