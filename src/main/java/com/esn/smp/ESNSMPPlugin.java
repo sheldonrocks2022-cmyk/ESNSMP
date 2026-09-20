@@ -17,6 +17,7 @@ import com.esn.smp.gameplay.DiscordReminder;
 import com.esn.smp.gameplay.HomesWarps;
 import com.esn.smp.gameplay.ProfileCommand;
 import com.esn.smp.gameplay.ESNScoreboard;
+import com.esn.smp.gameplay.V18Core;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -29,6 +30,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
     private SpawnManager spawnManager;
     private ESNDataStore dataStore;
     private DiscordReminder discordReminder;
+    private V18Core v18Core;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -57,6 +59,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         registerCommand("profile",new ProfileCommand(dataStore)); new ESNScoreboard(this,dataStore);
         registerCommand("esnitems",new ESNItemsCommand());
         Teleports teleports=new Teleports(this); for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back","tptoggle"}) registerCommand(name,teleports); getServer().getPluginManager().registerEvents(teleports,this);
+        try { v18Core=new V18Core(this,dataStore); for(String name:new String[]{"level","achievements","streak","team","bounty","trade","grave","season","event","staff","invsee","ecsee","freeze","warn","mute","history"}) registerCommand(name,v18Core); getServer().getPluginManager().registerEvents(v18Core,this); } catch(Exception ex){ getLogger().severe("v1.8 systems failed to initialize: "+ex.getMessage()); getServer().getPluginManager().disablePlugin(this); return; }
         Claims claims=new Claims(this); registerCommand("claim",claims); getServer().getPluginManager().registerEvents(claims,this); getServer().getPluginManager().registerEvents(new AntiCheat(),this);
 
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
@@ -83,6 +86,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
     @Override public void onDisable(){
         if(spawnManager!=null)spawnManager.shutdown();
         if(discordReminder!=null)discordReminder.shutdown();
+        if(v18Core!=null)try{v18Core.close();}catch(Exception ex){getLogger().severe("v1.8 database close error: "+ex.getMessage());}
         if(dataStore!=null)try{dataStore.close();}catch(Exception ex){getLogger().severe("Database close error: "+ex.getMessage());}
     }
 
