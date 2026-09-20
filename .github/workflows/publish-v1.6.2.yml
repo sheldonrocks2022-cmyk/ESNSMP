@@ -1,0 +1,38 @@
+name: Publish ESNSMP v1.6.2 Release
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/publish-v1.6.2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build
+        run: mvn -B clean package
+      - name: Prepare JAR
+        run: |
+          JAR=$(find target -maxdepth 1 -type f -name '*.jar' ! -name 'original-*' | head -n 1)
+          test -n "$JAR"
+          cp "$JAR" ESNSMP-v1.6.2.jar
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.6.2 >/dev/null 2>&1; then
+            gh release upload v1.6.2 ESNSMP-v1.6.2.jar --clobber
+          else
+            gh release create v1.6.2 ESNSMP-v1.6.2.jar --title "ESNSMP v1.6.2" --notes "Stable ESNSMP v1.6.2 server plugin build."
+          fi
