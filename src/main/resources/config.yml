@@ -1,0 +1,21 @@
+spawn:
+  world: world
+  x: 0.5
+  y: 80.0
+  z: 0.5
+  yaw: 0.0
+  pitch: 0.0
+  configured: false
+  generated: false
+  build-on-first-start: true
+  protection-radius: 36
+  teleport-new-players: true
+  teleport-on-respawn: true
+  disable-pvp: true
+  disable-hostile-spawns: true
+  disable-explosions: true
+
+branding:
+  title: "&6&lESN &f&lSMP"
+  subtitle: "&7Survive • Build • Become Legendary"
+  welcome-message: "&8[&6ESN&8] &fWelcome to &6ESN SMP&f!"
