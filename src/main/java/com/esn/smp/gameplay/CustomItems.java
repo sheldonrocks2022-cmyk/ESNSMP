@@ -1,16 +1,17 @@
 package com.esn.smp.gameplay;
-import org.bukkit.*;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Player;
-import org.bukkit.event.*;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.inventory.*;
-import org.bukkit.inventory.meta.ItemMeta;
-import java.util.*;
-public final class CustomItems implements Listener {
- public static ItemStack spawnCompass(Location spawn){ItemStack i=new ItemStack(Material.COMPASS);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.GOLD+"ESN World Spawn");m.setLore(List.of(ChatColor.GRAY+"Points toward the ESN world spawn"));i.setItemMeta(m);return i;}
- public static ItemStack titanBlade(){ItemStack i=new ItemStack(Material.NETHERITE_SWORD);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_RED+"Titan Blade");m.setLore(List.of(ChatColor.GRAY+"An ESN legendary weapon"));m.addEnchant(Enchantment.SHARPNESS,20,true);m.addEnchant(Enchantment.UNBREAKING,5,true);m.addEnchant(Enchantment.LOOTING,4,true);i.setItemMeta(m);return i;}
- public static ItemStack voidPick(){ItemStack i=new ItemStack(Material.NETHERITE_PICKAXE);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_PURPLE+"Voidbreaker");m.setLore(List.of(ChatColor.GRAY+"Forged beyond vanilla limits"));m.addEnchant(Enchantment.EFFICIENCY,10,true);m.addEnchant(Enchantment.UNBREAKING,6,true);m.addEnchant(Enchantment.FORTUNE,5,true);i.setItemMeta(m);return i;}
- public static ItemStack titanChestplate(){ItemStack i=new ItemStack(Material.NETHERITE_CHESTPLATE);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_RED+"Titan Chestplate");m.setLore(List.of(ChatColor.GRAY+"Extreme ESN protection"));m.addEnchant(Enchantment.PROTECTION,40,true);m.addEnchant(Enchantment.UNBREAKING,10,true);m.addEnchant(Enchantment.MENDING,1,true);i.setItemMeta(m);return i;}
- public static ItemStack voidHelmet(){ItemStack i=new ItemStack(Material.NETHERITE_HELMET);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_PURPLE+"Void Crown");m.setLore(List.of(ChatColor.GRAY+"Extreme ESN protection"));m.addEnchant(Enchantment.PROTECTION,30,true);m.addEnchant(Enchantment.UNBREAKING,10,true);m.addEnchant(Enchantment.MENDING,1,true);i.setItemMeta(m);return i;}
+import org.bukkit.*;import org.bukkit.enchantments.Enchantment;import org.bukkit.inventory.*;import org.bukkit.inventory.meta.ItemMeta;import java.util.*;
+public final class CustomItems{
+ private static ItemStack gear(Material mat,String name,ChatColor color,int prot){ItemStack i=new ItemStack(mat);ItemMeta m=i.getItemMeta();m.setDisplayName(color+name);m.setLore(List.of(ChatColor.GRAY+"ESN legendary equipment"));if(prot>0)m.addEnchant(Enchantment.PROTECTION,prot,true);m.addEnchant(Enchantment.UNBREAKING,10,true);m.addEnchant(Enchantment.MENDING,1,true);i.setItemMeta(m);return i;}
+ private static ItemStack weapon(Material mat,String name,ChatColor color,int sharp){ItemStack i=gear(mat,name,color,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.SHARPNESS,sharp,true);m.addEnchant(Enchantment.LOOTING,5,true);i.setItemMeta(m);return i;}
+ public static ItemStack spawnCompass(Location s){ItemStack i=new ItemStack(Material.COMPASS);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.GOLD+"ESN World Spawn");m.setLore(List.of(ChatColor.GRAY+"Points toward the ESN world spawn"));i.setItemMeta(m);return i;}
+ public static ItemStack titanBlade(){return weapon(Material.NETHERITE_SWORD,"Titan Blade",ChatColor.DARK_RED,20);}
+ public static ItemStack voidBlade(){return weapon(Material.NETHERITE_SWORD,"Void Blade",ChatColor.DARK_PURPLE,18);}
+ public static ItemStack titanAxe(){return weapon(Material.NETHERITE_AXE,"Titan Cleaver",ChatColor.DARK_RED,15);}
+ public static ItemStack voidPick(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Voidbreaker",ChatColor.DARK_PURPLE,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.EFFICIENCY,10,true);m.addEnchant(Enchantment.FORTUNE,5,true);i.setItemMeta(m);return i;}
+ public static ItemStack titanHelmet(){return gear(Material.NETHERITE_HELMET,"Titan Helmet",ChatColor.DARK_RED,40);}public static ItemStack titanChestplate(){return gear(Material.NETHERITE_CHESTPLATE,"Titan Chestplate",ChatColor.DARK_RED,40);}public static ItemStack titanLeggings(){return gear(Material.NETHERITE_LEGGINGS,"Titan Leggings",ChatColor.DARK_RED,40);}public static ItemStack titanBoots(){return gear(Material.NETHERITE_BOOTS,"Titan Boots",ChatColor.DARK_RED,40);}
+ public static ItemStack voidHelmet(){return gear(Material.NETHERITE_HELMET,"Void Crown",ChatColor.DARK_PURPLE,30);}public static ItemStack voidChestplate(){return gear(Material.NETHERITE_CHESTPLATE,"Void Chestplate",ChatColor.DARK_PURPLE,30);}public static ItemStack voidLeggings(){return gear(Material.NETHERITE_LEGGINGS,"Void Leggings",ChatColor.DARK_PURPLE,30);}public static ItemStack voidBoots(){return gear(Material.NETHERITE_BOOTS,"Void Boots",ChatColor.DARK_PURPLE,30);}
+ public static ItemStack infernalBlade(){ItemStack i=weapon(Material.NETHERITE_SWORD,"Infernal Fang",ChatColor.RED,14);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.FIRE_ASPECT,5,true);i.setItemMeta(m);return i;}
+ public static ItemStack celestialBow(){ItemStack i=gear(Material.BOW,"Celestial Bow",ChatColor.AQUA,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.POWER,12,true);m.addEnchant(Enchantment.INFINITY,1,true);m.addEnchant(Enchantment.FLAME,3,true);i.setItemMeta(m);return i;}
+ public static ItemStack minerDrill(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Titan Drill",ChatColor.GOLD,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.EFFICIENCY,12,true);m.addEnchant(Enchantment.FORTUNE,7,true);i.setItemMeta(m);return i;}
+ public static ItemStack lifeApple(){ItemStack i=new ItemStack(Material.ENCHANTED_GOLDEN_APPLE);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.LIGHT_PURPLE+"Life Core");m.setLore(List.of(ChatColor.GRAY+"Extremely rare ESN relic"));i.setItemMeta(m);return i;}
 }
