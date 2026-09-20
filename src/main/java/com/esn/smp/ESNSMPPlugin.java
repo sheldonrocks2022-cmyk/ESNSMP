@@ -20,6 +20,7 @@ import com.esn.smp.gameplay.ESNScoreboard;
 import com.esn.smp.gameplay.V18Core;
 import com.esn.smp.gameplay.V19Core;
 import com.esn.smp.gameplay.ExpansionCore;
+import com.esn.smp.gameplay.WelcomeGuide;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -73,6 +74,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(auctions,this);
         getServer().getPluginManager().registerEvents(gameplay,this);
         getServer().getPluginManager().registerEvents(new LootDrops(),this);
+        getServer().getPluginManager().registerEvents(new WelcomeGuide(this),this);
         discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
 
