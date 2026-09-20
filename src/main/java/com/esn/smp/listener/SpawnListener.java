@@ -39,6 +39,7 @@ public final class SpawnListener implements Listener {
                     event.getPlayer().sendTitle(title, subtitle, 10, 70, 20);
                     event.getPlayer().sendMessage(color(plugin.getConfig().getString(
                             "branding.welcome-message", "&8[&6ESN&8] &fWelcome to &6ESN SMP&f!")));
+                    giveStarterKit(event.getPlayer(), spawn);
                 });
             }
         }
@@ -52,6 +53,12 @@ public final class SpawnListener implements Listener {
         if(p.getInventory().getBoots()==null)p.getInventory().setBoots(new ItemStack(Material.IRON_BOOTS));
         Location spawn=spawnManager.getSpawn();if(spawn!=null){p.getInventory().addItem(CustomItems.spawnCompass(spawn));p.setCompassTarget(spawn);}
         p.sendMessage(ChatColor.GREEN+"Starter kit received: iron armor, iron tools, sword and ESN spawn compass!");
+    }
+
+    private void giveStarterKit(org.bukkit.entity.Player p, Location spawn) {
+        p.getInventory().addItem(new ItemStack(Material.IRON_SWORD),new ItemStack(Material.IRON_PICKAXE),new ItemStack(Material.IRON_AXE),new ItemStack(Material.IRON_SHOVEL),CustomItems.spawnCompass(spawn));
+        p.getInventory().setHelmet(new ItemStack(Material.IRON_HELMET));p.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));p.getInventory().setLeggings(new ItemStack(Material.IRON_LEGGINGS));p.getInventory().setBoots(new ItemStack(Material.IRON_BOOTS));
+        p.setCompassTarget(spawn);p.sendMessage(ChatColor.GREEN+"Starter kit received: full iron armor, iron tools, sword, and ESN Spawn Compass!");
     }
 
     @EventHandler
