@@ -4,6 +4,9 @@ import com.esn.smp.ESNSMPPlugin;
 import com.esn.smp.spawn.SpawnManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import com.esn.smp.gameplay.CustomItems;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -37,6 +40,14 @@ public final class SpawnListener implements Listener {
                 });
             }
         }
+    }
+
+    @EventHandler
+    public void giveSpawnCompass(PlayerJoinEvent event) {
+        Location spawn=spawnManager.getSpawn(); if(spawn==null)return;
+        boolean has=false; for(ItemStack i:event.getPlayer().getInventory().getContents()) if(i!=null&&i.getType()==Material.COMPASS&&i.hasItemMeta()&&(ChatColor.GOLD+"ESN World Spawn").equals(i.getItemMeta().getDisplayName())) {has=true;break;}
+        if(!has) event.getPlayer().getInventory().addItem(CustomItems.spawnCompass(spawn));
+        event.getPlayer().setCompassTarget(spawn);
     }
 
     @EventHandler
