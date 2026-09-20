@@ -50,4 +50,28 @@ public final class CustomItems{
  public static ItemStack reaperScythe(){return weapon(Material.NETHERITE_HOE,"Reaper's Scythe",ChatColor.DARK_PURPLE,17);}
  public static ItemStack emeraldHammer(){return weapon(Material.NETHERITE_AXE,"Emerald Warhammer",ChatColor.GREEN,16);}
  public static ItemStack treasureRod(){ItemStack i=gear(Material.FISHING_ROD,"Treasure Seeker",ChatColor.GOLD,0);ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.LUCK_OF_THE_SEA,8,true);m.addEnchant(Enchantment.LURE,5,true);i.setItemMeta(m);return i;}
+ public static ItemStack solarBlade(){ItemStack i=gear(Material.NETHERITE_SWORD,"Solar Edge",ChatColor.GOLD,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,15,true);i.setItemMeta(x);return i;}
+ public static ItemStack solarAxe(){ItemStack i=gear(Material.NETHERITE_AXE,"Sunbreaker",ChatColor.GOLD,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,14,true);i.setItemMeta(x);return i;}
+ public static ItemStack solarPick(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Sun Drill",ChatColor.GOLD,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,11,true);i.setItemMeta(x);return i;}
+ public static ItemStack solarHelmet(){ItemStack i=gear(Material.NETHERITE_HELMET,"Solar Crown",ChatColor.GOLD,27);return i;}
+ public static ItemStack solarChest(){ItemStack i=gear(Material.NETHERITE_CHESTPLATE,"Solar Plate",ChatColor.GOLD,27);return i;}
+ public static ItemStack solarLegs(){ItemStack i=gear(Material.NETHERITE_LEGGINGS,"Solar Greaves",ChatColor.GOLD,27);return i;}
+ public static ItemStack solarBoots(){ItemStack i=gear(Material.NETHERITE_BOOTS,"Solar Steps",ChatColor.GOLD,27);return i;}
+ public static ItemStack bloodBlade(){ItemStack i=gear(Material.NETHERITE_SWORD,"Bloodmoon Blade",ChatColor.DARK_RED,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,17,true);i.setItemMeta(x);return i;}
+ public static ItemStack bloodAxe(){ItemStack i=gear(Material.NETHERITE_AXE,"Bloodmoon Cleaver",ChatColor.DARK_RED,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,15,true);i.setItemMeta(x);return i;}
+ public static ItemStack bloodPick(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Bloodstone Drill",ChatColor.DARK_RED,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,12,true);i.setItemMeta(x);return i;}
+ public static ItemStack bloodHelmet(){ItemStack i=gear(Material.NETHERITE_HELMET,"Bloodmoon Helm",ChatColor.DARK_RED,32);return i;}
+ public static ItemStack bloodChest(){ItemStack i=gear(Material.NETHERITE_CHESTPLATE,"Bloodmoon Plate",ChatColor.DARK_RED,32);return i;}
+ public static ItemStack bloodLegs(){ItemStack i=gear(Material.NETHERITE_LEGGINGS,"Bloodmoon Guards",ChatColor.DARK_RED,32);return i;}
+ public static ItemStack bloodBoots(){ItemStack i=gear(Material.NETHERITE_BOOTS,"Bloodmoon Walkers",ChatColor.DARK_RED,32);return i;}
+ public static ItemStack natureBlade(){ItemStack i=gear(Material.DIAMOND_SWORD,"Gaia Blade",ChatColor.GREEN,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,12,true);i.setItemMeta(x);return i;}
+ public static ItemStack natureAxe(){ItemStack i=gear(Material.DIAMOND_AXE,"Worldroot Axe",ChatColor.GREEN,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,12,true);i.setItemMeta(x);return i;}
+ public static ItemStack naturePick(){ItemStack i=gear(Material.DIAMOND_PICKAXE,"Earthshaper",ChatColor.GREEN,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,10,true);i.setItemMeta(x);return i;}
+ public static ItemStack natureHelmet(){ItemStack i=gear(Material.DIAMOND_HELMET,"Gaia Crown",ChatColor.GREEN,22);return i;}
+ public static ItemStack natureChest(){ItemStack i=gear(Material.DIAMOND_CHESTPLATE,"Gaia Heartplate",ChatColor.GREEN,22);return i;}
+ public static ItemStack natureBoots(){ItemStack i=gear(Material.DIAMOND_BOOTS,"Gaia Treads",ChatColor.GREEN,22);return i;}
+ public static ItemStack arcaneBlade(){ItemStack i=gear(Material.NETHERITE_SWORD,"Arcane Edge",ChatColor.LIGHT_PURPLE,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,16,true);i.setItemMeta(x);return i;}
+ public static ItemStack arcaneStaff(){ItemStack i=gear(Material.BLAZE_ROD,"Arcane Staff",ChatColor.LIGHT_PURPLE,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.KNOCKBACK,8,true);i.setItemMeta(x);return i;}
+ public static ItemStack arcanePick(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Arcane Excavator",ChatColor.LIGHT_PURPLE,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,12,true);i.setItemMeta(x);return i;}
+ public static ItemStack arcaneHelmet(){ItemStack i=gear(Material.NETHERITE_HELMET,"Arcane Visor",ChatColor.LIGHT_PURPLE,29);return i;}
 }
