@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '1.8.3'
+version: '1.8.4'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
@@ -41,8 +41,9 @@ commands:
   quests:
     description: 'View ESN quests'
   leaderboard:
-    description: View ESN leaderboard
-    aliases: [top]
+    description: 'View ESN leaderboard'
+    aliases:
+      - top
   warps:
     description: 'List server warps'
   warp:
