@@ -1,26 +1,41 @@
 name: ESNSMP
-version: 1.1.0
+version: 1.2.0
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
-description: ESN SMP core spawn and protection plugin
+description: ESN SMP core, massive spawn, economy and auction house
 
 commands:
   spawn:
-    description: Teleport to the ESN SMP spawn.
-    usage: /spawn
+    description: Teleport to ESN SMP spawn.
     permission: esnsmp.spawn
   setspawn:
-    description: Set the ESN SMP spawn at your location.
-    usage: /setspawn
+    description: Set ESN SMP spawn.
     permission: esnsmp.admin
   esnspawn:
-    description: Build, rebuild, inspect, or roll back the ESN SMP spawn.
+    description: Manage the ESN SMP spawn.
     usage: /esnspawn <build|rebuild|status|rollback>
     permission: esnsmp.admin
+  ah:
+    aliases: [auction, auctionhouse]
+    description: Open and manage the ESN Auction House.
+    usage: /ah [sell <price>|cancel <id>|claim]
+    permission: esnsmp.auction
+  balance:
+    aliases: [bal, money]
+    description: View your ESN Coin balance.
+    permission: esnsmp.economy
+  pay:
+    description: Pay ESN Coins to another online player.
+    usage: /pay <player> <amount>
+    permission: esnsmp.economy
 
 permissions:
   esnsmp.spawn:
+    default: true
+  esnsmp.auction:
+    default: true
+  esnsmp.economy:
     default: true
   esnsmp.admin:
     default: op
