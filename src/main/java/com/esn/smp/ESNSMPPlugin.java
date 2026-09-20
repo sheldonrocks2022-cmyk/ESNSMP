@@ -8,6 +8,7 @@ import com.esn.smp.data.ESNDataStore;
 import com.esn.smp.economy.EconomyCommand;
 import com.esn.smp.listener.SpawnListener;
 import com.esn.smp.gameplay.SMPGameplay;
+import com.esn.smp.gameplay.ESNItemsCommand;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -43,6 +44,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         registerCommand("balance",economy);
         registerCommand("pay",economy);
         for(String name:new String[]{"menu","shop","crates","daily","quests","leaderboard","warps"}) registerCommand(name,gameplay);
+        registerCommand("esnitems",new ESNItemsCommand());
 
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
         getServer().getPluginManager().registerEvents(new SpawnProtectionListener(spawnManager),this);
