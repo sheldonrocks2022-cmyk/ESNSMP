@@ -68,6 +68,12 @@ public final class ESNDataStore implements AutoCloseable {
                     )
                     """);
             statement.execute("""
+                    CREATE TABLE IF NOT EXISTS daily_claims (
+                      uuid TEXT PRIMARY KEY,
+                      last_claim INTEGER NOT NULL
+                    )
+                    """);
+            statement.execute("""
                     CREATE INDEX IF NOT EXISTS idx_deliveries_owner
                     ON deliveries(owner_uuid)
                     """);
@@ -81,6 +87,23 @@ public final class ESNDataStore implements AutoCloseable {
     public synchronized long getBalance(Player player) throws SQLException {
         ensureAccount(connection, player.getUniqueId(), player.getName());
         return readBalance(connection, player.getUniqueId());
+    }
+
+    public synchronized void deposit(Player player,long amount) throws SQLException {
+        if(amount<=0)return; ensureAccount(connection,player.getUniqueId(),player.getName());
+        updateBalance(connection,player.getUniqueId(),Math.addExact(readBalance(connection,player.getUniqueId()),amount));
+    }
+    public synchronized boolean withdraw(Player player,long amount) throws SQLException {
+        if(amount<=0)return false; ensureAccount(connection,player.getUniqueId(),player.getName());
+        long b=readBalance(connection,player.getUniqueId()); if(b<amount)return false; updateBalance(connection,player.getUniqueId(),b-amount); return true;
+    }
+    public synchronized long claimDaily(Player player) throws SQLException {
+        ensureAccount(connection,player.getUniqueId(),player.getName()); long now=System.currentTimeMillis(),last=0;
+        try(PreparedStatement p=connection.prepareStatement("SELECT last_claim FROM daily_claims WHERE uuid=?")){p.setString(1,player.getUniqueId().toString());try(ResultSet r=p.executeQuery()){if(r.next())last=r.getLong(1);}}
+        long wait=86400000L-(now-last); if(last>0&&wait>0)return wait;
+        begin(); try{long b=readBalance(connection,player.getUniqueId());updateBalance(connection,player.getUniqueId(),Math.addExact(b,250));
+          try(PreparedStatement p=connection.prepareStatement("INSERT INTO daily_claims(uuid,last_claim) VALUES(?,?) ON CONFLICT(uuid) DO UPDATE SET last_claim=excluded.last_claim")){p.setString(1,player.getUniqueId().toString());p.setLong(2,now);p.executeUpdate();}commit();return 0;
+        }catch(Exception ex){rollbackQuietly();throw ex instanceof SQLException s?s:new SQLException(ex);}finally{restoreAutoCommit();}
     }
 
     public synchronized boolean transfer(Player from, Player to, long amount) throws SQLException {
