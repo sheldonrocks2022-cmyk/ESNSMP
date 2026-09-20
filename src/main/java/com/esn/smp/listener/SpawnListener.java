@@ -23,7 +23,9 @@ public final class SpawnListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        if (!event.getPlayer().hasPlayedBefore()
+        boolean firstJoin=!event.getPlayer().hasPlayedBefore();
+        if(firstJoin) giveStarterKit(event.getPlayer());
+        if (firstJoin
                 && plugin.getConfig().getBoolean("spawn.teleport-new-players", true)) {
             Location spawn = spawnManager.getSpawn();
             if (spawn != null) {
@@ -40,6 +42,16 @@ public final class SpawnListener implements Listener {
                 });
             }
         }
+    }
+
+    private void giveStarterKit(org.bukkit.entity.Player p) {
+        p.getInventory().addItem(new ItemStack(Material.IRON_SWORD),new ItemStack(Material.IRON_PICKAXE),new ItemStack(Material.IRON_AXE),new ItemStack(Material.IRON_SHOVEL));
+        if(p.getInventory().getHelmet()==null)p.getInventory().setHelmet(new ItemStack(Material.IRON_HELMET));
+        if(p.getInventory().getChestplate()==null)p.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
+        if(p.getInventory().getLeggings()==null)p.getInventory().setLeggings(new ItemStack(Material.IRON_LEGGINGS));
+        if(p.getInventory().getBoots()==null)p.getInventory().setBoots(new ItemStack(Material.IRON_BOOTS));
+        Location spawn=spawnManager.getSpawn();if(spawn!=null){p.getInventory().addItem(CustomItems.spawnCompass(spawn));p.setCompassTarget(spawn);}
+        p.sendMessage(ChatColor.GREEN+"Starter kit received: iron armor, iron tools, sword and ESN spawn compass!");
     }
 
     @EventHandler
