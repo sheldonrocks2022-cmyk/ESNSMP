@@ -56,3 +56,8 @@ public final class SpawnListener implements Listener {
     }
 
 
+
+    @EventHandler public void giveSpawnCompass(PlayerJoinEvent event){Location spawn=spawnManager.getSpawn();if(spawn==null)return;boolean has=false;for(ItemStack i:event.getPlayer().getInventory().getContents())if(i!=null&&i.getType()==Material.COMPASS&&i.hasItemMeta()&&(ChatColor.GOLD+"ESN World Spawn").equals(i.getItemMeta().getDisplayName())){has=true;break;}if(!has)event.getPlayer().getInventory().addItem(CustomItems.spawnCompass(spawn));event.getPlayer().setCompassTarget(spawn);}
+    @EventHandler public void onRespawn(PlayerRespawnEvent event){if(!plugin.getConfig().getBoolean("spawn.teleport-on-respawn",true))return;Location spawn=spawnManager.getSpawn();if(spawn!=null)event.setRespawnLocation(spawn);}
+    private String color(String input){return ChatColor.translateAlternateColorCodes('&',input==null?"":input);}
+}
