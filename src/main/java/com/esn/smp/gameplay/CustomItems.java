@@ -75,19 +75,19 @@ public final class CustomItems{
  public static ItemStack arcanePick(){ItemStack i=gear(Material.NETHERITE_PICKAXE,"Arcane Excavator",ChatColor.LIGHT_PURPLE,0);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.EFFICIENCY,12,true);i.setItemMeta(x);return i;}
  public static ItemStack arcaneHelmet(){ItemStack i=gear(Material.NETHERITE_HELMET,"Arcane Visor",ChatColor.LIGHT_PURPLE,29);return i;}
  public static ItemStack relic(Material mat,String name,ChatColor color,String rarity){ItemStack i=gear(mat,name,color,0);ItemMeta m=i.getItemMeta();m.setLore(List.of(color+"Rarity: "+rarity,ChatColor.GRAY+"ESN forged relic"));i.setItemMeta(m);return i;}
- public static ItemStack abyssBlade(){ItemStack i=weapon(Material.NETHERITE_SWORD,"Abyssal Sovereign",ChatColor.DARK_PURPLE,21);return i;}
- public static ItemStack abyssAxe(){return weapon(Material.NETHERITE_AXE,"Abyssal Executioner",ChatColor.DARK_PURPLE,18);}
- public static ItemStack abyssPick(){ItemStack i=relic(Material.NETHERITE_PICKAXE,"Abyssal Excavator",ChatColor.DARK_PURPLE,"DIVINE");ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.EFFICIENCY,13,true);m.addEnchant(Enchantment.FORTUNE,7,true);i.setItemMeta(m);return i;}
- public static ItemStack abyssHelmet(){return gear(Material.NETHERITE_HELMET,"Abyssal Crown",ChatColor.DARK_PURPLE,36);}
+ public static ItemStack abyssBlade(){return weapon(Material.NETHERITE_SWORD,"Abyssal Sovereign",ChatColor.DARK_PURPLE,48);}
+ public static ItemStack abyssAxe(){return weapon(Material.NETHERITE_AXE,"Abyssal Executioner",ChatColor.DARK_PURPLE,46);}
+ public static ItemStack abyssPick(){ItemStack i=relic(Material.NETHERITE_PICKAXE,"Abyssal Excavator",ChatColor.DARK_PURPLE,"DIVINE");ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.EFFICIENCY,45,true);m.addEnchant(Enchantment.FORTUNE,42,true);i.setItemMeta(m);return i;}
+ public static ItemStack abyssHelmet(){return gear(Material.NETHERITE_HELMET,"Abyssal Crown",ChatColor.DARK_PURPLE,45);}
  public static ItemStack abyssChest(){return gear(Material.NETHERITE_CHESTPLATE,"Abyssal Heartplate",ChatColor.DARK_PURPLE,36);}
  public static ItemStack abyssLegs(){return gear(Material.NETHERITE_LEGGINGS,"Abyssal Legguards",ChatColor.DARK_PURPLE,36);}
  public static ItemStack abyssBoots(){return gear(Material.NETHERITE_BOOTS,"Abyssal Walkers",ChatColor.DARK_PURPLE,36);}
- public static ItemStack dragonBlade(){return weapon(Material.NETHERITE_SWORD,"Dragonfire Greatblade",ChatColor.DARK_RED,22);}
- public static ItemStack dragonAxe(){return weapon(Material.NETHERITE_AXE,"Dragonbone Cleaver",ChatColor.DARK_RED,19);}
- public static ItemStack dragonHelmet(){return gear(Material.NETHERITE_HELMET,"Dragonlord Helm",ChatColor.DARK_RED,38);}
- public static ItemStack dragonChest(){return gear(Material.NETHERITE_CHESTPLATE,"Dragonlord Plate",ChatColor.DARK_RED,38);}
- public static ItemStack dragonLegs(){return gear(Material.NETHERITE_LEGGINGS,"Dragonlord Guards",ChatColor.DARK_RED,38);}
- public static ItemStack dragonBoots(){return gear(Material.NETHERITE_BOOTS,"Dragonlord Treads",ChatColor.DARK_RED,38);}
+ public static ItemStack dragonBlade(){return weapon(Material.NETHERITE_SWORD,"Dragonfire Greatblade",ChatColor.DARK_RED,50);}
+ public static ItemStack dragonAxe(){return weapon(Material.NETHERITE_AXE,"Dragonbone Cleaver",ChatColor.DARK_RED,48);}
+ public static ItemStack dragonHelmet(){return gear(Material.NETHERITE_HELMET,"Dragonlord Helm",ChatColor.DARK_RED,47);}
+ public static ItemStack dragonChest(){return gear(Material.NETHERITE_CHESTPLATE,"Dragonlord Plate",ChatColor.DARK_RED,47);}
+ public static ItemStack dragonLegs(){return gear(Material.NETHERITE_LEGGINGS,"Dragonlord Guards",ChatColor.DARK_RED,47);}
+ public static ItemStack dragonBoots(){return gear(Material.NETHERITE_BOOTS,"Dragonlord Treads",ChatColor.DARK_RED,47);}
  public static ItemStack cosmicBlade(){return weapon(Material.NETHERITE_SWORD,"Cosmic Riftblade",ChatColor.LIGHT_PURPLE,24);}
  public static ItemStack cosmicStaff(){ItemStack i=relic(Material.BLAZE_ROD,"Cosmic Scepter",ChatColor.LIGHT_PURPLE,"DIVINE");ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.KNOCKBACK,10,true);i.setItemMeta(m);return i;}
  public static ItemStack cosmicHelmet(){return gear(Material.NETHERITE_HELMET,"Cosmic Halo",ChatColor.LIGHT_PURPLE,40);}
