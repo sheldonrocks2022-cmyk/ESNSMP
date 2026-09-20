@@ -30,6 +30,13 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getScheduler().runTask(this, () -> {
             try {
                 spawnManager.ensureConfigured();
+
+                if (getConfig().getBoolean("spawn.build-incomplete", false)) {
+                    getLogger().severe("A previous ESN spawn build did not finish. Automatic rebuilding is disabled.");
+                    getLogger().severe("Run /esnspawn rollback, then /esnspawn build after checking the world.");
+                    return;
+                }
+
                 if (getConfig().getBoolean("spawn.build-on-first-start", true)
                         && !getConfig().getBoolean("spawn.generated", false)) {
                     getLogger().info("First start detected. Building ESN SMP spawn...");
@@ -42,6 +49,13 @@ public final class ESNSMPPlugin extends JavaPlugin {
         });
 
         getLogger().info("ESNSMP v" + getDescription().getVersion() + " enabled.");
+    }
+
+    @Override
+    public void onDisable() {
+        if (spawnManager != null) {
+            spawnManager.shutdown();
+        }
     }
 
     private void registerCommand(String name, org.bukkit.command.CommandExecutor executor) {
