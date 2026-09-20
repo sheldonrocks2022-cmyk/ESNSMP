@@ -493,7 +493,8 @@ public final class SpawnManager {
 
             plugin.getConfig().set("spawn.generated", true);
             plugin.getConfig().set("spawn.build-incomplete", false);
-            plugin.getConfig().set("spawn.design-version", 3);\n            if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
+            plugin.getConfig().set("spawn.design-version", 3);
+            if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
             plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
             plugin.saveConfig();
 
