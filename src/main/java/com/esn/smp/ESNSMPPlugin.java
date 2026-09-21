@@ -83,7 +83,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         registerCommand("pay",economy);
         for(String name:new String[]{"shop","crates","daily","quests","leaderboard"}) registerCommand(name,gameplay); getServer().getPluginManager().registerEvents(gameplay,this); ServerMenus serverMenus=new ServerMenus(this);registerCommand("menu",serverMenus);getServer().getPluginManager().registerEvents(serverMenus,this);
         HomesWarps homesWarps=new HomesWarps(this); for(String name:new String[]{"sethome","home","delhome","homes","rtp","warp","warps","setwarp","delwarp"}) registerCommand(name,homesWarps);
-        registerCommand("profile",new ProfileCommand(dataStore)); new ESNScoreboard(this,dataStore);
+        ProfileCommand profiles=new ProfileCommand(dataStore);registerCommand("profile",profiles);getServer().getPluginManager().registerEvents(profiles,this); new ESNScoreboard(this,dataStore);
         registerCommand("esnitems",new ESNItemsCommand());
         Teleports teleports=new Teleports(this); for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back","tptoggle"}) registerCommand(name,teleports); getServer().getPluginManager().registerEvents(teleports,this);
         try { v18Core=new V18Core(this,dataStore); for(String name:new String[]{"level","streak","team","bounty","trade","staff","invsee","ecsee","freeze","warn","mute","history"}) registerCommand(name,v18Core); getServer().getPluginManager().registerEvents(v18Core,this); } catch(Exception ex){ getLogger().severe("v1.8 optional systems failed to initialize; core will stay online: "+ex.getMessage()); }
