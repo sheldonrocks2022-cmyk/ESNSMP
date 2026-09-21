@@ -1,0 +1,19 @@
+package com.esn.smp.gameplay;
+import org.bukkit.*;import org.bukkit.enchantments.Enchantment;import org.bukkit.inventory.*;import org.bukkit.inventory.meta.ItemMeta;import org.bukkit.persistence.*;import java.util.*;
+public final class EternalGear{
+ private static ItemStack base(Material mat,String name,String id){ItemStack i=new ItemStack(mat);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_AQUA+name);m.setLore(List.of(ChatColor.LIGHT_PURPLE+"ETERNAL Rarity",ChatColor.GRAY+"ESN 2.0 endgame equipment"));m.getPersistentDataContainer().set(new NamespacedKey("esnsmp","item_id"),PersistentDataType.STRING,id);m.addEnchant(Enchantment.UNBREAKING,60,true);i.setItemMeta(m);return i;}
+ private static ItemStack armor(Material m,String n,String id){ItemStack i=base(m,n,id);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.PROTECTION,60,true);x.addEnchant(Enchantment.FIRE_PROTECTION,55,true);x.addEnchant(Enchantment.PROJECTILE_PROTECTION,55,true);x.addEnchant(Enchantment.BLAST_PROTECTION,55,true);i.setItemMeta(x);return i;}
+ private static ItemStack weapon(Material m,String n,String id){ItemStack i=base(m,n,id);ItemMeta x=i.getItemMeta();x.addEnchant(Enchantment.SHARPNESS,65,true);x.addEnchant(Enchantment.SMITE,55,true);x.addEnchant(Enchantment.BANE_OF_ARTHROPODS,55,true);x.addEnchant(Enchantment.LOOTING,55,true);i.setItemMeta(x);return i;}
+ public static ItemStack key(){ItemStack i=base(Material.HEAVY_CORE,"Eternal Crate Key","eternal_key");ItemMeta m=i.getItemMeta();m.setLore(List.of(ChatColor.AQUA+"Opens only the Eternal Crate",ChatColor.GRAY+"Hostile 40% • Passive 25% • Boss 100%"));i.setItemMeta(m);return i;}
+ public static ItemStack sword(){return weapon(Material.NETHERITE_SWORD,"Eternal Dominion","eternal_sword");}
+ public static ItemStack axe(){return weapon(Material.NETHERITE_AXE,"Eternal Ruin","eternal_axe");}
+ public static ItemStack pick(){ItemStack i=base(Material.NETHERITE_PICKAXE,"Eternal Excavator","eternal_pick");ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.EFFICIENCY,65,true);m.addEnchant(Enchantment.FORTUNE,55,true);i.setItemMeta(m);return i;}
+ public static ItemStack shovel(){ItemStack i=base(Material.NETHERITE_SHOVEL,"Eternal Terraformer","eternal_shovel");ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.EFFICIENCY,65,true);m.addEnchant(Enchantment.FORTUNE,55,true);i.setItemMeta(m);return i;}
+ public static ItemStack hoe(){ItemStack i=base(Material.NETHERITE_HOE,"Eternal Harvester","eternal_hoe");ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.EFFICIENCY,65,true);m.addEnchant(Enchantment.FORTUNE,55,true);i.setItemMeta(m);return i;}
+ public static ItemStack helmet(){ItemStack i=armor(Material.NETHERITE_HELMET,"Eternal Crown","eternal_helmet");ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.RESPIRATION,55,true);m.addEnchant(Enchantment.AQUA_AFFINITY,55,true);i.setItemMeta(m);return i;}
+ public static ItemStack chest(){return armor(Material.NETHERITE_CHESTPLATE,"Eternal Aegis","eternal_chest");}
+ public static ItemStack legs(){return armor(Material.NETHERITE_LEGGINGS,"Eternal Legguards","eternal_legs");}
+ public static ItemStack boots(){ItemStack i=armor(Material.NETHERITE_BOOTS,"Eternal Walkers","eternal_boots");ItemMeta m=i.getItemMeta();m.addEnchant(Enchantment.FEATHER_FALLING,60,true);m.addEnchant(Enchantment.DEPTH_STRIDER,55,true);m.addEnchant(Enchantment.SOUL_SPEED,55,true);i.setItemMeta(m);return i;}
+ public static ItemStack[] pool(){return new ItemStack[]{sword(),axe(),pick(),shovel(),hoe(),helmet(),chest(),legs(),boots()};}
+ public static boolean key(ItemStack i){return i!=null&&i.hasItemMeta()&&"eternal_key".equals(i.getItemMeta().getPersistentDataContainer().get(new NamespacedKey("esnsmp","item_id"),PersistentDataType.STRING));}
+}
