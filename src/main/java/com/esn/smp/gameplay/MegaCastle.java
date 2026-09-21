@@ -28,17 +28,17 @@ public final class MegaCastle implements Listener, CommandExecutor {
   Player p=e.getPlayer();if(!p.hasPermission("esnsmp.staff")){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Staff only.");return;}
   if(building){e.setCancelled(true);p.sendMessage(ChatColor.RED+"A castle build is already running.");return;}
   Location o=e.getBlockPlaced().getLocation();if(o.getBlockY()<20||o.getBlockY()>240){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Unsafe build height.");return;}
-  building=true;p.sendMessage(ChatColor.GOLD+"ESN Mega Castle construction started. ~145x145 footprint.");
+  building=true;p.sendMessage(ChatColor.GOLD+"ESN Mega Castle construction started. ~230x230 footprint.");
   build(o.clone().add(0,-1,0),p);
  }
  private record Change(int x,int y,int z,Material m){}
  private void build(Location o,Player owner){
-  List<Change> q=new ArrayList<>(); int R=72;
+  List<Change> q=new ArrayList<>(); int R=115;
   // Foundation/courtyard.
   for(int x=-R;x<=R;x++)for(int z=-R;z<=R;z++) if(Math.abs(x)==R||Math.abs(z)==R) for(int y=1;y<=10;y++)q.add(new Change(x,y,z,Material.DEEPSLATE_BRICKS));
   for(int x=-R+1;x<R;x++)for(int z=-R+1;z<R;z++)if((x+z)%3==0)q.add(new Change(x,0,z,Material.STONE_BRICKS));
   // Four defensive towers.
-  int[][] towers={{-64,-64},{64,-64},{-64,64},{64,64}};
+  int[][] towers={{-105,-105},{105,-105},{-105,105},{105,105}};
   for(int[] t:towers) cylinder(q,t[0],t[1],10,0,28,Material.DEEPSLATE_BRICKS);
   // Central keep, 61x51, four floors.
   shell(q,-30,30,-25,25,1,34,Material.STONE_BRICKS);
@@ -60,7 +60,7 @@ public final class MegaCastle implements Listener, CommandExecutor {
   shell(q,-24,24,-18,18,-8,-1,Material.REINFORCED_DEEPSLATE);
   for(int x=-20;x<=20;x+=4)for(int z=-14;z<=14;z+=4)q.add(new Change(x,-6,z,Material.BARREL));
   // Lighting.
-  for(int x=-60;x<=60;x+=12)for(int z=-60;z<=60;z+=12)q.add(new Change(x,2,z,Material.SEA_LANTERN));
+  for(int x=-100;x<=100;x+=12)for(int z=-100;z<=100;z+=12)q.add(new Change(x,2,z,Material.SEA_LANTERN));
   final int total=q.size(); new BukkitRunnable(){int i=0;public void run(){try{int budget=1800;while(budget-->0&&i<total){Change c=q.get(i++);Block b=o.clone().add(c.x,c.y,c.z).getBlock();b.setType(c.m,false);}if(i%18000<1800)owner.sendMessage(ChatColor.YELLOW+"Castle: "+(i*100/total)+"%");if(i>=total){building=false;owner.sendMessage(ChatColor.GREEN+"ESN Mega Castle construction complete.");cancel();}}catch(Exception ex){building=false;plugin.getLogger().severe("Castle build stopped safely: "+ex.getMessage());owner.sendMessage(ChatColor.RED+"Castle build stopped safely. Check console.");cancel();}}}.runTaskTimer(plugin,1L,1L);
  }
  private void shell(List<Change> q,int x1,int x2,int z1,int z2,int y1,int y2,Material m){for(int y=y1;y<=y2;y++)for(int x=x1;x<=x2;x++)for(int z=z1;z<=z2;z++)if(y==y1||y==y2||x==x1||x==x2||z==z1||z==z2)q.add(new Change(x,y,z,m));}
