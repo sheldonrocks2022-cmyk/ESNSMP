@@ -19,5 +19,5 @@ public final class LootDrops implements Listener{
  }
  public static ItemStack key(){ItemStack i=new ItemStack(Material.TRIPWIRE_HOOK);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.GOLD+"ESN Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens ESN and Celestial crates"));i.setItemMeta(m);return tag(i,"crate_key");}
  public static ItemStack abyssKey(){ItemStack i=new ItemStack(Material.ECHO_SHARD);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_PURPLE+"Abyssal Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens only the Abyssal Crate"));i.setItemMeta(m);return tag(i,"abyss_key");}
- public static ItemStack dragonKey(){ItemStack i=new ItemStack(Material.BLAZE_ROD);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_RED+"Dragonlord Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens only the Dragonlord Crate"));i.setItemMeta(m);return tag(i,"dragon_key");}
+ public static ItemStack dragonKey(){ItemStack i=new ItemStack(Material.DRAGON_BREATH);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_RED+"Dragonlord Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens only the Dragonlord Crate"));i.setItemMeta(m);return tag(i,"dragon_key");}
 }
