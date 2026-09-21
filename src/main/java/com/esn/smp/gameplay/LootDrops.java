@@ -4,6 +4,8 @@ public final class LootDrops implements Listener{
  private static ItemStack tag(ItemStack i,String id){ItemMeta m=i.getItemMeta();m.getPersistentDataContainer().set(new NamespacedKey("esnsmp","item_id"),PersistentDataType.STRING,id);i.setItemMeta(m);return i;}
  @EventHandler public void death(EntityDeathEvent e){
   LivingEntity mob=e.getEntity();Player killer=mob.getKiller();if(killer==null)return;
+  double eternalChance=(mob.getScoreboardTags().contains("esnWorldBoss")||mob.getScoreboardTags().contains("esnSwampBoss"))?1.0:(mob instanceof Monster||mob instanceof Slime||mob instanceof Phantom)?0.40:(mob instanceof Animals||mob instanceof WaterMob||mob instanceof Ambient||mob instanceof Villager||mob instanceof WanderingTrader||mob instanceof IronGolem||mob instanceof Snowman)?0.25:0.0;
+  if(eternalChance>0&&ThreadLocalRandom.current().nextDouble()<eternalChance){e.getDrops().add(EternalGear.key());killer.sendMessage(ChatColor.DARK_AQUA+"Eternal Crate Key dropped!");}
   double chance=chance(mob);if(chance<=0)return;
   if(ThreadLocalRandom.current().nextDouble()<chance){e.getDrops().add(key());killer.sendMessage(ChatColor.GOLD+"Rare drop: ESN Crate Key!");}
  }
