@@ -36,6 +36,7 @@ import com.esn.smp.gameplay.ESNAdventureEngine;
 import com.esn.smp.gameplay.AdminControlCenter;
 import com.esn.smp.gameplay.MegaCastle;
 import com.esn.smp.gameplay.ServerMenus;
+import com.esn.smp.gameplay.JailSystem;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -87,7 +88,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         Teleports teleports=new Teleports(this); for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back","tptoggle"}) registerCommand(name,teleports); getServer().getPluginManager().registerEvents(teleports,this);
         try { v18Core=new V18Core(this,dataStore); for(String name:new String[]{"level","streak","team","bounty","trade","staff","invsee","ecsee","freeze","warn","mute","history"}) registerCommand(name,v18Core); getServer().getPluginManager().registerEvents(v18Core,this); } catch(Exception ex){ getLogger().severe("v1.8 optional systems failed to initialize; core will stay online: "+ex.getMessage()); }
         AdminControlCenter adminCenter=new AdminControlCenter(this,gameplay,dataStore);registerCommand("admin",adminCenter);registerCommand("modmenu",adminCenter);getServer().getPluginManager().registerEvents(adminCenter,this);
-        MegaCastle megaCastle=new MegaCastle(this);registerCommand("castlecore",megaCastle);getServer().getPluginManager().registerEvents(megaCastle,this);
+        MegaCastle megaCastle=new MegaCastle(this);registerCommand("castlecore",megaCastle);getServer().getPluginManager().registerEvents(megaCastle,this); JailSystem jail=new JailSystem(this);registerCommand("jail",jail);getServer().getPluginManager().registerEvents(jail,this);
         v19Core=new V19Core(this,dataStore); for(String name:new String[]{"pass","upgrade","tradegui","tutorial","grave"}) registerCommand(name,v19Core); getServer().getPluginManager().registerEvents(v19Core,this);
         try { expansionCore=new ExpansionCore(this,dataStore); for(String name:new String[]{"jobs","skills","prestige","titles","collections","stats","afk","calendar","blacksmith","salvage","reforge","boss","dungeon","raid","koth","report","note"}) registerCommand(name,expansionCore); getServer().getPluginManager().registerEvents(expansionCore,this); } catch(Exception ex){ getLogger().severe("Expansion systems failed safely: "+ex.getMessage()); }
         try { esn20Core=new ESN20Core(this,dataStore); for(String name:new String[]{"forge","bossdrops","contracts","relics","challenges","rewards"}) registerCommand(name,esn20Core); getServer().getPluginManager().registerEvents(esn20Core,this); } catch(Exception ex){ getLogger().severe("ESN 2.0 systems failed safely: "+ex.getMessage()); }
