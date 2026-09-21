@@ -96,7 +96,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new LootDrops(),this);
         getServer().getPluginManager().registerEvents(new MythicCrates(this),this);
         getServer().getPluginManager().registerEvents(new ExtendedCrates(),this);
-        getServer().getPluginManager().registerEvents(new MegaCrates(),this);
+        MegaCrates megaCrates=new MegaCrates(); registerCommand("megacratekey",megaCrates); getServer().getPluginManager().registerEvents(megaCrates,this);
         getServer().getPluginManager().registerEvents(new BiomeBosses(this),this);
         AdventureSystems adventure=new AdventureSystems(this); for(String name:new String[]{"mastery","codex","pets","treasure","progression","diagnostics"}) registerCommand(name,adventure); getServer().getPluginManager().registerEvents(adventure,this);
         getServer().getPluginManager().registerEvents(new EndgameSystems(this),this);
