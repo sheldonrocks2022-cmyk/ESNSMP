@@ -76,7 +76,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         registerCommand("ah",auctions);
         registerCommand("balance",economy);
         registerCommand("pay",economy);
-        for(String name:new String[]{"menu","shop","crates","daily","quests","leaderboard"}) registerCommand(name,gameplay);
+        for(String name:new String[]{"menu","shop","crates","daily","quests","leaderboard"}) registerCommand(name,gameplay); getServer().getPluginManager().registerEvents(gameplay,this);
         HomesWarps homesWarps=new HomesWarps(this); for(String name:new String[]{"sethome","home","delhome","homes","rtp","warp","warps","setwarp","delwarp"}) registerCommand(name,homesWarps);
         registerCommand("profile",new ProfileCommand(dataStore)); new ESNScoreboard(this,dataStore);
         registerCommand("esnitems",new ESNItemsCommand());
