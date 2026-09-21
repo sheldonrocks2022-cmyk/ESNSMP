@@ -206,6 +206,27 @@ commands:
   rewards:
     description: 'View ESN reward road progress'
 
+  season2:
+    description: 'View ESN Season 2 progression'
+  milestones:
+    description: 'View and claim boss milestones'
+  bestiary2:
+    description: 'View persistent bestiary'
+  achievements2:
+    description: 'View 2.0 achievements'
+  title:
+    description: 'Equip earned titles'
+  party2:
+    description: 'Use safe party invitations'
+  events2:
+    description: 'View 2.0 world events'
+  guide:
+    description: 'View the 2.0 progression path'
+  leaderboards2:
+    description: 'View 2.0 career standings'
+  claimflags:
+    description: 'View claim protection features'
+
 permissions:
   esnsmp.spawn:
     default: true
