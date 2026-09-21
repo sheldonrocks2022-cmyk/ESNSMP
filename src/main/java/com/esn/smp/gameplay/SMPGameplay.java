@@ -35,25 +35,25 @@ public final class SMPGameplay implements CommandExecutor, Listener {
   Inventory i=Bukkit.createInventory(null,54,ChatColor.DARK_PURPLE+"ESN Loot Crates • "+page+"/15");
   if(page==1){
    Material[] icons={Material.OAK_PLANKS,Material.STONE,Material.COPPER_INGOT,Material.BRICK,Material.IRON_INGOT,Material.EMERALD,Material.OBSIDIAN};
-   for(int n=0;n<ExtendedCrates.LOW.length;n++){String[] r=Arrays.stream(ExtendedCrates.pool(false,n)).map(x->ChatColor.stripColor(x.getItemMeta().getDisplayName())).toArray(String[]::new);i.setItem(19+n,b(icons[n],ChatColor.GREEN+"Starter • "+ExtendedCrates.LOW[n]+" Crate",crateLoreKey(ExtendedCrates.LOW[n]+" Crate Key","11.11%",r)));}
-  }else if(page==2){
+   for(int n=0;n<ExtendedCrates.LOW.length;n++){String[] r=Arrays.stream(ExtendedCrates.pool(false,n)).map(x->ChatColor.stripColor(x.getItemMeta().getDisplayName())).toArray(String[]::new);i.setItem(19+n,b(icons[n],ChatColor.GREEN+"Tier "+(n+1)+" • "+ExtendedCrates.LOW[n]+" Crate",crateLoreKey(ExtendedCrates.LOW[n]+" Crate Key","11.11%",r)));}
+  } else if(page==2){
    i.setItem(10,b(Material.ENDER_CHEST,ChatColor.WHITE+"ESN Crate",List.of(ChatColor.GRAY+"Requires: ESN Crate Key",ChatColor.YELLOW+"Click to open")));
    i.setItem(11,b(Material.END_CRYSTAL,ChatColor.AQUA+"Celestial Crate",crateLore("8.33%","Celestial Saber","Celestial Reaver","Celestial Excavator","Celestial Halo","Celestial Aegis","Celestial Greaves","Celestial Walkers","Celestial Bow","Reaper Scythe","Poseidon Wrath","Dragonspine Bow","Phantom Repeater")));
    String[] names={"Infernal","Storm","Shadow","Frost","Solar","Abyssal","Dragonlord"};Material[] icons={Material.BLAZE_POWDER,Material.LIGHTNING_ROD,Material.ECHO_SHARD,Material.PACKED_ICE,Material.SUNFLOWER,Material.RESPAWN_ANCHOR,Material.DRAGON_HEAD};
    for(int n=0;n<7;n++)i.setItem(12+n,b(icons[n],ChatColor.GOLD+names[n]+" Crate",List.of(ChatColor.YELLOW+"Click to open")));
    i.setItem(19,b(Material.HEAVY_CORE,ChatColor.DARK_AQUA+"Eternal Crate",crateLoreKey("Eternal Crate Key","11.11%","Eternal Dominion","Eternal Ruin","Eternal Excavator","Eternal Terraformer","Eternal Harvester","Eternal Crown","Eternal Aegis","Eternal Legguards","Eternal Walkers")));
-  }else if(page==3){
+  } else if(page==3){
    Material[] icons={Material.NETHER_STAR,Material.CRYING_OBSIDIAN,Material.FEATHER,Material.HEART_OF_THE_SEA,Material.NETHERITE_BLOCK,Material.BLACK_DYE,Material.BEACON,Material.CLOCK,Material.END_CRYSTAL,Material.DRAGON_EGG};
    for(int n=0;n<10;n++){String[] r=Arrays.stream(MythicCrates.pool(n)).map(x->ChatColor.stripColor(x.getItemMeta().getDisplayName())).toArray(String[]::new);i.setItem(19+n,b(icons[n],ChatColor.GOLD+MythicCrates.TIERS[n]+" Crate",crateLoreKey(MythicCrates.TIERS[n]+" Crate Key","11.11%",r)));}
-  }else if(page==4){
+  } else if(page==4){
    Material[] icons={Material.FIREWORK_STAR,Material.ENDER_EYE,Material.NETHER_STAR,Material.TOTEM_OF_UNDYING,Material.END_CRYSTAL,Material.DRAGON_EGG};
    for(int n=0;n<6;n++){String[] r=Arrays.stream(ExtendedCrates.pool(true,n)).map(x->ChatColor.stripColor(x.getItemMeta().getDisplayName())).toArray(String[]::new);i.setItem(20+n,b(icons[n],ChatColor.DARK_PURPLE+ExtendedCrates.HIGH[n]+" Crate",crateLoreKey(ExtendedCrates.HIGH[n]+" Crate Key","11.11%",r)));}
-  }else if(page==5){
+  } else if(page==5){
    Material[] icons={Material.BEACON,Material.RESPAWN_ANCHOR,Material.HEAVY_CORE,Material.NETHERITE_BLOCK};
-   for(int n=6;n<ExtendedCrates.HIGH.length;n++){String[] r=Arrays.stream(ExtendedCrates.pool(true,n)).map(x->ChatColor.stripColor(x.getItemMeta().getDisplayName())).toArray(String[]::new);i.setItem(19+n-6,b(icons[n-6],ChatColor.DARK_RED+ExtendedCrates.HIGH[n]+" Crate",crateLoreKey(ExtendedCrates.HIGH[n]+" Crate Key","11.11%",r)));}
-  }else{
-   int start=(page-6)*10;
-   for(int n=0;n<10&&start+n<MegaCrates.COUNT;n++){int t=start+n;String[] r=Arrays.stream(MegaCrates.pool(t)).map(x->ChatColor.stripColor(x.getItemMeta().getDisplayName())).toArray(String[]::new);i.setItem(19+n,b(Material.ECHO_SHARD,ChatColor.DARK_PURPLE+"MEGA "+(t+1)+" • "+MegaCrates.name(t)+" Crate",crateLoreKey(MegaCrates.name(t)+" Crate Key","9.09%",r)));}
+   for(int n=6;n<ExtendedCrates.HIGH.length;n++){String[] r=Arrays.stream(ExtendedCrates.pool(true,n)).map(x->ChatColor.stripColor(x.getItemMeta().getDisplayName())).toArray(String[]::new);i.setItem(19+n-6,b(icons[n-6],ChatColor.DARK_RED+"ULTIMATE • "+ExtendedCrates.HIGH[n]+" Crate",crateLoreKey(ExtendedCrates.HIGH[n]+" Crate Key","11.11%",r)));}
+  } else {
+   int startTier=(page-6)*10;
+   for(int n=0;n<10&&startTier+n<MegaCrates.COUNT;n++){int tier=startTier+n;String[] r=Arrays.stream(MegaCrates.pool(tier)).map(x->ChatColor.stripColor(x.getItemMeta().getDisplayName())).toArray(String[]::new);i.setItem(19+n,b(Material.ECHO_SHARD,ChatColor.DARK_PURPLE+"MEGA "+(tier+1)+" • "+MegaCrates.name(tier)+" Crate",crateLoreKey(MegaCrates.name(tier)+" Crate Key","9.09%",r)));}
   }
   nav(i,page,15);p.openInventory(i);
  }
