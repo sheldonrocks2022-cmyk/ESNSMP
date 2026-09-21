@@ -65,6 +65,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this); return;
         }
 
+        for(String cmdName:getDescription().getCommands().keySet()){PluginCommand pc=getCommand(cmdName);if(pc!=null)pc.setExecutor((sender,command,label,args)->{sender.sendMessage(org.bukkit.ChatColor.RED+"ESN system \""+command.getName()+"\" did not initialize. Check the server console for the subsystem error.");getLogger().warning("[ESNSMP] Fallback executor reached for /"+command.getName()+" by "+sender.getName());return true;});}
         spawnManager=new SpawnManager(this);
         AuctionHouse auctions=new AuctionHouse(dataStore);
         EconomyCommand economy=new EconomyCommand(dataStore);
