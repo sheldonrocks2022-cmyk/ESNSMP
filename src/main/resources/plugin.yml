@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '1.9.0'
+version: '2.0.0'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
@@ -192,6 +192,19 @@ commands:
     description: 'Add a persistent staff note'
     usage: '/note <player> <note>'
     permission: esnsmp.staff
+
+  forge:
+    description: 'Forge boss drops into powerful ESN relics'
+  bossdrops:
+    description: 'View uses for ESN boss drops'
+  contracts:
+    description: 'View persistent boss contracts'
+  relics:
+    description: 'View the ESN relic system'
+  challenges:
+    description: 'View ESN challenge progress'
+  rewards:
+    description: 'View ESN reward road progress'
 
 permissions:
   esnsmp.spawn:
