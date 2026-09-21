@@ -35,6 +35,7 @@ import com.esn.smp.gameplay.RPGOverhaul;
 import com.esn.smp.gameplay.ESNAdventureEngine;
 import com.esn.smp.gameplay.AdminControlCenter;
 import com.esn.smp.gameplay.MegaCastle;
+import com.esn.smp.gameplay.ServerMenus;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -79,7 +80,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         registerCommand("ah",auctions);
         registerCommand("balance",economy);
         registerCommand("pay",economy);
-        for(String name:new String[]{"menu","shop","crates","daily","quests","leaderboard"}) registerCommand(name,gameplay); getServer().getPluginManager().registerEvents(gameplay,this);
+        for(String name:new String[]{"shop","crates","daily","quests","leaderboard"}) registerCommand(name,gameplay); getServer().getPluginManager().registerEvents(gameplay,this); ServerMenus serverMenus=new ServerMenus(this);registerCommand("menu",serverMenus);getServer().getPluginManager().registerEvents(serverMenus,this);
         HomesWarps homesWarps=new HomesWarps(this); for(String name:new String[]{"sethome","home","delhome","homes","rtp","warp","warps","setwarp","delwarp"}) registerCommand(name,homesWarps);
         registerCommand("profile",new ProfileCommand(dataStore)); new ESNScoreboard(this,dataStore);
         registerCommand("esnitems",new ESNItemsCommand());
