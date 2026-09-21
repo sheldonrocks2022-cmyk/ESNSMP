@@ -284,6 +284,10 @@ commands:
   castlecore:
     description: Give an ESN Mega Castle Core.
     permission: esnsmp.staff
+  jail:
+    description: Open the ESN prison control menu.
+    usage: /jail [player] [cell|release]
+    permission: esnsmp.staff
 
   bosscodex:
     description: 'View the persistent boss codex'
