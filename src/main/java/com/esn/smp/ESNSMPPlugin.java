@@ -111,7 +111,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         try { adventureEngine=new ESNAdventureEngine(this,dataStore); for(String name:new String[]{"adventure","class","ultimate","rift","bossrush","records","guild","trophies","bountyboard","hunt","artifactfusion","adventureachievements","revive"}) registerCommand(name,adventureEngine); getServer().getPluginManager().registerEvents(adventureEngine,this); } catch(Exception ex){ getLogger().severe("Adventure engine failed safely: "+ex.getMessage()); }
         getServer().getPluginManager().registerEvents(new WelcomeGuide(this),this);
         discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
-        HubServiceListener hubServices=new HubServiceListener(spawnManager,auctions); spawnManager.setHubServices(hubServices); getServer().getPluginManager().registerEvents(hubServices,this);
+        HubServiceListener hubServices=new HubServiceListener(spawnManager,auctions,gameplay,serverMenus); spawnManager.setHubServices(hubServices); getServer().getPluginManager().registerEvents(hubServices,this);
 
         getServer().getScheduler().runTask(this,()->{
             try {
