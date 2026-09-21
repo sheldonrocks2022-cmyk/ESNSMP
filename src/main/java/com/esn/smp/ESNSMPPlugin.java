@@ -32,6 +32,7 @@ import com.esn.smp.gameplay.AdventureSystems;
 import com.esn.smp.gameplay.EndgameSystems;
 import com.esn.smp.gameplay.BossHealthBars;
 import com.esn.smp.gameplay.RPGOverhaul;
+import com.esn.smp.gameplay.ESNAdventureEngine;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -51,6 +52,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
     private ESN20Expansion esn20Expansion;
     private Fun20Core fun20Core;
     private RPGOverhaul rpgOverhaul;
+    private ESNAdventureEngine adventureEngine;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -100,6 +102,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new EndgameSystems(this),this);
         getServer().getPluginManager().registerEvents(new BossHealthBars(this),this);
         try { rpgOverhaul=new RPGOverhaul(this,dataStore); for(String name:new String[]{"bosscodex","skilltree","contracts2","gearupgrade","seasonpass","rpgprofile","rotation","bosssummon","bossdiag"}) registerCommand(name,rpgOverhaul); getServer().getPluginManager().registerEvents(rpgOverhaul,this); } catch(Exception ex){ getLogger().severe("RPG overhaul failed safely: "+ex.getMessage()); }
+        try { adventureEngine=new ESNAdventureEngine(this,dataStore); for(String name:new String[]{"adventure","class","ultimate","rift","bossrush","records","guild","trophies"}) registerCommand(name,adventureEngine); getServer().getPluginManager().registerEvents(adventureEngine,this); } catch(Exception ex){ getLogger().severe("Adventure engine failed safely: "+ex.getMessage()); }
         getServer().getPluginManager().registerEvents(new WelcomeGuide(this),this);
         discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
@@ -125,6 +128,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         if(esn20Core!=null)try{esn20Core.close();}catch(Exception ex){getLogger().severe("ESN 2.0 database close error: "+ex.getMessage());}
         if(esn20Expansion!=null)try{esn20Expansion.close();}catch(Exception ex){getLogger().severe("ESN 2.0 expansion database close error: "+ex.getMessage());}
         if(rpgOverhaul!=null)try{rpgOverhaul.close();}catch(Exception ex){getLogger().severe("RPG database close error: "+ex.getMessage());}
+        if(adventureEngine!=null)try{adventureEngine.close();}catch(Exception ex){getLogger().severe("Adventure database close error: "+ex.getMessage());}
         if(dataStore!=null)try{dataStore.close();}catch(Exception ex){getLogger().severe("Database close error: "+ex.getMessage());}
     }
 
