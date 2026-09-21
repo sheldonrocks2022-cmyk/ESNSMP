@@ -102,7 +102,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new EndgameSystems(this),this);
         getServer().getPluginManager().registerEvents(new BossHealthBars(this),this);
         try { rpgOverhaul=new RPGOverhaul(this,dataStore); for(String name:new String[]{"bosscodex","skilltree","contracts2","gearupgrade","seasonpass","rpgprofile","rotation","bosssummon","bossdiag"}) registerCommand(name,rpgOverhaul); getServer().getPluginManager().registerEvents(rpgOverhaul,this); } catch(Exception ex){ getLogger().severe("RPG overhaul failed safely: "+ex.getMessage()); }
-        try { adventureEngine=new ESNAdventureEngine(this,dataStore); for(String name:new String[]{"adventure","class","ultimate","rift","bossrush","records","guild","trophies"}) registerCommand(name,adventureEngine); getServer().getPluginManager().registerEvents(adventureEngine,this); } catch(Exception ex){ getLogger().severe("Adventure engine failed safely: "+ex.getMessage()); }
+        try { adventureEngine=new ESNAdventureEngine(this,dataStore); for(String name:new String[]{"adventure","class","ultimate","rift","bossrush","records","guild","trophies","bountyboard","hunt","artifactfusion","adventureachievements","revive"}) registerCommand(name,adventureEngine); getServer().getPluginManager().registerEvents(adventureEngine,this); } catch(Exception ex){ getLogger().severe("Adventure engine failed safely: "+ex.getMessage()); }
         getServer().getPluginManager().registerEvents(new WelcomeGuide(this),this);
         discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
