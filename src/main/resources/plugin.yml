@@ -266,6 +266,24 @@ commands:
     description: 'Run ESN system diagnostics'
     permission: esnsmp.admin
 
+  bosscodex:
+    description: 'View the persistent boss codex'
+  skilltree:
+    description: 'View RPG skill tree progression'
+  contracts2:
+    description: 'View advanced weekly contracts'
+  gearupgrade:
+    description: 'Evolve held equipment'
+  seasonpass:
+    description: 'View RPG season progression'
+  rpgprofile:
+    description: 'View detailed RPG profile'
+  rotation:
+    description: 'View current progression rotation'
+  bossdiag:
+    description: 'Run boss-system diagnostics'
+    permission: esnsmp.admin
+
 permissions:
   esnsmp.spawn:
     default: true
