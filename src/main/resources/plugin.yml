@@ -286,6 +286,23 @@ commands:
     description: 'Run boss-system diagnostics'
     permission: esnsmp.admin
 
+  adventure:
+    description: 'View the ESN Adventure Engine'
+  class:
+    description: 'Choose an ESN combat class'
+  ultimate:
+    description: 'Activate your charged class ultimate'
+  rift:
+    description: 'Start a Rift encounter'
+  bossrush:
+    description: 'Start a five-boss rush'
+  records:
+    description: 'View persistent ESN server records'
+  guild:
+    description: 'Manage adventure guild progression'
+  trophies:
+    description: 'View your trophy room'
+
 permissions:
   esnsmp.spawn:
     default: true
