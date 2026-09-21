@@ -45,7 +45,8 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.util.Objects;
 
-public final class ESNSMPPlugin extends JavaPlugin {\n    // Build verification marker: combined Castle/NPC/Profile/Mod batch.
+public final class ESNSMPPlugin extends JavaPlugin {
+    // Build verification marker: combined Castle/NPC/Profile/Mod batch.
  private SpawnManager spawnManager;private ESNDataStore dataStore;private DiscordReminder discordReminder;private V18Core v18Core;private V19Core v19Core;private ExpansionCore expansionCore;private ESN20Core esn20Core;private ESN20Expansion esn20Expansion;private Fun20Core fun20Core;private RPGOverhaul rpgOverhaul;private ESNAdventureEngine adventureEngine;
  @Override public void onEnable(){saveDefaultConfig();try{dataStore=new ESNDataStore(getDataFolder(),getConfig().getLong("economy.starting-balance",500),getConfig().getInt("auction.max-listings-per-player",10),getConfig().getLong("auction.max-price",1000000000L));dataStore.initialize();}catch(Exception ex){getLogger().severe("ESN database failed to initialize. Plugin disabled to protect player data: "+ex.getMessage());getServer().getPluginManager().disablePlugin(this);return;}
   for(String cmdName:getDescription().getCommands().keySet()){PluginCommand pc=getCommand(cmdName);if(pc!=null)pc.setExecutor((sender,command,label,args)->{sender.sendMessage(org.bukkit.ChatColor.RED+"ESN system \""+command.getName()+"\" did not initialize. Check the server console for the subsystem error.");getLogger().warning("[ESNSMP] Fallback executor reached for /"+command.getName()+" by "+sender.getName());return true;});}
