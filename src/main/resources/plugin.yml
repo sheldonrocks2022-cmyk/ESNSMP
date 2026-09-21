@@ -303,6 +303,17 @@ commands:
   trophies:
     description: 'View your trophy room'
 
+  bountyboard:
+    description: 'View your rotating adventure bounty'
+  hunt:
+    description: 'Start a Mythic Hunt'
+  artifactfusion:
+    description: 'Fuse matching ESN rarity artifacts'
+  adventureachievements:
+    description: 'View adventure achievements'
+  revive:
+    description: 'Revive a nearby downed teammate'
+
 permissions:
   esnsmp.spawn:
     default: true
