@@ -264,7 +264,36 @@ public final class SpawnManager {
         return changes;
     }
 
-    private void addGrandPrison(List<BlockChange> c,int cx,int cy,int cz){int x1=cx+130,x2=cx+190,z1=cz+110,z2=cz+185;for(int x=x1;x<=x2;x++)for(int z=z1;z<=z2;z++)for(int y=cy;y<=cy+18;y++)if(x==x1||x==x2||z==z1||z==z2||y==cy||y==cy+18)c.add(new BlockChange(x,y,z,Material.REINFORCED_DEEPSLATE));for(int n=0;n<12;n++){int bx=cx+145+(n%4)*8,bz=cz+125+(n/4)*9;for(int x=bx-3;x<=bx+3;x++)for(int z=bz-3;z<=bz+3;z++)for(int y=cy;y<=cy+5;y++){boolean wall=x==bx-3||x==bx+3||z==bz-3||z==bz+3||y==cy||y==cy+5;c.add(new BlockChange(x,y,z,wall?Material.REINFORCED_DEEPSLATE:Material.AIR));}for(int y=cy+1;y<=cy+3;y++)c.add(new BlockChange(bx, y, bz-3, Material.IRON_BARS));c.add(new BlockChange(bx,cy+1,bz+1,Material.RED_BED));}for(int x=x1+5;x<=x2-5;x+=10){c.add(new BlockChange(x,cy+19,z1,Material.SEA_LANTERN));c.add(new BlockChange(x,cy+19,z2,Material.SEA_LANTERN));}}
+    private void addGrandPrison(List<BlockChange> c,int cx,int cy,int cz){
+        // Highly visible maximum-security prison in the south-east district, connected to spawn by a lit road.
+        int x1=cx+120,x2=cx+190,z1=cz+105,z2=cz+185;
+        for(int x=cx+8;x<=cx+120;x++)for(int z=cz+3;z<=cz+7;z++)c.add(new BlockChange(x,cy,z,Material.POLISHED_DEEPSLATE));
+        for(int x=x1;x<=x2;x++)for(int z=z1;z<=z2;z++)for(int y=cy-3;y<=cy+24;y++){
+            boolean shell=x==x1||x==x2||z==z1||z==z2||y==cy-3||y==cy+24;
+            if(shell)c.add(new BlockChange(x,y,z,Material.REINFORCED_DEEPSLATE));
+        }
+        // Four massive corner watchtowers.
+        for(int[] t:new int[][]{{x1+4,z1+4},{x2-4,z1+4},{x1+4,z2-4},{x2-4,z2-4}})
+            for(int dx=-4;dx<=4;dx++)for(int dz=-4;dz<=4;dz++)for(int y=cy;y<=cy+34;y++)
+                if(Math.abs(dx)==4||Math.abs(dz)==4||y==cy+34)c.add(new BlockChange(t[0]+dx,y,t[1]+dz,Material.DEEPSLATE_BRICKS));
+        // Grand barred entrance and PRISON sign frame.
+        for(int x=cx+145;x<=cx+165;x++)for(int y=cy+1;y<=cy+14;y++)if(x==cx+145||x==cx+165||y>=cy+12)c.add(new BlockChange(x,y,z1,Material.POLISHED_BLACKSTONE_BRICKS));
+        for(int x=cx+151;x<=cx+159;x++)for(int y=cy+1;y<=cy+9;y++)c.add(new BlockChange(x,y,z1,Material.IRON_BARS));
+        // Central cell block with 12 fully enclosed cells and a guarded corridor.
+        for(int n=0;n<12;n++){int bx=cx+137+(n%4)*12,bz=cz+125+(n/4)*17;
+            for(int x=bx-5;x<=bx+5;x++)for(int z=bz-6;z<=bz+6;z++)for(int y=cy;y<=cy+7;y++){
+                boolean wall=x==bx-5||x==bx+5||z==bz-6||z==bz+6||y==cy||y==cy+7;
+                c.add(new BlockChange(x,y,z,wall?Material.REINFORCED_DEEPSLATE:Material.AIR));
+            }
+            for(int x=bx-2;x<=bx+2;x++)for(int y=cy+1;y<=cy+4;y++)c.add(new BlockChange(x,y,bz-6,Material.IRON_BARS));
+            c.add(new BlockChange(bx,cy+1,bz+2,Material.RED_BED));c.add(new BlockChange(bx+2,cy+1,bz+2,Material.BARREL));
+            c.add(new BlockChange(bx-2,cy+1,bz+2,Material.IRON_BLOCK));c.add(new BlockChange(bx,cy+6,bz,Material.SEA_LANTERN));
+        }
+        // Yard, guard posts and beacon so staff can immediately find it.
+        for(int x=x1+8;x<=x2-8;x++)for(int z=z2-22;z<=z2-8;z++)c.add(new BlockChange(x,cy,z,Material.SMOOTH_STONE));
+        for(int x=x1+12;x<=x2-12;x+=12){c.add(new BlockChange(x,cy+1,z2-15,Material.IRON_BARS));c.add(new BlockChange(x,cy+2,z2-15,Material.IRON_BARS));}
+        c.add(new BlockChange(cx+155,cy+25,cz+145,Material.BEACON));
+    }
 
     private void addCenterMedallion(List<BlockChange> changes, int cx, int cy, int cz) {
         int radius = 14;
