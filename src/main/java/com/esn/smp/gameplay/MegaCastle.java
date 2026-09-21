@@ -52,7 +52,7 @@ public final class MegaCastle implements Listener, CommandExecutor {
   if(type.equals("table")){add(q,x,y,z,Material.OAK_FENCE);add(q,x,y+1,z,Material.OAK_PRESSURE_PLATE);}
   if(type.equals("armor")){add(q,x,y,z,Material.POLISHED_BLACKSTONE_WALL);add(q,x,y+1,z,Material.IRON_BLOCK);add(q,x+2,y,z,Material.SMITHING_TABLE);}
  }
- private void build(Location o,Player owner){
+ private boolean occupiedWard(int x,int z){return (Math.abs(x)<=58&&Math.abs(z)<=58)||(x>=48&&z>=-48&&z<=48)||(x<=-48&&z>=-38&&z<=38)||(x<=-55&&z>=48)||(x>=48&&z>=48)||(z<=-44&&Math.abs(x)<=22)||(Math.abs(x)<=12)||(Math.abs(z)<=12);}\n private void build(Location o,Player owner){
   List<Change>q=new ArrayList<>();int R=115;
   // Clean construction envelope and lay a deliberate courtyard instead of random flooring.
   for(int x=-R;x<=R;x++)for(int z=-R;z<=R;z++)for(int y=-8;y<=75;y++)add(q,x,y,z,Material.AIR);
@@ -110,10 +110,10 @@ public final class MegaCastle implements Listener, CommandExecutor {
   int[][] wings={{-92,-48,-92,-48},{48,92,-92,-48},{-92,-48,48,92},{48,92,48,92}};for(int[]w:wings){shell(q,w[0],w[1],w[2],w[3],1,18,Material.STONE_BRICKS);roof(q,(w[0]+w[1])/2,(w[2]+w[3])/2,23,23,19);facade(q,w[0]+2,w[1]-2,w[2]-1,3,16);}
   for(int x=-96;x<=96;x+=16){fill(q,x,x,2,12,-114,-111,Material.POLISHED_DIORITE);fill(q,x,x,2,12,111,114,Material.POLISHED_DIORITE);}for(int z=-96;z<=96;z+=16){fill(q,-114,-111,2,12,z,z,Material.POLISHED_DIORITE);fill(q,111,114,2,12,z,z,Material.POLISHED_DIORITE);}
   // Dense landscaped inner wards inspired by a high-detail medieval citadel.
-  for(int x=-92;x<=92;x+=16)for(int z=-92;z<=92;z+=18)if(Math.abs(x)>45||Math.abs(z)>45)tree(q,x,2,z);
+  for(int x=-92;x<=92;x+=16)for(int z=-92;z<=92;z+=18)if((Math.abs(x)>45||Math.abs(z)>45)&&!occupiedWard(x,z))tree(q,x,2,z);
   for(int x=-108;x<=108;x+=12){add(q,x,2,-108,Material.OAK_LEAVES);add(q,x,2,108,Material.OAK_LEAVES);}for(int z=-108;z<=108;z+=12){add(q,-108,2,z,Material.OAK_LEAVES);add(q,108,2,z,Material.OAK_LEAVES);}
   // Formal gardens: hedges, fountains, paths and dozens of trees fill otherwise empty wards.
-  for(int x=-100;x<=100;x+=10)for(int z=-100;z<=100;z+=10)if(Math.abs(x)>55||Math.abs(z)>55){add(q,x,2,z,Material.OAK_LEAVES);if((x+z)%20==0)add(q,x,3,z,Material.FLOWERING_AZALEA_LEAVES);}for(int[]f:new int[][]{{-72,0},{72,0},{0,72},{0,-72}}){fill(q,f[0]-4,f[0]+4,1,1,f[1]-4,f[1]+4,Material.WATER);fill(q,f[0],f[0],2,7,f[1],f[1],Material.QUARTZ_PILLAR);add(q,f[0],8,f[1],Material.SEA_LANTERN);}
+  for(int x=-100;x<=100;x+=10)for(int z=-100;z<=100;z+=10)if((Math.abs(x)>55||Math.abs(z)>55)&&!occupiedWard(x,z)){add(q,x,2,z,Material.OAK_LEAVES);if((x+z)%20==0)add(q,x,3,z,Material.FLOWERING_AZALEA_LEAVES);}for(int[]f:new int[][]{{-72,0},{72,0},{0,72},{0,-72}}){fill(q,f[0]-4,f[0]+4,1,1,f[1]-4,f[1]+4,Material.WATER);fill(q,f[0],f[0],2,7,f[1],f[1],Material.QUARTZ_PILLAR);add(q,f[0],8,f[1],Material.SEA_LANTERN);}
   // Courtyard roads, fountain, market/storage sheds and lighting.
   floor(q,-8,8,1,-104,-39,Material.POLISHED_ANDESITE);floor(q,-8,8,1,39,104,Material.POLISHED_ANDESITE);floor(q,-104,-41,1,-5,5,Material.POLISHED_ANDESITE);floor(q,41,104,1,-5,5,Material.POLISHED_ANDESITE);
   fill(q,-5,5,1,1,44,54,Material.WATER);fill(q,-1,1,1,7,48,50,Material.QUARTZ_PILLAR);
