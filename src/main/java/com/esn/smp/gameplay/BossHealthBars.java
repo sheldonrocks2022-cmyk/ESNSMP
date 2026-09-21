@@ -1,0 +1,9 @@
+package com.esn.smp.gameplay;
+import org.bukkit.*;import org.bukkit.attribute.Attribute;import org.bukkit.boss.*;import org.bukkit.entity.*;import org.bukkit.event.*;import org.bukkit.event.entity.*;import org.bukkit.plugin.java.JavaPlugin;import java.util.*;
+public final class BossHealthBars implements Listener{
+ private final JavaPlugin p;private final Map<UUID,BossBar> bars=new HashMap<>();
+ public BossHealthBars(JavaPlugin p){this.p=p;Bukkit.getScheduler().runTaskTimer(p,this::tick,20L,10L);}
+ private boolean boss(LivingEntity e){Set<String>t=e.getScoreboardTags();return t.contains("esnWorldBoss")||t.contains("esnSwampBoss")||t.contains("esnBiomeBoss");}
+ private void tick(){Set<UUID>seen=new HashSet<>();for(World w:Bukkit.getWorlds())for(LivingEntity e:w.getLivingEntities())if(boss(e)&&e.isValid()&&!e.isDead()){seen.add(e.getUniqueId());BossBar b=bars.computeIfAbsent(e.getUniqueId(),u->Bukkit.createBossBar(e.getCustomName()==null?"ESN BOSS":e.getCustomName(),e.getScoreboardTags().contains("esnWorldBoss")?BarColor.PURPLE:BarColor.RED,BarStyle.SEGMENTED_10));b.setTitle(e.getCustomName()==null?"ESN BOSS":e.getCustomName());var a=e.getAttribute(Attribute.MAX_HEALTH);double max=a==null?1:a.getValue();b.setProgress(Math.max(0,Math.min(1,e.getHealth()/Math.max(1,max))));for(Player x:w.getPlayers()){boolean near=x.getLocation().distanceSquared(e.getLocation())<=22500;if(near&&!b.getPlayers().contains(x))b.addPlayer(x);else if(!near&&b.getPlayers().contains(x))b.removePlayer(x);}}for(UUID u:new HashSet<>(bars.keySet()))if(!seen.contains(u)){bars.remove(u).removeAll();}}
+ @EventHandler public void death(EntityDeathEvent e){BossBar b=bars.remove(e.getEntity().getUniqueId());if(b!=null)b.removeAll();}
+}
