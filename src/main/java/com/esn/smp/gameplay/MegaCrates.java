@@ -15,7 +15,7 @@ public final class MegaCrates implements Listener,org.bukkit.command.CommandExec
  @EventHandler public void repairJoin(org.bukkit.event.player.PlayerJoinEvent e){for(ItemStack i:e.getPlayer().getInventory().getContents())repair(i);for(ItemStack i:e.getPlayer().getEnderChest().getContents())repair(i);}
  @EventHandler public void repairHeld(org.bukkit.event.player.PlayerItemHeldEvent e){repair(e.getPlayer().getInventory().getItem(e.getNewSlot()));}
  @EventHandler public void repairOpen(org.bukkit.event.inventory.InventoryOpenEvent e){for(ItemStack i:e.getInventory().getContents())repair(i);}
- private static void applyUnsafe(ItemStack i,Enchantment e,int level){i.addUnsafeEnchantment(e,Math.max(1,Math.min(30000,level)));}
+ private static void applyUnsafe(ItemStack i,Enchantment e,int level){int v=Math.max(1,Math.min(30000,level));i.addUnsafeEnchantment(e,v);if(i.getEnchantmentLevel(e)!=v)throw new IllegalStateException("Realm enchant write failed: "+e.getKey()+" expected "+v+" got "+i.getEnchantmentLevel(e));}
  private static int tier(ItemStack i){if(i==null||!i.hasItemMeta())return -1;String v=i.getItemMeta().getPersistentDataContainer().get(k("mega_item"),PersistentDataType.STRING);if(v==null)return -1;try{return Integer.parseInt(v.split(":")[0]);}catch(Exception ex){return -1;}}
  private static double scale(int t){return t<0?1.0:1.0+power(t)/255.0;}
  @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true) public void realmDamage(EntityDamageByEntityEvent e){Player p=e.getDamager() instanceof Player q?q:e.getDamager() instanceof Projectile pr&&pr.getShooter() instanceof Player q?q:null;if(p==null)return;int t=tier(p.getInventory().getItemInMainHand());if(t<0)return;double mult=Math.min(12.0,scale(t));e.setDamage(e.getDamage()*mult);}
