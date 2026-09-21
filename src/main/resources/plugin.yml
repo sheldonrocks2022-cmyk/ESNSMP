@@ -116,6 +116,11 @@ commands:
     description: 'View moderation history'
     permission: esnsmp.staff
 
+  megacratekey:
+    description: Give a Realm crate key.
+    usage: /megacratekey <1-100>
+    permission: esnsmp.admin
+
   esnitems:
     description: Give ESN custom items and crate keys.
     usage: /esnitems <item>
