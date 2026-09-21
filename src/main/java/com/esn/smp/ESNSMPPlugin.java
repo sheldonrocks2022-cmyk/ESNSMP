@@ -31,6 +31,7 @@ import com.esn.smp.gameplay.BiomeBosses;
 import com.esn.smp.gameplay.AdventureSystems;
 import com.esn.smp.gameplay.EndgameSystems;
 import com.esn.smp.gameplay.BossHealthBars;
+import com.esn.smp.gameplay.RPGOverhaul;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -49,6 +50,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
     private ESN20Core esn20Core;
     private ESN20Expansion esn20Expansion;
     private Fun20Core fun20Core;
+    private RPGOverhaul rpgOverhaul;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -97,6 +99,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         AdventureSystems adventure=new AdventureSystems(this); for(String name:new String[]{"mastery","codex","pets","treasure","progression","diagnostics"}) registerCommand(name,adventure); getServer().getPluginManager().registerEvents(adventure,this);
         getServer().getPluginManager().registerEvents(new EndgameSystems(this),this);
         getServer().getPluginManager().registerEvents(new BossHealthBars(this),this);
+        try { rpgOverhaul=new RPGOverhaul(this,dataStore); for(String name:new String[]{"bosscodex","skilltree","contracts2","gearupgrade","seasonpass","rpgprofile","rotation","bossdiag"}) registerCommand(name,rpgOverhaul); getServer().getPluginManager().registerEvents(rpgOverhaul,this); } catch(Exception ex){ getLogger().severe("RPG overhaul failed safely: "+ex.getMessage()); }
         getServer().getPluginManager().registerEvents(new WelcomeGuide(this),this);
         discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
@@ -121,6 +124,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         if(expansionCore!=null)try{expansionCore.close();}catch(Exception ex){getLogger().severe("Expansion database close error: "+ex.getMessage());}
         if(esn20Core!=null)try{esn20Core.close();}catch(Exception ex){getLogger().severe("ESN 2.0 database close error: "+ex.getMessage());}
         if(esn20Expansion!=null)try{esn20Expansion.close();}catch(Exception ex){getLogger().severe("ESN 2.0 expansion database close error: "+ex.getMessage());}
+        if(rpgOverhaul!=null)try{rpgOverhaul.close();}catch(Exception ex){getLogger().severe("RPG database close error: "+ex.getMessage());}
         if(dataStore!=null)try{dataStore.close();}catch(Exception ex){getLogger().severe("Database close error: "+ex.getMessage());}
     }
 
