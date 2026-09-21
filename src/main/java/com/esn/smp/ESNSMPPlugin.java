@@ -28,6 +28,7 @@ import com.esn.smp.gameplay.MythicCrates;
 import com.esn.smp.gameplay.ExtendedCrates;
 import com.esn.smp.gameplay.MegaCrates;
 import com.esn.smp.gameplay.BiomeBosses;
+import com.esn.smp.gameplay.EndgameSystems;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -91,6 +92,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ExtendedCrates(),this);
         getServer().getPluginManager().registerEvents(new MegaCrates(),this);
         getServer().getPluginManager().registerEvents(new BiomeBosses(this),this);
+        getServer().getPluginManager().registerEvents(new EndgameSystems(this),this);
         getServer().getPluginManager().registerEvents(new WelcomeGuide(this),this);
         discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
