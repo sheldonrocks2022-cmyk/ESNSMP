@@ -247,6 +247,11 @@ commands:
   fishingevent:
     description: 'View fishing event information'
 
+  runeforge:
+    description: 'Socket Elite Runes into equipment'
+  setbonus:
+    description: 'View Eternal armor set bonuses'
+
 permissions:
   esnsmp.spawn:
     default: true
