@@ -111,11 +111,12 @@ public final class ESNSMPPlugin extends JavaPlugin {
         try { adventureEngine=new ESNAdventureEngine(this,dataStore); for(String name:new String[]{"adventure","class","ultimate","rift","bossrush","records","guild","trophies","bountyboard","hunt","artifactfusion","adventureachievements","revive"}) registerCommand(name,adventureEngine); getServer().getPluginManager().registerEvents(adventureEngine,this); } catch(Exception ex){ getLogger().severe("Adventure engine failed safely: "+ex.getMessage()); }
         getServer().getPluginManager().registerEvents(new WelcomeGuide(this),this);
         discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
-        getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
+        HubServiceListener hubServices=new HubServiceListener(spawnManager,auctions); spawnManager.setHubServices(hubServices); getServer().getPluginManager().registerEvents(hubServices,this);
 
         getServer().getScheduler().runTask(this,()->{
             try {
                 spawnManager.ensureConfigured();
+                if(getConfig().getBoolean("spawn.generated",false)) hubServices.respawnNpcs();
                 if(getConfig().getBoolean("spawn.build-incomplete",false)){
                     getLogger().severe("Previous spawn build did not finish. Run /esnspawn rollback before rebuilding.");return;
                 }
