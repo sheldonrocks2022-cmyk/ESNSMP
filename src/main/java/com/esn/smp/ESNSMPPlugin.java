@@ -22,6 +22,7 @@ import com.esn.smp.gameplay.V19Core;
 import com.esn.smp.gameplay.ExpansionCore;
 import com.esn.smp.gameplay.WelcomeGuide;
 import com.esn.smp.gameplay.ESN20Core;
+import com.esn.smp.gameplay.ESN20Expansion;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -38,6 +39,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
     private V19Core v19Core;
     private ExpansionCore expansionCore;
     private ESN20Core esn20Core;
+    private ESN20Expansion esn20Expansion;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -70,6 +72,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         v19Core=new V19Core(this,dataStore); for(String name:new String[]{"pass","upgrade","tradegui","tutorial"}) registerCommand(name,v19Core); getServer().getPluginManager().registerEvents(v19Core,this);
         try { expansionCore=new ExpansionCore(this,dataStore); for(String name:new String[]{"jobs","skills","prestige","titles","collections","bestiary","stats","afk","calendar","blacksmith","salvage","reforge","boss","dungeon","raid","party","koth","report","note"}) registerCommand(name,expansionCore); getServer().getPluginManager().registerEvents(expansionCore,this); } catch(Exception ex){ getLogger().severe("Expansion systems failed safely: "+ex.getMessage()); }
         try { esn20Core=new ESN20Core(this,dataStore); for(String name:new String[]{"forge","bossdrops","contracts","relics","challenges","rewards"}) registerCommand(name,esn20Core); getServer().getPluginManager().registerEvents(esn20Core,this); } catch(Exception ex){ getLogger().severe("ESN 2.0 systems failed safely: "+ex.getMessage()); }
+        try { esn20Expansion=new ESN20Expansion(this,dataStore); for(String name:new String[]{"season2","milestones","bestiary2","achievements2","title","party2","events2","guide","leaderboards2","claimflags"}) registerCommand(name,esn20Expansion); getServer().getPluginManager().registerEvents(esn20Expansion,this); } catch(Exception ex){ getLogger().severe("ESN 2.0 expansion failed safely: "+ex.getMessage()); }
         Claims claims=new Claims(this); registerCommand("claim",claims); getServer().getPluginManager().registerEvents(claims,this); getServer().getPluginManager().registerEvents(new AntiCheat(),this);
 
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
@@ -100,6 +103,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         if(v18Core!=null)try{v18Core.close();}catch(Exception ex){getLogger().severe("v1.8 database close error: "+ex.getMessage());}
         if(expansionCore!=null)try{expansionCore.close();}catch(Exception ex){getLogger().severe("Expansion database close error: "+ex.getMessage());}
         if(esn20Core!=null)try{esn20Core.close();}catch(Exception ex){getLogger().severe("ESN 2.0 database close error: "+ex.getMessage());}
+        if(esn20Expansion!=null)try{esn20Expansion.close();}catch(Exception ex){getLogger().severe("ESN 2.0 expansion database close error: "+ex.getMessage());}
         if(dataStore!=null)try{dataStore.close();}catch(Exception ex){getLogger().severe("Database close error: "+ex.getMessage());}
     }
 
