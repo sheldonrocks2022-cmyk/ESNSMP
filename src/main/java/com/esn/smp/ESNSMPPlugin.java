@@ -92,7 +92,6 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
         getServer().getPluginManager().registerEvents(new SpawnProtectionListener(spawnManager),this);
         getServer().getPluginManager().registerEvents(auctions,this);
-        getServer().getPluginManager().registerEvents(gameplay,this);
         getServer().getPluginManager().registerEvents(new LootDrops(),this);
         getServer().getPluginManager().registerEvents(new MythicCrates(this),this);
         getServer().getPluginManager().registerEvents(new ExtendedCrates(),this);
