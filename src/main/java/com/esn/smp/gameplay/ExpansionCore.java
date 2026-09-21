@@ -48,7 +48,9 @@ public final class ExpansionCore implements Listener,CommandExecutor,AutoCloseab
    if(Bukkit.getWorlds().isEmpty()){requester.sendMessage(ChatColor.RED+"World boss could not spawn: no worlds are loaded.");return;}
    if(worldBoss!=null){Entity current=Bukkit.getEntity(worldBoss);if(current!=null&&current.isValid()&&!current.isDead()){requester.sendMessage(ChatColor.YELLOW+"A world boss is already active at "+current.getWorld().getName()+" "+current.getLocation().getBlockX()+", "+current.getLocation().getBlockY()+", "+current.getLocation().getBlockZ()+".");if(requester instanceof Player rp)rp.setCompassTarget(current.getLocation());return;}worldBoss=null;}
    World w=Bukkit.getWorlds().stream().filter(q->q.getEnvironment()==World.Environment.NORMAL).findFirst().orElse(Bukkit.getWorlds().get(0));
-   Location l=w.getSpawnLocation().clone().add(.5,1,.5);
+   Location spawn=w.getSpawnLocation();
+   Location l=new Location(w,spawn.getBlockX()+0.5,spawn.getBlockY(),spawn.getBlockZ()+0.5,spawn.getYaw(),spawn.getPitch());
+   for(int up=0;up<4&&!l.getBlock().isPassable();up++)l.add(0,1,0);
    w.getChunkAt(l).load(true);
    p.getLogger().info("[ESNSMP] World boss using configured world spawn: "+w.getName()+" "+l.getBlockX()+", "+l.getBlockY()+", "+l.getBlockZ());
    EntityType[] types={EntityType.RAVAGER,EntityType.WITHER_SKELETON,EntityType.VINDICATOR,EntityType.EVOKER,EntityType.PIGLIN_BRUTE};
