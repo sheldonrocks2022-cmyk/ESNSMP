@@ -1,41 +1,7 @@
 package com.esn.smp.spawn;
-
 import org.bukkit.Material;
-
 public enum HubService {
-    AUCTION("Auction House", 40, 34, Material.GOLD_BLOCK),
-    SHOP("Server Shop", -40, 34, Material.EMERALD_BLOCK),
-    CRATES("Crates", 20, 54, Material.AMETHYST_BLOCK),
-    QUESTS("Quests", -20, 54, Material.LAPIS_BLOCK),
-    WARPS("Warps", 0, 58, Material.CRYING_OBSIDIAN),
-    LEADERBOARDS("Leaderboards", 55, 0, Material.DIAMOND_BLOCK),
-    INFO("Info & Rules", -55, 0, Material.QUARTZ_BLOCK);
-
-    private final String displayName;
-    private final int offsetX;
-    private final int offsetZ;
-    private final Material coreMaterial;
-
-    HubService(String displayName, int offsetX, int offsetZ, Material coreMaterial) {
-        this.displayName = displayName;
-        this.offsetX = offsetX;
-        this.offsetZ = offsetZ;
-        this.coreMaterial = coreMaterial;
-    }
-
-    public String displayName() {
-        return displayName;
-    }
-
-    public int offsetX() {
-        return offsetX;
-    }
-
-    public int offsetZ() {
-        return offsetZ;
-    }
-
-    public Material coreMaterial() {
-        return coreMaterial;
-    }
+ AUCTION("Auction House","ah",40,34,Material.GOLD_BLOCK),SHOP("Server Shop","shop",-40,34,Material.EMERALD_BLOCK),CRATES("Crates","crates",20,54,Material.AMETHYST_BLOCK),QUESTS("Quests","quests",-20,54,Material.LAPIS_BLOCK),WARPS("Warps","warps",0,58,Material.CRYING_OBSIDIAN),LEADERBOARDS("Leaderboards","leaderboard",55,0,Material.DIAMOND_BLOCK),INFO("Server Guide","menu",-55,0,Material.QUARTZ_BLOCK),
+ BOSSES("Bosses","boss",72,-35,Material.NETHERITE_BLOCK),DUNGEONS("Dungeons","dungeon",-72,-35,Material.REDSTONE_BLOCK),ADVENTURE("Adventure","adventure",92,12,Material.ENDER_CHEST),JOBS("Jobs & Skills","jobs",-92,12,Material.IRON_BLOCK),BLACKSMITH("Blacksmith","blacksmith",92,48,Material.ANVIL),FORGE("Forge","forge",-92,48,Material.BLAST_FURNACE),RUNES("Runes","runes",112,78,Material.ENCHANTING_TABLE),RELICS("Relics","relics",-112,78,Material.BEACON),SEASON("Season Pass","seasonpass",72,90,Material.GOLD_BLOCK),CODEX("Boss Codex","bosscodex",-72,90,Material.BOOKSHELF),PROGRESSION("Progression","progression",0,105,Material.NETHER_STAR),EVENTS("Events","event",35,110,Material.BELL);
+ private final String name,command;private final int x,z;private final Material mat;HubService(String n,String c,int x,int z,Material m){name=n;command=c;this.x=x;this.z=z;mat=m;}public String displayName(){return name;}public String command(){return command;}public int offsetX(){return x;}public int offsetZ(){return z;}public Material coreMaterial(){return mat;}
 }
