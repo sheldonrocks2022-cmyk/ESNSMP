@@ -43,6 +43,9 @@ public final class MegaCastle implements Listener, CommandExecutor {
  private void tower(List<Change>q,int cx,int cz,int r,int y1,int y2){cylinder(q,cx,cz,r,y1,y2,Material.STONE_BRICKS);for(int y=y1+5;y<y2;y+=7)floor(q,cx-r+2,cx+r-2,y,cz-r+2,cz+r-2,Material.DARK_OAK_PLANKS);for(int y=y1+5;y<y2;y+=7){add(q,cx,y,cz-r,Material.BLUE_STAINED_GLASS);add(q,cx,y,cz+r,Material.BLUE_STAINED_GLASS);add(q,cx-r,y,cz,Material.BLUE_STAINED_GLASS);add(q,cx+r,y,cz,Material.BLUE_STAINED_GLASS);}for(int a=-r;a<=r;a+=3){add(q,cx+a,y2+1,cz-r,Material.STONE_BRICKS);add(q,cx+a,y2+1,cz+r,Material.STONE_BRICKS);add(q,cx-r,y2+1,cz+a,Material.STONE_BRICKS);add(q,cx+r,y2+1,cz+a,Material.STONE_BRICKS);}roof(q,cx,cz,r+3,r+3,y2+2);}
  private void facade(List<Change>q,int x1,int x2,int z,int y1,int y2){for(int x=x1;x<=x2;x+=6){fill(q,x,x,y1,y2,z,z,Material.POLISHED_DIORITE);if(x+2<=x2){add(q,x+2,y1+4,z,Material.BLUE_STAINED_GLASS);add(q,x+2,y1+5,z,Material.BLUE_STAINED_GLASS);}}for(int x=x1;x<=x2;x+=3)add(q,x,y2+1,z,Material.STONE_BRICK_WALL);}
  private void tree(List<Change>q,int x,int y,int z){fill(q,x,x,y,y+5,z,z,Material.SPRUCE_LOG);for(int yy=y+3;yy<=y+7;yy++)for(int dx=-3;dx<=3;dx++)for(int dz=-3;dz<=3;dz++)if(Math.abs(dx)+Math.abs(dz)<=5-(yy-y-3)/2)add(q,x+dx,yy,z+dz,Material.SPRUCE_LEAVES);}
+ private void spire(List<Change>q,int cx,int cz,int r,int y){for(int layer=0;layer<=r;layer++){int rr=Math.max(0,r-layer),yy=y+layer;for(int x=-rr;x<=rr;x++)for(int z=-rr;z<=rr;z++)if(Math.abs(x)==rr||Math.abs(z)==rr)add(q,cx+x,yy,cz+z,layer%2==0?Material.DARK_OAK_PLANKS:Material.SPRUCE_PLANKS);}fill(q,cx,cx,y+r+1,y+r+5,cz,cz,Material.DARK_OAK_FENCE);add(q,cx,y+r+6,cz,Material.BLUE_WOOL);}
+ private void arch(List<Change>q,int cx,int y,int z,int w,int h){for(int x=-w;x<=w;x++)add(q,cx+x,y+h,z,Material.POLISHED_DIORITE);for(int yy=0;yy<h;yy++){add(q,cx-w,y+yy,z,Material.POLISHED_DIORITE);add(q,cx+w,y+yy,z,Material.POLISHED_DIORITE);}for(int x=-w+1;x<w;x++)for(int yy=0;yy<h;yy++)add(q,cx+x,y+yy,z,Material.AIR);}
+ private void banner(List<Change>q,int x,int y,int z){fill(q,x,x,y,y+4,z,z,Material.BLUE_WOOL);add(q,x,y, z,Material.GOLD_BLOCK);}
  private void pillars(List<Change>q,int x1,int x2,int z1,int z2,int y1,int y2){for(int x=x1;x<=x2;x+=8)for(int z:new int[]{z1,z2})fill(q,x,x,y1,y2,z,z,Material.POLISHED_DEEPSLATE);}
  private void furniture(List<Change>q,int x,int y,int z,String type){
   if(type.equals("bed")){add(q,x,y,z,Material.RED_WOOL);add(q,x+1,y,z,Material.RED_WOOL);add(q,x,y+1,z,Material.RED_CARPET);add(q,x+1,y+1,z,Material.RED_CARPET);add(q,x+2,y,z,Material.BARREL);add(q,x+2,y+1,z,Material.LANTERN);}
@@ -58,15 +61,15 @@ public final class MegaCastle implements Listener, CommandExecutor {
   for(int y=1;y<=15;y++){for(int x=-115;x<=115;x++){add(q,x,y,-115,Material.DEEPSLATE_BRICKS);add(q,x,y,115,Material.DEEPSLATE_BRICKS);}for(int z=-114;z<=114;z++){add(q,-115,y,z,Material.DEEPSLATE_BRICKS);add(q,115,y,z,Material.DEEPSLATE_BRICKS);}}
   for(int x=-115;x<=115;x+=4){add(q,x,16,-115,Material.POLISHED_DEEPSLATE);add(q,x,16,115,Material.POLISHED_DEEPSLATE);}
   for(int z=-115;z<=115;z+=4){add(q,-115,16,z,Material.POLISHED_DEEPSLATE);add(q,115,16,z,Material.POLISHED_DEEPSLATE);}
-  int[][]ts={{-104,-104},{104,-104},{-104,104},{104,104},{-104,-55},{104,-55},{-104,55},{104,55},{-55,-104},{55,-104},{-55,104},{55,104}};for(int[]t:ts)tower(q,t[0],t[1],9,0,30);
+  int[][]ts={{-104,-104},{104,-104},{-104,104},{104,104},{-104,-55},{104,-55},{-104,55},{104,55},{-55,-104},{55,-104},{-55,104},{55,104}};for(int[]t:ts){tower(q,t[0],t[1],9,0,30);spire(q,t[0],t[1],8,32);}
   // Grand south gate: arched opening, portcullis frame and gatehouse.
   fill(q,-15,15,1,22,-114,-104,Material.STONE_BRICKS);fill(q,-6,6,1,10,-115,-103,Material.AIR);for(int x=-6;x<=6;x+=2)fill(q,x,x,1,9,-104,-104,Material.IRON_BARS);
   // Central keep with towers, floors, windows, roofline and connected grand staircase.
   shell(q,-40,40,-38,38,1,40,Material.STONE_BRICKS);for(int y:new int[]{1,10,19,28,37})floor(q,-39,39,y,-37,37,Material.DARK_OAK_PLANKS);
-  int[][]kt={{-36,-34},{36,-34},{-36,34},{36,34},{0,-34},{0,34}};for(int[]t:kt)tower(q,t[0],t[1],7,1,46);roof(q,0,0,42,40,42);facade(q,-38,38,-39,3,37);facade(q,-38,38,39,3,37);
+  int[][]kt={{-36,-34},{36,-34},{-36,34},{36,34},{0,-34},{0,34}};for(int[]t:kt){tower(q,t[0],t[1],7,1,46);spire(q,t[0],t[1],7,48);}roof(q,0,0,42,40,42);spire(q,0,0,13,49);facade(q,-38,38,-39,3,37);facade(q,-38,38,39,3,37);
   for(int y:new int[]{6,15,24,33})for(int x=-30;x<=30;x+=10){add(q,x,y,-38,Material.BLUE_STAINED_GLASS);add(q,x,y,38,Material.BLUE_STAINED_GLASS);}
   for(int y=2;y<=35;y++){int x=30-(y%9);add(q,x,y,30,Material.STONE_BRICK_STAIRS);}
-  fill(q,-5,5,2,11,-38,-37,Material.AIR);
+  fill(q,-5,5,2,11,-38,-37,Material.AIR);arch(q,0,2,-39,7,11);for(int x:new int[]{-28,-18,-8,8,18,28}){arch(q,x,5,-39,2,5);banner(q,x,12,-40);}
   // Ground-floor throne hall with columns, dais, carpet, chandeliers and side seating.
   floor(q,-22,22,2,-28,10,Material.POLISHED_BLACKSTONE);fill(q,-2,2,3,3,5,28,Material.RED_CARPET);for(int z=-22;z<=4;z+=7){for(int x:new int[]{-17,17})fill(q,x,x,3,8,z,z,Material.QUARTZ_PILLAR);}
   floor(q,-7,7,3,13,20,Material.POLISHED_DEEPSLATE);add(q,0,4,18,Material.GOLD_BLOCK);add(q,0,5,18,Material.RED_WOOL);for(int x:new int[]{-5,5})for(int z=14;z<=19;z+=5)add(q,x,4,z,Material.LANTERN);
@@ -99,6 +102,9 @@ public final class MegaCastle implements Listener, CommandExecutor {
   room(q,5,34,-30,-5,-7,Material.REINFORCED_DEEPSLATE,Material.GOLD_BLOCK);for(int x=9;x<=30;x+=5)for(int z=-26;z<=-9;z+=5)add(q,x,-6,z,Material.BARREL);
   // Secret passage from vault toward west wing.
   fill(q,-55,4,-6,-4,-7,-4,Material.AIR);floor(q,-55,4,-7,-7,-4,Material.POLISHED_DEEPSLATE);
+  // Layered inner ward buildings and galleries create the dense reference silhouette.
+  int[][] wings={{-92,-48,-92,-48},{48,92,-92,-48},{-92,-48,48,92},{48,92,48,92}};for(int[]w:wings){shell(q,w[0],w[1],w[2],w[3],1,18,Material.STONE_BRICKS);roof(q,(w[0]+w[1])/2,(w[2]+w[3])/2,23,23,19);facade(q,w[0]+2,w[1]-2,w[2]-1,3,16);}
+  for(int x=-96;x<=96;x+=16){fill(q,x,x,2,12,-114,-111,Material.POLISHED_DIORITE);fill(q,x,x,2,12,111,114,Material.POLISHED_DIORITE);}for(int z=-96;z<=96;z+=16){fill(q,-114,-111,2,12,z,z,Material.POLISHED_DIORITE);fill(q,111,114,2,12,z,z,Material.POLISHED_DIORITE);}
   // Dense landscaped inner wards inspired by a high-detail medieval citadel.
   for(int x=-92;x<=92;x+=16)for(int z=-92;z<=92;z+=18)if(Math.abs(x)>45||Math.abs(z)>45)tree(q,x,2,z);
   for(int x=-108;x<=108;x+=12){add(q,x,2,-108,Material.OAK_LEAVES);add(q,x,2,108,Material.OAK_LEAVES);}for(int z=-108;z<=108;z+=12){add(q,-108,2,z,Material.OAK_LEAVES);add(q,108,2,z,Material.OAK_LEAVES);}
