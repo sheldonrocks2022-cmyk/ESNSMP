@@ -93,6 +93,7 @@ commands:
   season:
     description: 'View ESN season progress'
   event:
+    aliases: [events]
     description: 'View the current ESN event'
   staff:
     description: 'Open ESN staff command help'
@@ -173,6 +174,7 @@ commands:
   afk:
     description: 'Toggle AFK status'
   calendar:
+    aliases: [eventcalendar]
     description: 'View ESN event calendar'
   blacksmith:
     description: 'Open ESN blacksmith information'
@@ -271,7 +273,7 @@ commands:
     description: 'Run ESN system diagnostics'
     permission: esnsmp.admin
   admin:
-    aliases: [adminmenu, esnadmin, modmenu, mod]
+    aliases: [adminmenu, esnadmin, mod]
     description: 'Open the ESN Admin Control Center / moderation menu'
     permission: esnsmp.admin
   modmenu:
