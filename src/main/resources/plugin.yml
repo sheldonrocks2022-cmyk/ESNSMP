@@ -330,6 +330,14 @@ commands:
     description: 'Revive a nearby downed teammate'
 
 permissions:
+  esnsmp.owner:
+    default: op
+  esnsmp.staff.helper:
+    default: false
+  esnsmp.staff.moderator:
+    default: false
+  esnsmp.staff.seniormod:
+    default: false
   esnsmp.spawn:
     default: true
   esnsmp.auction:
