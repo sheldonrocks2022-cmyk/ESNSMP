@@ -23,6 +23,7 @@ import com.esn.smp.gameplay.ExpansionCore;
 import com.esn.smp.gameplay.WelcomeGuide;
 import com.esn.smp.gameplay.ESN20Core;
 import com.esn.smp.gameplay.ESN20Expansion;
+import com.esn.smp.gameplay.Fun20Core;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -40,6 +41,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
     private ExpansionCore expansionCore;
     private ESN20Core esn20Core;
     private ESN20Expansion esn20Expansion;
+    private Fun20Core fun20Core;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -73,6 +75,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         try { expansionCore=new ExpansionCore(this,dataStore); for(String name:new String[]{"jobs","skills","prestige","titles","collections","stats","afk","calendar","blacksmith","salvage","reforge","boss","dungeon","raid","koth","report","note"}) registerCommand(name,expansionCore); getServer().getPluginManager().registerEvents(expansionCore,this); } catch(Exception ex){ getLogger().severe("Expansion systems failed safely: "+ex.getMessage()); }
         try { esn20Core=new ESN20Core(this,dataStore); for(String name:new String[]{"forge","bossdrops","contracts","relics","challenges","rewards"}) registerCommand(name,esn20Core); getServer().getPluginManager().registerEvents(esn20Core,this); } catch(Exception ex){ getLogger().severe("ESN 2.0 systems failed safely: "+ex.getMessage()); }
         try { esn20Expansion=new ESN20Expansion(this,dataStore); for(String name:new String[]{"season2","season","milestones","bestiary2","bestiary","achievements2","achievements","title","party2","party","events2","event","guide","leaderboards2","claimflags"}) registerCommand(name,esn20Expansion); getServer().getPluginManager().registerEvents(esn20Expansion,this); } catch(Exception ex){ getLogger().severe("ESN 2.0 expansion failed safely: "+ex.getMessage()); }
+        fun20Core=new Fun20Core(this,dataStore); for(String name:new String[]{"chaos","artifacts","runes","ascend","community","supplydrop","merchant","endless","fishingevent"}) registerCommand(name,fun20Core); getServer().getPluginManager().registerEvents(fun20Core,this);
         Claims claims=new Claims(this); registerCommand("claim",claims); getServer().getPluginManager().registerEvents(claims,this); getServer().getPluginManager().registerEvents(new AntiCheat(),this);
 
         getServer().getPluginManager().registerEvents(new SpawnListener(this,spawnManager),this);
