@@ -252,6 +252,20 @@ commands:
   setbonus:
     description: 'View Eternal armor set bonuses'
 
+  mastery:
+    description: 'View Realm mastery progression'
+  codex:
+    description: 'View discovered ESN boss progression'
+  pets:
+    description: 'View boss pet information'
+  treasure:
+    description: 'View treasure system information'
+  progression:
+    description: 'View the ESN RPG progression path'
+  diagnostics:
+    description: 'Run ESN system diagnostics'
+    permission: esnsmp.admin
+
 permissions:
   esnsmp.spawn:
     default: true
