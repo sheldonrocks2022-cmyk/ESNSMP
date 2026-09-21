@@ -99,7 +99,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         AdventureSystems adventure=new AdventureSystems(this); for(String name:new String[]{"mastery","codex","pets","treasure","progression","diagnostics"}) registerCommand(name,adventure); getServer().getPluginManager().registerEvents(adventure,this);
         getServer().getPluginManager().registerEvents(new EndgameSystems(this),this);
         getServer().getPluginManager().registerEvents(new BossHealthBars(this),this);
-        try { rpgOverhaul=new RPGOverhaul(this,dataStore); for(String name:new String[]{"bosscodex","skilltree","contracts2","gearupgrade","seasonpass","rpgprofile","rotation","bossdiag"}) registerCommand(name,rpgOverhaul); getServer().getPluginManager().registerEvents(rpgOverhaul,this); } catch(Exception ex){ getLogger().severe("RPG overhaul failed safely: "+ex.getMessage()); }
+        try { rpgOverhaul=new RPGOverhaul(this,dataStore); for(String name:new String[]{"bosscodex","skilltree","contracts2","gearupgrade","seasonpass","rpgprofile","rotation","bosssummon","bossdiag"}) registerCommand(name,rpgOverhaul); getServer().getPluginManager().registerEvents(rpgOverhaul,this); } catch(Exception ex){ getLogger().severe("RPG overhaul failed safely: "+ex.getMessage()); }
         getServer().getPluginManager().registerEvents(new WelcomeGuide(this),this);
         discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
