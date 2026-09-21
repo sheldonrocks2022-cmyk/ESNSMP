@@ -271,9 +271,13 @@ commands:
     description: 'Run ESN system diagnostics'
     permission: esnsmp.admin
   admin:
-    aliases: [adminmenu, esnadmin]
-    description: 'Open the ESN Admin Control Center'
+    aliases: [adminmenu, esnadmin, modmenu, mod]
+    description: 'Open the ESN Admin Control Center / moderation menu'
     permission: esnsmp.admin
+  modmenu:
+    aliases: [staffmenu]
+    description: 'Open the ESN moderation menu'
+    permission: esnsmp.staff
 
   bosscodex:
     description: 'View the persistent boss codex'
