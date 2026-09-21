@@ -20,7 +20,7 @@ public final class MegaCastle implements Listener, CommandExecutor {
   if(!(s instanceof Player p)){s.sendMessage("Players only.");return true;}
   if(!p.hasPermission("esnsmp.staff")){p.sendMessage(ChatColor.RED+"Staff only.");return true;}
   ItemStack core=new ItemStack(Material.LODESTONE);ItemMeta m=core.getItemMeta();m.setDisplayName(ChatColor.GOLD+""+ChatColor.BOLD+"ESN MEGA CASTLE CORE");
-  m.setLore(List.of(ChatColor.GRAY+"Place to construct the ESN Mega Castle.",ChatColor.RED+"WARNING: requires a massive clear area.",ChatColor.YELLOW+"One castle may build at a time."));
+  m.setLore(List.of(ChatColor.GRAY+"Place to construct the ESN Mega Castle.",ChatColor.RED+"WARNING: clears the entire 230x230 build zone.",ChatColor.YELLOW+"Terrain and structures in the path are removed.",ChatColor.YELLOW+"One castle may build at a time."));
   m.getPersistentDataContainer().set(key,PersistentDataType.BYTE,(byte)1);core.setItemMeta(m);p.getInventory().addItem(core);p.sendMessage(ChatColor.GOLD+"Castle Core granted. Place it on open terrain.");return true;
  }
  @EventHandler public void place(BlockPlaceEvent e){
@@ -28,12 +28,15 @@ public final class MegaCastle implements Listener, CommandExecutor {
   Player p=e.getPlayer();if(!p.hasPermission("esnsmp.staff")){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Staff only.");return;}
   if(building){e.setCancelled(true);p.sendMessage(ChatColor.RED+"A castle build is already running.");return;}
   Location o=e.getBlockPlaced().getLocation();if(o.getBlockY()<20||o.getBlockY()>240){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Unsafe build height.");return;}
-  building=true;p.sendMessage(ChatColor.GOLD+"ESN Mega Castle construction started. ~230x230 footprint.");
+  building=true;p.sendMessage(ChatColor.RED+"Clearing the 230x230 castle build zone first...");
   build(o.clone().add(0,-1,0),p);
  }
  private record Change(int x,int y,int z,Material m){}
  private void build(Location o,Player owner){
   List<Change> q=new ArrayList<>(); int R=115;
+  // Clear the full castle volume first so terrain, trees and existing structures cannot obstruct construction.
+  // This is deliberately queued and rate-limited with the rest of the build to protect server tick health.
+  for(int x=-R;x<R;x++)for(int z=-R;z<R;z++)for(int y=-8;y<=40;y++)q.add(new Change(x,y,z,Material.AIR));
   // Foundation/courtyard.
   for(int x=-R;x<=R;x++)for(int z=-R;z<=R;z++) if(Math.abs(x)==R||Math.abs(z)==R) for(int y=1;y<=10;y++)q.add(new Change(x,y,z,Material.DEEPSLATE_BRICKS));
   for(int x=-R+1;x<R;x++)for(int z=-R+1;z<R;z++)if((x+z)%3==0)q.add(new Change(x,0,z,Material.STONE_BRICKS));
@@ -61,7 +64,7 @@ public final class MegaCastle implements Listener, CommandExecutor {
   for(int x=-20;x<=20;x+=4)for(int z=-14;z<=14;z+=4)q.add(new Change(x,-6,z,Material.BARREL));
   // Lighting.
   for(int x=-100;x<=100;x+=12)for(int z=-100;z<=100;z+=12)q.add(new Change(x,2,z,Material.SEA_LANTERN));
-  final int total=q.size(); new BukkitRunnable(){int i=0;public void run(){try{int budget=1800;while(budget-->0&&i<total){Change c=q.get(i++);Block b=o.clone().add(c.x,c.y,c.z).getBlock();b.setType(c.m,false);}if(i%18000<1800)owner.sendMessage(ChatColor.YELLOW+"Castle: "+(i*100/total)+"%");if(i>=total){building=false;owner.sendMessage(ChatColor.GREEN+"ESN Mega Castle construction complete.");cancel();}}catch(Exception ex){building=false;plugin.getLogger().severe("Castle build stopped safely: "+ex.getMessage());owner.sendMessage(ChatColor.RED+"Castle build stopped safely. Check console.");cancel();}}}.runTaskTimer(plugin,1L,1L);
+  final int total=q.size(); new BukkitRunnable(){int i=0;public void run(){try{int budget=1800;while(budget-->0&&i<total){Change c=q.get(i++);Block b=o.clone().add(c.x,c.y,c.z).getBlock();b.setType(c.m,false);}if(i%18000<1800)owner.sendMessage(ChatColor.YELLOW+"Castle clearing/building: "+(i*100/total)+"%");if(i>=total){building=false;owner.sendMessage(ChatColor.GREEN+"ESN Mega Castle construction complete.");cancel();}}catch(Exception ex){building=false;plugin.getLogger().severe("Castle build stopped safely: "+ex.getMessage());owner.sendMessage(ChatColor.RED+"Castle build stopped safely. Check console.");cancel();}}}.runTaskTimer(plugin,1L,1L);
  }
  private void shell(List<Change> q,int x1,int x2,int z1,int z2,int y1,int y2,Material m){for(int y=y1;y<=y2;y++)for(int x=x1;x<=x2;x++)for(int z=z1;z<=z2;z++)if(y==y1||y==y2||x==x1||x==x2||z==z1||z==z2)q.add(new Change(x,y,z,m));}
  private void cylinder(List<Change> q,int cx,int cz,int r,int y1,int y2,Material m){for(int y=y1;y<=y2;y++)for(int x=-r;x<=r;x++)for(int z=-r;z<=r;z++){double d=Math.sqrt(x*x+z*z);if(d>=r-1&&d<=r+.5)q.add(new Change(cx+x,y,cz+z,m));}}
