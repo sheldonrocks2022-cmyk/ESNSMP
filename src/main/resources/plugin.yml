@@ -273,11 +273,11 @@ commands:
     description: 'Run ESN system diagnostics'
     permission: esnsmp.admin
   admin:
-    aliases: [adminmenu, esnadmin, mod]
+    aliases: [adminmenu, esnadmin]
     description: 'Open the ESN Admin Control Center / moderation menu'
     permission: esnsmp.admin
   modmenu:
-    aliases: [staffmenu]
+    aliases: [staffmenu, mod]
     description: 'Open the ESN moderation menu'
     permission: esnsmp.staff
 
@@ -334,9 +334,13 @@ permissions:
     default: op
   esnsmp.staff.helper:
     default: false
+  esnsmp.staff.trialmod:
+    default: false
   esnsmp.staff.moderator:
     default: false
   esnsmp.staff.seniormod:
+    default: false
+  esnsmp.staff.admin:
     default: false
   esnsmp.spawn:
     default: true
