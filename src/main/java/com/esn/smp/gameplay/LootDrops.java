@@ -1,6 +1,7 @@
 package com.esn.smp.gameplay;
-import org.bukkit.*;import org.bukkit.entity.*;import org.bukkit.event.*;import org.bukkit.event.entity.EntityDeathEvent;import org.bukkit.inventory.*;import org.bukkit.inventory.meta.ItemMeta;import java.util.concurrent.ThreadLocalRandom;
+import org.bukkit.*;import org.bukkit.entity.*;import org.bukkit.event.*;import org.bukkit.event.entity.EntityDeathEvent;import org.bukkit.inventory.*;import org.bukkit.inventory.meta.ItemMeta;import org.bukkit.persistence.PersistentDataType;import org.bukkit.NamespacedKey;import java.util.concurrent.ThreadLocalRandom;
 public final class LootDrops implements Listener{
+ private static ItemStack tag(ItemStack i,String id){ItemMeta m=i.getItemMeta();m.getPersistentDataContainer().set(new NamespacedKey("esnsmp","item_id"),PersistentDataType.STRING,id);i.setItemMeta(m);return i;}
  @EventHandler public void death(EntityDeathEvent e){
   LivingEntity mob=e.getEntity();Player killer=mob.getKiller();if(killer==null)return;
   double chance=chance(mob);if(chance<=0)return;
@@ -14,7 +15,7 @@ public final class LootDrops implements Listener{
   if(mob instanceof Monster||mob instanceof Slime||mob instanceof Phantom)return .35;
   return 0;
  }
- public static ItemStack key(){ItemStack i=new ItemStack(Material.TRIPWIRE_HOOK);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.GOLD+"ESN Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens ESN and Celestial crates"));i.setItemMeta(m);return i;}
- public static ItemStack abyssKey(){ItemStack i=new ItemStack(Material.ECHO_SHARD);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_PURPLE+"Abyssal Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens only the Abyssal Crate"));i.setItemMeta(m);return i;}
- public static ItemStack dragonKey(){ItemStack i=new ItemStack(Material.BLAZE_ROD);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_RED+"Dragonlord Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens only the Dragonlord Crate"));i.setItemMeta(m);return i;}
+ public static ItemStack key(){ItemStack i=new ItemStack(Material.TRIPWIRE_HOOK);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.GOLD+"ESN Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens ESN and Celestial crates"));i.setItemMeta(m);return tag(i,"crate_key");}
+ public static ItemStack abyssKey(){ItemStack i=new ItemStack(Material.ECHO_SHARD);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_PURPLE+"Abyssal Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens only the Abyssal Crate"));i.setItemMeta(m);return tag(i,"abyss_key");}
+ public static ItemStack dragonKey(){ItemStack i=new ItemStack(Material.BLAZE_ROD);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.DARK_RED+"Dragonlord Crate Key");m.setLore(java.util.List.of(ChatColor.GRAY+"Opens only the Dragonlord Crate"));i.setItemMeta(m);return tag(i,"dragon_key");}
 }
