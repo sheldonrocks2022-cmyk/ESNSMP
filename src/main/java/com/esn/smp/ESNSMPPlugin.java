@@ -30,6 +30,7 @@ import com.esn.smp.gameplay.MegaCrates;
 import com.esn.smp.gameplay.BiomeBosses;
 import com.esn.smp.gameplay.AdventureSystems;
 import com.esn.smp.gameplay.EndgameSystems;
+import com.esn.smp.gameplay.BossHealthBars;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -95,6 +96,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BiomeBosses(this),this);
         AdventureSystems adventure=new AdventureSystems(this); for(String name:new String[]{"mastery","codex","pets","treasure","progression","diagnostics"}) registerCommand(name,adventure); getServer().getPluginManager().registerEvents(adventure,this);
         getServer().getPluginManager().registerEvents(new EndgameSystems(this),this);
+        getServer().getPluginManager().registerEvents(new BossHealthBars(this),this);
         getServer().getPluginManager().registerEvents(new WelcomeGuide(this),this);
         discordReminder=new DiscordReminder(this); getServer().getPluginManager().registerEvents(discordReminder,this);
         getServer().getPluginManager().registerEvents(new HubServiceListener(spawnManager,auctions),this);
