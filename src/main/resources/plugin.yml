@@ -281,6 +281,10 @@ commands:
     description: 'Open the ESN moderation menu'
     permission: esnsmp.staff
 
+  castlecore:
+    description: Give an ESN Mega Castle Core.
+    permission: esnsmp.staff
+
   bosscodex:
     description: 'View the persistent boss codex'
   skilltree:
