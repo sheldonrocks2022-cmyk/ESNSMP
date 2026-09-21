@@ -20,8 +20,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public final class SpawnManager {
-    private static final int HUB_RADIUS = 120;
-    private static final int CLEAR_HEIGHT = 10;
+    private static final int HUB_RADIUS = 200;
+    private static final int CLEAR_HEIGHT = 18;
     private static final int LOGO_RADIUS = 26;
     private static final int BLOCKS_PER_TICK = 2400;
 
@@ -208,7 +208,7 @@ public final class SpawnManager {
         int cy = center.getBlockY();
         int cz = center.getBlockZ();
 
-        List<BlockChange> changes = new ArrayList<>(500000);
+        List<BlockChange> changes = new ArrayList<>(2200000);
 
         // Massive circular plaza: 161 blocks across.
         for (int dx = -HUB_RADIUS; dx <= HUB_RADIUS; dx++) {
@@ -247,7 +247,7 @@ public final class SpawnManager {
         addRoadLighting(changes, cx, cy, cz);
         addServiceStations(changes, cx, cy, cz);
         addServiceDistrict(changes, cx, cy, cz);
-        addFloatingIslandAndWaterfall(changes, cx, cy, cz);
+        addFloatingIslandAndWaterfall(changes, cx, cy, cz); addGrandPrison(changes,cx,cy,cz);
 
         // Exact player landing spot: keep the configured feet position clear.
         for (int dx = -1; dx <= 1; dx++) {
@@ -261,6 +261,8 @@ public final class SpawnManager {
 
         return changes;
     }
+
+    private void addGrandPrison(List<BlockChange> c,int cx,int cy,int cz){int x1=cx+130,x2=cx+190,z1=cz+110,z2=cz+185;for(int x=x1;x<=x2;x++)for(int z=z1;z<=z2;z++)for(int y=cy;y<=cy+18;y++)if(x==x1||x==x2||z==z1||z==z2||y==cy||y==cy+18)c.add(new BlockChange(x,y,z,Material.REINFORCED_DEEPSLATE));for(int n=0;n<12;n++){int bx=cx+145+(n%4)*8,bz=cz+125+(n/4)*9;for(int x=bx-3;x<=bx+3;x++)for(int z=bz-3;z<=bz+3;z++)for(int y=cy;y<=cy+5;y++){boolean wall=x==bx-3||x==bx+3||z==bz-3||z==bz+3||y==cy||y==cy+5;c.add(new BlockChange(x,y,z,wall?Material.REINFORCED_DEEPSLATE:Material.AIR));}for(int y=cy+1;y<=cy+3;y++)c.add(new BlockChange(bx, y, bz-3, Material.IRON_BARS));c.add(new BlockChange(bx,cy+1,bz+1,Material.RED_BED));}for(int x=x1+5;x<=x2-5;x+=10){c.add(new BlockChange(x,cy+19,z1,Material.SEA_LANTERN));c.add(new BlockChange(x,cy+19,z2,Material.SEA_LANTERN));}}
 
     private void addCenterMedallion(List<BlockChange> changes, int cx, int cy, int cz) {
         int radius = 14;
