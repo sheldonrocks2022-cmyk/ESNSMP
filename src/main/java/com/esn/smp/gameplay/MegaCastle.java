@@ -29,7 +29,7 @@ public final class MegaCastle implements Listener, CommandExecutor {
   ItemMeta m=e.getItemInHand().getItemMeta(); if(m==null||!m.getPersistentDataContainer().has(key,PersistentDataType.BYTE))return;
   Player p=e.getPlayer(); if(!p.hasPermission("esnsmp.staff")){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Staff only.");return;}
   if(building){e.setCancelled(true);p.sendMessage(ChatColor.RED+"A castle build is already running.");return;}
-  Location o=e.getBlockPlaced().getLocation(); if(o.getBlockY()<20||o.getBlockY()>240){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Unsafe build height.");return;}
+  Location o=e.getBlockPlaced().getLocation(); if(o.getBlockY()<20||o.getBlockY()>245-75){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Unsafe build height.");return;}
   building=true;p.sendMessage(ChatColor.GOLD+"Constructing the fully detailed ESN Mega Castle...");build(o.clone().add(0,-1,0),p);
  }
  private record Change(int x,int y,int z,Material m){}
@@ -55,7 +55,7 @@ public final class MegaCastle implements Listener, CommandExecutor {
  private void build(Location o,Player owner){
   List<Change>q=new ArrayList<>();int R=115;
   // Clean construction envelope and lay a deliberate courtyard instead of random flooring.
-  for(int x=-R;x<R;x++)for(int z=-R;z<R;z++)for(int y=-8;y<=46;y++)add(q,x,y,z,Material.AIR);
+  for(int x=-R;x<=R;x++)for(int z=-R;z<=R;z++)for(int y=-8;y<=75;y++)add(q,x,y,z,Material.AIR);
   floor(q,-114,114,0,-114,114,Material.STONE_BRICKS);
   // Outer curtain walls, battlements, four gatehouses and corner towers.
   for(int y=1;y<=15;y++){for(int x=-115;x<=115;x++){add(q,x,y,-115,Material.DEEPSLATE_BRICKS);add(q,x,y,115,Material.DEEPSLATE_BRICKS);}for(int z=-114;z<=114;z++){add(q,-115,y,z,Material.DEEPSLATE_BRICKS);add(q,115,y,z,Material.DEEPSLATE_BRICKS);}}
@@ -70,6 +70,10 @@ public final class MegaCastle implements Listener, CommandExecutor {
   for(int y:new int[]{6,15,24,33})for(int x=-30;x<=30;x+=10){add(q,x,y,-38,Material.BLUE_STAINED_GLASS);add(q,x,y,38,Material.BLUE_STAINED_GLASS);}
   for(int y=2;y<=35;y++){int x=30-(y%9);add(q,x,y,30,Material.STONE_BRICK_STAIRS);}
   fill(q,-5,5,2,11,-38,-37,Material.AIR);arch(q,0,2,-39,7,11);for(int x:new int[]{-28,-18,-8,8,18,28}){arch(q,x,5,-39,2,5);banner(q,x,12,-40);}
+  // Monumental layered central palace: extra terraces, towers, galleries and chapel-like crown.
+  shell(q,-52,52,-50,50,1,28,Material.STONE_BRICKS);for(int y:new int[]{8,16,24})floor(q,-51,51,y,-49,49,Material.DARK_OAK_PLANKS);facade(q,-50,50,-51,3,27);facade(q,-50,50,51,3,27);
+  int[][] crown={{-48,-46},{48,-46},{-48,46},{48,46},{-24,-48},{24,-48},{-24,48},{24,48}};for(int[]t:crown){tower(q,t[0],t[1],6,1,34);spire(q,t[0],t[1],6,36);}
+  for(int ring=0;ring<3;ring++){int a=58+ring*13;for(int x=-a;x<=a;x+=13){fill(q,x,x,2,10,-a,-a,Material.STONE_BRICKS);fill(q,x,x,2,10,a,a,Material.STONE_BRICKS);}for(int z=-a;z<=a;z+=13){fill(q,-a,-a,2,10,z,z,Material.STONE_BRICKS);fill(q,a,a,2,10,z,z,Material.STONE_BRICKS);}}
   // Ground-floor throne hall with columns, dais, carpet, chandeliers and side seating.
   floor(q,-22,22,2,-28,10,Material.POLISHED_BLACKSTONE);fill(q,-2,2,3,3,5,28,Material.RED_CARPET);for(int z=-22;z<=4;z+=7){for(int x:new int[]{-17,17})fill(q,x,x,3,8,z,z,Material.QUARTZ_PILLAR);}
   floor(q,-7,7,3,13,20,Material.POLISHED_DEEPSLATE);add(q,0,4,18,Material.GOLD_BLOCK);add(q,0,5,18,Material.RED_WOOL);for(int x:new int[]{-5,5})for(int z=14;z<=19;z+=5)add(q,x,4,z,Material.LANTERN);
@@ -108,6 +112,8 @@ public final class MegaCastle implements Listener, CommandExecutor {
   // Dense landscaped inner wards inspired by a high-detail medieval citadel.
   for(int x=-92;x<=92;x+=16)for(int z=-92;z<=92;z+=18)if(Math.abs(x)>45||Math.abs(z)>45)tree(q,x,2,z);
   for(int x=-108;x<=108;x+=12){add(q,x,2,-108,Material.OAK_LEAVES);add(q,x,2,108,Material.OAK_LEAVES);}for(int z=-108;z<=108;z+=12){add(q,-108,2,z,Material.OAK_LEAVES);add(q,108,2,z,Material.OAK_LEAVES);}
+  // Formal gardens: hedges, fountains, paths and dozens of trees fill otherwise empty wards.
+  for(int x=-100;x<=100;x+=10)for(int z=-100;z<=100;z+=10)if(Math.abs(x)>55||Math.abs(z)>55){add(q,x,2,z,Material.OAK_LEAVES);if((x+z)%20==0)add(q,x,3,z,Material.FLOWERING_AZALEA_LEAVES);}for(int[]f:new int[][]{{-72,0},{72,0},{0,72},{0,-72}}){fill(q,f[0]-4,f[0]+4,1,1,f[1]-4,f[1]+4,Material.WATER);fill(q,f[0],f[0],2,7,f[1],f[1],Material.QUARTZ_PILLAR);add(q,f[0],8,f[1],Material.SEA_LANTERN);}
   // Courtyard roads, fountain, market/storage sheds and lighting.
   floor(q,-8,8,1,-104,-39,Material.POLISHED_ANDESITE);floor(q,-8,8,1,39,104,Material.POLISHED_ANDESITE);floor(q,-104,-41,1,-5,5,Material.POLISHED_ANDESITE);floor(q,41,104,1,-5,5,Material.POLISHED_ANDESITE);
   fill(q,-5,5,1,1,44,54,Material.WATER);fill(q,-1,1,1,7,48,50,Material.QUARTZ_PILLAR);
