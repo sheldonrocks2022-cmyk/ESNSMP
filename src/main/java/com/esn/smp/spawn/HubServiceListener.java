@@ -23,12 +23,12 @@ public final class HubServiceListener implements Listener {
                 try{
                     switch(s){
                         case AUCTION -> auctions.open(p,0);
-                        case SHOP -> p.sendMessage(ChatColor.GREEN+"Server Shop is being stocked.");
-                        case CRATES -> p.sendMessage(ChatColor.LIGHT_PURPLE+"Crates station is ready for the crate module.");
-                        case QUESTS -> p.sendMessage(ChatColor.BLUE+"Quests station is ready for the quest module.");
-                        case WARPS -> p.sendMessage(ChatColor.DARK_PURPLE+"Warps station is ready for world destinations.");
-                        case LEADERBOARDS -> p.sendMessage(ChatColor.AQUA+"Use /balance to start climbing the ESN economy leaderboard.");
-                        case INFO -> p.sendMessage(ChatColor.GOLD+"Welcome to ESN SMP! Respect players and the server rules.");
+                        case SHOP -> Bukkit.dispatchCommand(p,"shop");
+                        case CRATES -> Bukkit.dispatchCommand(p,"crates");
+                        case QUESTS -> Bukkit.dispatchCommand(p,"quests");
+                        case WARPS -> Bukkit.dispatchCommand(p,"warps");
+                        case LEADERBOARDS -> Bukkit.dispatchCommand(p,"leaderboard");
+                        case INFO -> Bukkit.dispatchCommand(p,"menu");
                     }
                 }catch(Exception ex){p.sendMessage(ChatColor.RED+"That station is temporarily unavailable.");}
                 return;
