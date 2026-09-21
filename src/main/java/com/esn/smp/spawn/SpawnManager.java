@@ -29,6 +29,8 @@ public final class SpawnManager {
     private boolean building;
     private BukkitTask buildTask;
     private BackupWriter activeBackup;
+    private HubServiceListener hubServices;
+    public void setHubServices(HubServiceListener h){this.hubServices=h;}
 
     public SpawnManager(ESNSMPPlugin plugin) {
         this.plugin = plugin;
@@ -530,6 +532,7 @@ public final class SpawnManager {
             sender.sendMessage(ChatColor.GREEN + "Massive ESN SMP spawn build complete.");
             sender.sendMessage(ChatColor.GRAY + "Rollback backup: " + backupFile.getName());
             plugin.getLogger().info("Large ESN spawn build complete at " + format(center));
+            if(hubServices!=null) hubServices.respawnNpcs();
         } catch (Exception ex) {
             plugin.getLogger().severe("Could not finalize ESN spawn build: " + ex.getMessage());
             sender.sendMessage(ChatColor.RED + "Build completed but finalization failed. Keep the rollback backup.");
