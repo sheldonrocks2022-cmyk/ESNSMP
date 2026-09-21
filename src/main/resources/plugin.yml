@@ -227,6 +227,26 @@ commands:
   claimflags:
     description: 'View claim protection features'
 
+  chaos:
+    description: 'View the active ESN Chaos modifier'
+  artifacts:
+    description: 'View ESN boss artifact information'
+  runes:
+    description: 'View ESN rune information'
+  ascend:
+    description: 'Ascend held Eternal equipment'
+  community:
+    description: 'View community goals'
+  supplydrop:
+    description: 'Call a supply drop nearby'
+    permission: esnsmp.admin
+  merchant:
+    description: 'View the Mystery Merchant'
+  endless:
+    description: 'Start an Endless Trial'
+  fishingevent:
+    description: 'View fishing event information'
+
 permissions:
   esnsmp.spawn:
     default: true
