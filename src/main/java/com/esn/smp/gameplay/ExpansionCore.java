@@ -55,7 +55,7 @@ public final class ExpansionCore implements Listener,CommandExecutor,AutoCloseab
    String[] names={"Titan Prime","Void Reaper","Eclipse Executioner","Arcane Sovereign","Nether Warlord"};int n=ThreadLocalRandom.current().nextInt(types.length);
    Entity raw=w.spawnEntity(l,types[n]);if(!(raw instanceof LivingEntity z)){raw.remove();requester.sendMessage(ChatColor.RED+"World boss spawn failed: invalid entity type.");return;}
    z.setCustomName(ChatColor.DARK_PURPLE+"WORLD BOSS: "+names[n]);z.setCustomNameVisible(true);var max=z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);if(max==null){z.remove();requester.sendMessage(ChatColor.RED+"World boss spawn failed: entity has no health attribute.");return;}
-   max.setBaseValue(30000.0);z.setHealth(30000.0);z.addScoreboardTag("esnWorldBoss");z.addScoreboardTag("esnDesign"+(4+n%4));designBoss(z,4+n%4,true);worldBoss=z.getUniqueId();attachWorldBoss(z);
+   max.setBaseValue(100000.0);z.setHealth(100000.0);z.addScoreboardTag("esnWorldBoss");z.addScoreboardTag("esnDesign"+(4+n%4));designBoss(z,4+n%4,true);worldBoss=z.getUniqueId();attachWorldBoss(z);
    Bukkit.broadcastMessage(ChatColor.RED+"WORLD BOSS "+names[n]+" spawned in "+w.getName()+" at "+l.getBlockX()+", "+l.getBlockY()+", "+l.getBlockZ()+"! You have 10 minutes!");
    requester.sendMessage(ChatColor.GREEN+"World boss spawned successfully: "+names[n]+" at "+l.getBlockX()+", "+l.getBlockY()+", "+l.getBlockZ()+".");if(requester instanceof Player rp)rp.setCompassTarget(l);
    UUID id=z.getUniqueId();final Location announce=l.clone();
