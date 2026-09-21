@@ -116,7 +116,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
                     spawnManager.buildSpawn(getServer().getConsoleSender());
             } catch(Exception ex){getLogger().severe("Spawn initialization failed safely: "+ex.getMessage());}
         });
-        int bound=0,missing=0;for(org.bukkit.command.Command cmd:getDescription().getCommands().keySet().stream().map(this::getCommand).filter(java.util.Objects::nonNull).toList()){if(cmd.getExecutor()==this)missing++;else bound++;}getLogger().info("[ESNSMP] Command audit: "+bound+" executors bound, "+missing+" using plugin fallback.");
+        int declared=getDescription().getCommands().size(),available=0;for(String cmdName:getDescription().getCommands().keySet())if(getCommand(cmdName)!=null)available++;getLogger().info("[ESNSMP] Command audit: "+available+"/"+declared+" declared commands available.");
         getLogger().info("ESNSMP v"+getDescription().getVersion()+" enabled.");
     }
 
