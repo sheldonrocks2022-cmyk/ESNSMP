@@ -47,10 +47,10 @@ public final class ExpansionCore implements Listener,CommandExecutor,AutoCloseab
   try{
    if(Bukkit.getWorlds().isEmpty()){requester.sendMessage(ChatColor.RED+"World boss could not spawn: no worlds are loaded.");return;}
    if(worldBoss!=null){Entity current=Bukkit.getEntity(worldBoss);if(current!=null&&current.isValid()&&!current.isDead()){requester.sendMessage(ChatColor.YELLOW+"A world boss is already active at "+current.getWorld().getName()+" "+current.getLocation().getBlockX()+", "+current.getLocation().getBlockY()+", "+current.getLocation().getBlockZ()+".");if(requester instanceof Player rp)rp.setCompassTarget(current.getLocation());return;}worldBoss=null;}
-   World w=requester instanceof Player rp?rp.getWorld():Bukkit.getWorlds().stream().filter(q->q.getEnvironment()==World.Environment.NORMAL).findFirst().orElse(Bukkit.getWorlds().get(0));
-   Location center=new Location(w,1759.5,223,-928.5);
-   Location l=bossSpawnIsland(w);
-   if(l==null){requester.sendMessage(ChatColor.RED+"World boss spawn failed: could not find a safe spot on the spawn island.");p.getLogger().severe("World boss: spawn-island location search failed in "+w.getName());return;}
+   World w=Bukkit.getWorlds().stream().filter(q->q.getEnvironment()==World.Environment.NORMAL).findFirst().orElse(Bukkit.getWorlds().get(0));
+   Location l=w.getSpawnLocation().clone().add(.5,1,.5);
+   w.getChunkAt(l).load(true);
+   p.getLogger().info("[ESNSMP] World boss using configured world spawn: "+w.getName()+" "+l.getBlockX()+", "+l.getBlockY()+", "+l.getBlockZ());
    EntityType[] types={EntityType.RAVAGER,EntityType.WITHER_SKELETON,EntityType.VINDICATOR,EntityType.EVOKER,EntityType.PIGLIN_BRUTE};
    String[] names={"Titan Prime","Void Reaper","Eclipse Executioner","Arcane Sovereign","Nether Warlord"};int n=ThreadLocalRandom.current().nextInt(types.length);
    
