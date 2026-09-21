@@ -41,9 +41,9 @@ public final class MegaCastle implements Listener, CommandExecutor {
  private void cylinder(List<Change>q,int cx,int cz,int r,int y1,int y2,Material m){for(int y=y1;y<=y2;y++)for(int x=-r;x<=r;x++)for(int z=-r;z<=r;z++){double d=Math.sqrt(x*x+z*z);if(d>=r-1&&d<=r+.5)add(q,cx+x,y,cz+z,m);}}
  private void pillars(List<Change>q,int x1,int x2,int z1,int z2,int y1,int y2){for(int x=x1;x<=x2;x+=8)for(int z:new int[]{z1,z2})fill(q,x,x,y1,y2,z,z,Material.POLISHED_DEEPSLATE);}
  private void furniture(List<Change>q,int x,int y,int z,String type){
-  if(type.equals("bed")){add(q,x,y,z,Material.RED_BED);add(q,x+2,y,z,Material.BARREL);add(q,x+2,y+1,z,Material.LANTERN);}
+  if(type.equals("bed")){add(q,x,y,z,Material.RED_WOOL);add(q,x+1,y,z,Material.RED_WOOL);add(q,x,y+1,z,Material.RED_CARPET);add(q,x+1,y+1,z,Material.RED_CARPET);add(q,x+2,y,z,Material.BARREL);add(q,x+2,y+1,z,Material.LANTERN);}
   if(type.equals("table")){add(q,x,y,z,Material.OAK_FENCE);add(q,x,y+1,z,Material.OAK_PRESSURE_PLATE);}
-  if(type.equals("armor")){add(q,x,y,z,Material.ARMOR_STAND);add(q,x+2,y,z,Material.SMITHING_TABLE);}
+  if(type.equals("armor")){add(q,x,y,z,Material.POLISHED_BLACKSTONE_WALL);add(q,x,y+1,z,Material.IRON_BLOCK);add(q,x+2,y,z,Material.SMITHING_TABLE);}
  }
  private void build(Location o,Player owner){
   List<Change>q=new ArrayList<>();int R=115;
@@ -101,6 +101,6 @@ public final class MegaCastle implements Listener, CommandExecutor {
   for(int x=-100;x<=100;x+=20)for(int z=-100;z<=100;z+=20){add(q,x,2,z,Material.STONE_BRICK_WALL);add(q,x,3,z,Material.LANTERN);}
   // Decorative keep buttresses and roof crenellations.
   pillars(q,-40,40,-38,38,2,38);for(int x=-40;x<=40;x+=4){add(q,x,41,-38,Material.STONE_BRICKS);add(q,x,41,38,Material.STONE_BRICKS);}for(int z=-38;z<=38;z+=4){add(q,-40,41,z,Material.STONE_BRICKS);add(q,40,41,z,Material.STONE_BRICKS);}
-  final int total=q.size();new BukkitRunnable(){int i=0,last=-1;public void run(){try{int budget=1200;while(budget-->0&&i<total){Change c=q.get(i++);Block b=o.clone().add(c.x,c.y,c.z).getBlock();b.setType(c.m,false);}int pct=i*100/total;if(pct/10!=last/10){last=pct;owner.sendMessage(ChatColor.YELLOW+"Citadel construction: "+pct+"%");}if(i>=total){building=false;owner.sendMessage(ChatColor.GREEN+"ESN Mega Castle Citadel complete.");cancel();}}catch(Exception ex){building=false;plugin.getLogger().severe("Castle build stopped safely: "+ex.getMessage());owner.sendMessage(ChatColor.RED+"Castle build stopped safely. Check console.");cancel();}}}.runTaskTimer(plugin,1L,1L);
+  final int total=q.size();new BukkitRunnable(){int i=0,last=-1;public void run(){try{int budget=1200;while(budget-->0&&i<total){Change c=q.get(i++);if(!c.m.isBlock()){plugin.getLogger().warning("Skipped non-block castle material: "+c.m);continue;}Block b=o.clone().add(c.x,c.y,c.z).getBlock();b.setType(c.m,false);}int pct=i*100/total;if(pct/10!=last/10){last=pct;owner.sendMessage(ChatColor.YELLOW+"Citadel construction: "+pct+"%");}if(i>=total){building=false;owner.sendMessage(ChatColor.GREEN+"ESN Mega Castle Citadel complete.");cancel();}}catch(Exception ex){building=false;plugin.getLogger().severe("Castle build stopped safely: "+ex.getMessage());owner.sendMessage(ChatColor.RED+"Castle build stopped safely. Check console.");cancel();}}}.runTaskTimer(plugin,1L,1L);
  }
 }
