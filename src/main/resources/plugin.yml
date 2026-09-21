@@ -280,6 +280,8 @@ commands:
     description: 'View detailed RPG profile'
   rotation:
     description: 'View current progression rotation'
+  bosssummon:
+    description: 'Consume a Nether Star to summon a Titan boss'
   bossdiag:
     description: 'Run boss-system diagnostics'
     permission: esnsmp.admin
