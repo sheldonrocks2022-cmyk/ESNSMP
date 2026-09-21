@@ -120,6 +120,24 @@ public final class MegaCastle implements Listener, CommandExecutor {
   for(int x=-100;x<=100;x+=20)for(int z=-100;z<=100;z+=20){add(q,x,2,z,Material.STONE_BRICK_WALL);add(q,x,3,z,Material.LANTERN);}
   // Decorative keep buttresses and roof crenellations.
   pillars(q,-40,40,-38,38,2,38);for(int x=-40;x<=40;x+=4){add(q,x,41,-38,Material.STONE_BRICKS);add(q,x,41,38,Material.STONE_BRICKS);}for(int z=-38;z<=38;z+=4){add(q,-40,41,z,Material.STONE_BRICKS);add(q,40,41,z,Material.STONE_BRICKS);}
+  // MAX DETAIL PASS: gatehouse towers, inner curtain, bridge, cloister, markets, stables and defensive lighting.
+  for(int[]t:new int[][]{{-18,-108},{18,-108},{-18,108},{18,108}}){tower(q,t[0],t[1],7,1,28);spire(q,t[0],t[1],7,30);}
+  // Inner curtain creates a true layered citadel rather than disconnected buildings.
+  for(int y=2;y<=12;y++){for(int x=-62;x<=62;x++){if(Math.abs(x)>8){add(q,x,y,-62,Material.STONE_BRICKS);add(q,x,y,62,Material.STONE_BRICKS);}}for(int z=-61;z<=61;z++){add(q,-62,y,z,Material.STONE_BRICKS);add(q,62,y,z,Material.STONE_BRICKS);}}
+  for(int x=-62;x<=62;x+=4){add(q,x,13,-62,Material.STONE_BRICK_WALL);add(q,x,13,62,Material.STONE_BRICK_WALL);}for(int z=-62;z<=62;z+=4){add(q,-62,13,z,Material.STONE_BRICK_WALL);add(q,62,13,z,Material.STONE_BRICK_WALL);}
+  // Grand bridge from south gate to keep with parapets and lanterns.
+  floor(q,-7,7,1,-103,-40,Material.POLISHED_ANDESITE);for(int z=-100;z<=-44;z++){add(q,-8,2,z,Material.STONE_BRICK_WALL);add(q,8,2,z,Material.STONE_BRICK_WALL);}for(int z=-96;z<=-48;z+=12){add(q,-8,3,z,Material.LANTERN);add(q,8,3,z,Material.LANTERN);}
+  // Cloister galleries surrounding the central keep.
+  for(int x=-50;x<=50;x+=5)for(int z:new int[]{-54,54}){fill(q,x,x,2,8,z,z,Material.POLISHED_DIORITE);add(q,x,9,z,Material.STONE_BRICKS);}for(int z=-49;z<=49;z+=5)for(int x:new int[]{-54,54}){fill(q,x,x,2,8,z,z,Material.POLISHED_DIORITE);add(q,x,9,z,Material.STONE_BRICKS);}
+  // Stable and market quarters are fully floored and furnished.
+  room(q,-108,-70,-92,-48,1,Material.STONE_BRICKS,Material.SPRUCE_PLANKS);for(int z=-86;z<=-54;z+=8){for(int x=-103;x<=-76;x+=9){add(q,x,2,z,Material.HAY_BLOCK);add(q,x+2,2,z,Material.OAK_FENCE);add(q,x+3,2,z,Material.WATER_CAULDRON);}}
+  room(q,70,108,-92,-48,1,Material.STONE_BRICKS,Material.STONE_BRICKS);for(int x=76;x<=102;x+=8)for(int z=-86;z<=-56;z+=10){add(q,x,2,z,Material.BARREL);add(q,x+1,2,z,Material.CRAFTING_TABLE);add(q,x,3,z,Material.LANTERN);}
+  // Additional residential/guard buildings make the wards dense and complete.
+  for(int[]b:new int[][]{{-108,-76,42,70},{76,108,42,70},{-108,-76,74,106},{76,108,74,106}}){shell(q,b[0],b[1],b[2],b[3],1,14,Material.STONE_BRICKS);floor(q,b[0]+1,b[1]-1,1,b[2]+1,b[3]-1,Material.OAK_PLANKS);roof(q,(b[0]+b[1])/2,(b[2]+b[3])/2,(b[1]-b[0])/2+1,(b[3]-b[2])/2+1,15);}
+  // Exterior detail bands, windows and torches on all major curtain faces.
+  for(int x=-108;x<=108;x+=8){add(q,x,8,-114,Material.CHISELED_STONE_BRICKS);add(q,x,8,114,Material.CHISELED_STONE_BRICKS);if(x%16==0){add(q,x,10,-114,Material.SEA_LANTERN);add(q,x,10,114,Material.SEA_LANTERN);}}for(int z=-108;z<=108;z+=8){add(q,-114,8,z,Material.CHISELED_STONE_BRICKS);add(q,114,8,z,Material.CHISELED_STONE_BRICKS);if(z%16==0){add(q,-114,10,z,Material.SEA_LANTERN);add(q,114,10,z,Material.SEA_LANTERN);}}
+  // Fully connected underground service corridors beneath all four wings.
+  fill(q,-100,100,-6,-4,-3,3,Material.DEEPSLATE_BRICKS);fill(q,-3,3,-6,-4,-100,100,Material.DEEPSLATE_BRICKS);fill(q,-98,98,-5,-5,-2,2,Material.AIR);fill(q,-2,2,-5,-5,-98,98,Material.AIR);for(int x=-90;x<=90;x+=15){add(q,x,-4,0,Material.SEA_LANTERN);}for(int z=-90;z<=90;z+=15){add(q,0,-4,z,Material.SEA_LANTERN);}
   // Final structural integrity pass: seal every unintended foundation/wall gap before block placement.
   fill(q,-115,115,-3,-1,-115,115,Material.DEEPSLATE_BRICKS);floor(q,-115,115,0,-115,115,Material.STONE_BRICKS);
   for(int y=1;y<=15;y++){for(int x=-115;x<=115;x++){if(!(x>=-6&&x<=6)){add(q,x,y,-115,Material.DEEPSLATE_BRICKS);}add(q,x,y,115,Material.DEEPSLATE_BRICKS);}for(int z=-114;z<=114;z++){add(q,-115,y,z,Material.DEEPSLATE_BRICKS);add(q,115,y,z,Material.DEEPSLATE_BRICKS);}}
