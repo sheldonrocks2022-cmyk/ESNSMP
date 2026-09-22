@@ -291,13 +291,13 @@ public final class SpawnManager {
                 c.add(new BlockChange(x,y,z,wall?Material.REINFORCED_DEEPSLATE:Material.AIR));
             }
             for(int x=bx-2;x<=bx+2;x++)for(int y=cy+1;y<=cy+4;y++)c.add(new BlockChange(x,y,bz-6,Material.IRON_BARS));
-            c.add(new BlockChange(bx,cy+1,bz+2,Material.RED_BED));c.add(new BlockChange(bx+2,cy+1,bz+2,Material.BARREL));
+            c.add(new BlockChange(bx,cy+1,bz+2,Material.IRON_BLOCK));c.add(new BlockChange(bx+2,cy+1,bz+2,Material.BARREL));
             c.add(new BlockChange(bx-2,cy+1,bz+2,Material.IRON_BLOCK));c.add(new BlockChange(bx,cy+6,bz,Material.SEA_LANTERN));
         }
         // Yard, guard posts and beacon so staff can immediately find it.
         for(int x=x1+8;x<=x2-8;x++)for(int z=z2-22;z<=z2-8;z++)c.add(new BlockChange(x,cy,z,Material.SMOOTH_STONE));
         for(int x=x1+12;x<=x2-12;x+=12){c.add(new BlockChange(x,cy+1,z2-15,Material.IRON_BARS));c.add(new BlockChange(x,cy+2,z2-15,Material.IRON_BARS));}
-        c.add(new BlockChange(cx+155,cy+25,cz+145,Material.BEACON));
+        // Dense prison lighting: cells, corridors, yard and perimeter stay bright.\n        for(int x=x1+4;x<=x2-4;x+=6)for(int z=z1+4;z<=z2-4;z+=6)c.add(new BlockChange(x,cy+1,z,Material.TORCH));\n        for(int x=x1+3;x<=x2-3;x+=8){c.add(new BlockChange(x,cy+1,z1+2,Material.TORCH));c.add(new BlockChange(x,cy+1,z2-2,Material.TORCH));}\n        for(int z=z1+3;z<=z2-3;z+=8){c.add(new BlockChange(x1+2,cy+1,z,Material.TORCH));c.add(new BlockChange(x2-2,cy+1,z,Material.TORCH));}\n        c.add(new BlockChange(cx+155,cy+25,cz+145,Material.BEACON));
     }
 
     private void addCenterMedallion(List<BlockChange> changes, int cx, int cy, int cz) {
