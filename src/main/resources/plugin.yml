@@ -6,6 +6,20 @@ author: ESN
 description: ESN SMP core, massive spawn, economy and auction house
 
 commands:
+  realm:
+    description: 'View or advance Realm 1-100 progression'
+    usage: '/realm [advance]'
+  story:
+    aliases: [storyquest, npcquest]
+    description: 'View and advance the ESN NPC story questline'
+  discoveries:
+    aliases: [discovery]
+    description: 'View Journal world discoveries'
+  guildhq:
+    description: 'View or create your Guild Headquarters'
+    usage: '/guildhq [create <name>]'
+  titlemenu:
+    description: 'View unlockable ESN player titles'
   spawn:
     description: Teleport to ESN SMP spawn.
     permission: esnsmp.spawn
