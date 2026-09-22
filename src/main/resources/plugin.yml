@@ -34,6 +34,9 @@ commands:
     description: 'Open ESN SMP menu'
   shop:
     description: 'Open ESN server shop'
+  journal:
+    aliases: [adventurejournal]
+    description: 'Open your ESN Adventure Journal'
   crates:
     description: 'Open ESN loot crates'
   daily:
