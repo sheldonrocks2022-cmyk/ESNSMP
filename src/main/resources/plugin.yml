@@ -59,6 +59,9 @@ commands:
   chattoggle:
     aliases: [chat]
     description: 'Toggle receiving public chat'
+  chatmenu:
+    aliases: [chatsettings]
+    description: 'Open the ESN chat settings menu'
   crates:
     description: 'Open ESN loot crates'
   daily:
