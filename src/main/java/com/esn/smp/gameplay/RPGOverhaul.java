@@ -1,6 +1,6 @@
 package com.esn.smp.gameplay;
 import com.esn.smp.data.ESNDataStore;
-import org.bukkit.*;import org.bukkit.attribute.Attribute;import org.bukkit.command.*;import org.bukkit.entity.*;import org.bukkit.event.*;import org.bukkit.event.entity.*;import org.bukkit.event.player.*;import org.bukkit.inventory.*;import org.bukkit.inventory.meta.ItemMeta;import org.bukkit.persistence.*;import org.bukkit.plugin.java.JavaPlugin;import java.io.*;import java.sql.*;import java.util.*;import java.util.concurrent.ThreadLocalRandom;
+import org.bukkit.*;import org.bukkit.attribute.Attribute;import org.bukkit.command.*;import org.bukkit.entity.*;import org.bukkit.event.*;import org.bukkit.event.entity.*;import org.bukkit.event.player.*;import org.bukkit.event.inventory.InventoryClickEvent;import org.bukkit.inventory.*;import org.bukkit.inventory.meta.ItemMeta;import org.bukkit.persistence.*;import org.bukkit.plugin.java.JavaPlugin;import java.io.*;import java.sql.*;import java.util.*;import java.util.concurrent.ThreadLocalRandom;
 public final class RPGOverhaul implements Listener,CommandExecutor,AutoCloseable{
  private static final String SKILL_MENU=ChatColor.DARK_AQUA+"ESN Skill Tree",SEASON_MENU=ChatColor.LIGHT_PURPLE+"ESN Season Pass";
  private final JavaPlugin p;private final ESNDataStore eco;private Connection db;private final NamespacedKey evolve,ability;private final Map<UUID,Map<UUID,Double>> damage=new HashMap<>();private final Map<UUID,Long> cooldown=new HashMap<>();private String rotation="Titan Hunt";
