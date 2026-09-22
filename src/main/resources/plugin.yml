@@ -37,6 +37,28 @@ commands:
   journal:
     aliases: [adventurejournal]
     description: 'Open your ESN Adventure Journal'
+  msg:
+    aliases: [tell, whisper, w, pm]
+    description: 'Send a private message'
+    usage: '/msg <player> <message>'
+  reply:
+    aliases: [r]
+    description: 'Reply to your latest private message'
+    usage: '/reply <message>'
+  staffchat:
+    aliases: [sc]
+    description: 'Toggle or send ESN staff chat'
+    usage: '/staffchat [message]'
+    permission: esnsmp.staff
+  globalchat:
+    aliases: [gc]
+    description: 'Switch to global chat'
+  localchat:
+    aliases: [lc]
+    description: 'Switch to local chat'
+  chattoggle:
+    aliases: [chat]
+    description: 'Toggle receiving public chat'
   crates:
     description: 'Open ESN loot crates'
   daily:
@@ -373,3 +395,7 @@ permissions:
     default: op
   esnsmp.staff:
     default: op
+  esnsmp.chat.color:
+    default: op
+  esnsmp.chat.mention:
+    default: true

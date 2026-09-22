@@ -39,6 +39,7 @@ import com.esn.smp.gameplay.CastleServices;
 import com.esn.smp.gameplay.ServerMenus;
 import com.esn.smp.gameplay.JailSystem;
 import com.esn.smp.gameplay.AdventureJournal;
+import com.esn.smp.gameplay.ESNChatSystem;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.spawn.HubServiceListener;
 import com.esn.smp.spawn.SpawnManager;
@@ -53,7 +54,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
   for(String cmdName:getDescription().getCommands().keySet()){PluginCommand pc=getCommand(cmdName);if(pc!=null)pc.setExecutor((sender,command,label,args)->{sender.sendMessage(org.bukkit.ChatColor.RED+"ESN system \""+command.getName()+"\" did not initialize. Check the server console for the subsystem error.");getLogger().warning("[ESNSMP] Fallback executor reached for /"+command.getName()+" by "+sender.getName());return true;});}
   spawnManager=new SpawnManager(this);AuctionHouse auctions=new AuctionHouse(dataStore);EconomyCommand economy=new EconomyCommand(dataStore);SMPGameplay gameplay=new SMPGameplay(dataStore);
   registerCommand("spawn",new SpawnCommand(spawnManager));registerCommand("setspawn",new SetSpawnCommand(spawnManager));registerCommand("esnspawn",new ESNSpawnCommand(spawnManager));registerCommand("ah",auctions);registerCommand("balance",economy);registerCommand("pay",economy);
-  for(String name:new String[]{"shop","crates","daily","quests","leaderboard"})registerCommand(name,gameplay);getServer().getPluginManager().registerEvents(gameplay,this);ServerMenus serverMenus=new ServerMenus(this);registerCommand("menu",serverMenus);getServer().getPluginManager().registerEvents(serverMenus,this);AdventureJournal journal=new AdventureJournal(this);registerCommand("journal",journal);getServer().getPluginManager().registerEvents(journal,this);
+  for(String name:new String[]{"shop","crates","daily","quests","leaderboard"})registerCommand(name,gameplay);getServer().getPluginManager().registerEvents(gameplay,this);ServerMenus serverMenus=new ServerMenus(this);registerCommand("menu",serverMenus);getServer().getPluginManager().registerEvents(serverMenus,this);AdventureJournal journal=new AdventureJournal(this);registerCommand("journal",journal);getServer().getPluginManager().registerEvents(journal,this);ESNChatSystem chat=new ESNChatSystem(this);for(String name:new String[]{"msg","reply","staffchat","globalchat","localchat","chattoggle"})registerCommand(name,chat);getServer().getPluginManager().registerEvents(chat,this);
   HomesWarps homesWarps=new HomesWarps(this);for(String name:new String[]{"sethome","home","delhome","homes","rtp","warp","warps","setwarp","delwarp"})registerCommand(name,homesWarps);
   ProfileCommand profiles=new ProfileCommand(dataStore);registerCommand("profile",profiles);getServer().getPluginManager().registerEvents(profiles,this);new ESNScoreboard(this,dataStore);registerCommand("esnitems",new ESNItemsCommand());
   Teleports teleports=new Teleports(this);for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back","tptoggle"})registerCommand(name,teleports);getServer().getPluginManager().registerEvents(teleports,this);
