@@ -23,7 +23,7 @@ public final class SpawnManager {
     private static final int HUB_RADIUS = 200;
     private static final int CLEAR_HEIGHT = 18;
     private static final int LOGO_RADIUS = 26;
-    private static final int BLOCKS_PER_TICK = 2400;
+    private static final int BLOCKS_PER_TICK = 6000;
 
     private final ESNSMPPlugin plugin;
     private boolean building;
@@ -137,12 +137,13 @@ public final class SpawnManager {
 
         List<BlockChange> changes = prepareBuild(center);
         sender.sendMessage(ChatColor.GOLD + "Building the massive ESN SMP spawn...");
+        sender.sendMessage(ChatColor.YELLOW + "Do not restart/reload the server until /esnspawn status reports building=false.");
         sender.sendMessage(ChatColor.GRAY + "Size: " + (HUB_RADIUS * 2 + 1) + " blocks across. Changes are applied safely in batches.");
 
         try {
             this.activeBackup = new BackupWriter(backupFile, world);
         } catch (UncheckedIOException ex) {
-            plugin.getConfig().set("spawn.build-incomplete", false);
+            plugin.getConfig().set("spawn.build-incomplete", false);plugin.getConfig().set("spawn.build-processed-blocks",plugin.getConfig().getInt("spawn.build-total-blocks",0));
             plugin.saveConfig();
             sender.sendMessage(ChatColor.RED + "Could not create the rollback backup. Spawn was not changed.");
             plugin.getLogger().severe("Could not start spawn backup: " + ex.getMessage());
@@ -150,6 +151,7 @@ public final class SpawnManager {
         }
 
         building = true;
+        plugin.getConfig().set("spawn.build-total-blocks", changes.size());plugin.getConfig().set("spawn.build-processed-blocks",0);plugin.saveConfig();
         final int[] cursor = {0};
 
         buildTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -161,6 +163,7 @@ public final class SpawnManager {
                     activeBackup.set(block, change.material());
                     processed++;
                 }
+                if((cursor[0] % 30000)<BLOCKS_PER_TICK){plugin.getConfig().set("spawn.build-processed-blocks",cursor[0]);plugin.saveConfig();}
 
                 if (cursor[0] >= changes.size()) {
                     finishSuccessfulBuild(sender, center, backupFile);
