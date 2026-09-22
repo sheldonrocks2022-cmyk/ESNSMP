@@ -105,7 +105,7 @@ public final class SpawnManager {
             return false;
         }
 
-        double radius = plugin.getConfig().getDouble("spawn.protection-radius", 100.0);
+        double radius = plugin.getConfig().getDouble("spawn.protection-radius", 1000.0);
         double dx = location.getX() - spawn.getX();
         double dz = location.getZ() - spawn.getZ();
         return (dx * dx) + (dz * dz) <= radius * radius;
