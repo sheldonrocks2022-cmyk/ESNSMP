@@ -9,7 +9,7 @@ commands:
   championship:
     aliases: [champ]
     description: 'Staff-activated ESN Server Championship'
-    usage: '/championship <start|join|close|status|cancel>'
+    usage: '/championship <start|forfeit|status|cancel>'
   realm:
     description: 'View or advance Realm 1-100 progression'
     usage: '/realm [advance]'
