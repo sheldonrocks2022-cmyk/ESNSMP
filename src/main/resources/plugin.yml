@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.4.2'
+version: '2.4.5'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
@@ -124,6 +124,9 @@ commands:
   team:
     description: 'Manage ESN teams'
     usage: '/team <create|join|leave|info>'
+  outlaws:
+    aliases: [outlaw]
+    description: 'View active ESN outlaws and hunter rewards'
   bounty:
     description: 'View or place player bounties'
     usage: '/bounty [player] [coins]'
