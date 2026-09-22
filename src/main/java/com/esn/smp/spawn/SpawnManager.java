@@ -162,7 +162,12 @@ public final class SpawnManager {
                 while (cursor[0] < changes.size() && processed < BLOCKS_PER_TICK && System.nanoTime()-tickStart < BUILD_BUDGET_NANOS) {
                     BlockChange change = changes.get(cursor[0]++);
                     Block block = world.getBlockAt(change.x(), change.y(), change.z());
-                    activeBackup.set(block, change.material());
+                    Material material = change.material();
+                    if (!material.isBlock()) {
+                        plugin.getLogger().warning("Skipping invalid non-block spawn material " + material + " at " + change.x() + "," + change.y() + "," + change.z());
+                        continue;
+                    }
+                    activeBackup.set(block, material);
                     processed++;
                 }
                 if((cursor[0] % 30000)<Math.max(1,processed)){plugin.getConfig().set("spawn.build-processed-blocks",cursor[0]);plugin.saveConfig();}
@@ -297,7 +302,12 @@ public final class SpawnManager {
         // Yard, guard posts and beacon so staff can immediately find it.
         for(int x=x1+8;x<=x2-8;x++)for(int z=z2-22;z<=z2-8;z++)c.add(new BlockChange(x,cy,z,Material.SMOOTH_STONE));
         for(int x=x1+12;x<=x2-12;x+=12){c.add(new BlockChange(x,cy+1,z2-15,Material.IRON_BARS));c.add(new BlockChange(x,cy+2,z2-15,Material.IRON_BARS));}
-        // Dense prison lighting: cells, corridors, yard and perimeter stay bright.\n        for(int x=x1+4;x<=x2-4;x+=6)for(int z=z1+4;z<=z2-4;z+=6)c.add(new BlockChange(x,cy+1,z,Material.TORCH));\n        for(int x=x1+3;x<=x2-3;x+=8){c.add(new BlockChange(x,cy+1,z1+2,Material.TORCH));c.add(new BlockChange(x,cy+1,z2-2,Material.TORCH));}\n        for(int z=z1+3;z<=z2-3;z+=8){c.add(new BlockChange(x1+2,cy+1,z,Material.TORCH));c.add(new BlockChange(x2-2,cy+1,z,Material.TORCH));}\n        c.add(new BlockChange(cx+155,cy+25,cz+145,Material.BEACON));
+        // Dense prison lighting: cells, corridors, yard and perimeter stay bright.
+        for(int x=x1+4;x<=x2-4;x+=6)for(int z=z1+4;z<=z2-4;z+=6)c.add(new BlockChange(x,cy+1,z,Material.TORCH));
+        for(int x=x1+3;x<=x2-3;x+=8){c.add(new BlockChange(x,cy+1,z1+2,Material.TORCH));c.add(new BlockChange(x,cy+1,z2-2,Material.TORCH));}
+        for(int z=z1+3;z<=z2-3;z+=8){c.add(new BlockChange(x1+2,cy+1,z,Material.TORCH));c.add(new BlockChange(x2-2,cy+1,z,Material.TORCH));}
+        for(int n=0;n<12;n++){int bx=cx+137+(n%4)*12,bz=cz+125+(n/4)*17;c.add(new BlockChange(bx,cy+1,bz,Material.TORCH));c.add(new BlockChange(bx+3,cy+1,bz+3,Material.TORCH));c.add(new BlockChange(bx-3,cy+1,bz+3,Material.TORCH));}
+        c.add(new BlockChange(cx+155,cy+25,cz+145,Material.BEACON));
     }
 
     private void addCenterMedallion(List<BlockChange> changes, int cx, int cy, int cz) {
