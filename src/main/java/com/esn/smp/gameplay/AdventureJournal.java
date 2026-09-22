@@ -61,7 +61,7 @@ public final class AdventureJournal implements CommandExecutor, Listener {
   v.setItem(24,item(Material.EMERALD,ChatColor.GREEN+"Shop",ChatColor.GRAY+"Open the full ESN shop",ChatColor.YELLOW+"Click: /shop"));
   v.setItem(25,item(Material.SHIELD,ChatColor.BLUE+"Guild",ChatColor.GRAY+"Adventure guild progression",ChatColor.YELLOW+"Click: /guild"));
   String current=YearMonth.now().toString();
-  v.setItem(31,item(Material.CALENDAR,ChatColor.AQUA+"Monthly Discovery",ChatColor.GRAY+"Current month: "+ChatColor.WHITE+current,ChatColor.GRAY+"Discovered: "+(months.contains(current)?ChatColor.GREEN+"YES":ChatColor.RED+"NO"),ChatColor.GRAY+"Total discovered: "+ChatColor.WHITE+months.size(),ChatColor.GOLD+"Discover a new calendar month to earn",ChatColor.LIGHT_PURPLE+"1x Realm 100 Crate Key automatically."));
+  v.setItem(31,item(Material.CLOCK,ChatColor.AQUA+"Monthly Discovery",ChatColor.GRAY+"Current month: "+ChatColor.WHITE+current,ChatColor.GRAY+"Discovered: "+(months.contains(current)?ChatColor.GREEN+"YES":ChatColor.RED+"NO"),ChatColor.GRAY+"Total discovered: "+ChatColor.WHITE+months.size(),ChatColor.GOLD+"Discover a new calendar month to earn",ChatColor.LIGHT_PURPLE+"1x Realm 100 Crate Key automatically."));
   v.setItem(40,item(Material.PAPER,ChatColor.YELLOW+"Recent Discoveries",months.isEmpty()?ChatColor.GRAY+"No months discovered yet.":ChatColor.GRAY+String.join(", ",months.subList(Math.max(0,months.size()-5),months.size()))));
   v.setItem(45,item(Material.ARROW,ChatColor.YELLOW+"Server Menu",ChatColor.GRAY+"Click: /menu"));
   v.setItem(49,item(Material.BARRIER,ChatColor.RED+"Close"));
