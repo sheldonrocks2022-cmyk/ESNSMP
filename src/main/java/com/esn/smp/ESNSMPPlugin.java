@@ -41,6 +41,7 @@ import com.esn.smp.gameplay.JailSystem;
 import com.esn.smp.gameplay.AdventureJournal;
 import com.esn.smp.gameplay.ESNChatSystem;
 import com.esn.smp.gameplay.ESNWorldProgression;
+import com.esn.smp.gameplay.ServerChampionship;
 import com.esn.smp.listener.SpawnProtectionListener;
 import com.esn.smp.listener.SpawnMobGuard;
 import com.esn.smp.spawn.HubServiceListener;
@@ -54,7 +55,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
  private SpawnManager spawnManager;private ESNDataStore dataStore;private ESNWorldProgression worldProgression;private DiscordReminder discordReminder;private V18Core v18Core;private V19Core v19Core;private ExpansionCore expansionCore;private ESN20Core esn20Core;private ESN20Expansion esn20Expansion;private Fun20Core fun20Core;private RPGOverhaul rpgOverhaul;private ESNAdventureEngine adventureEngine;
  @Override public void onEnable(){saveDefaultConfig();try{dataStore=new ESNDataStore(getDataFolder(),getConfig().getLong("economy.starting-balance",500),getConfig().getInt("auction.max-listings-per-player",10),getConfig().getLong("auction.max-price",1000000000L));dataStore.initialize();}catch(Exception ex){getLogger().severe("ESN database failed to initialize. Plugin disabled to protect player data: "+ex.getMessage());getServer().getPluginManager().disablePlugin(this);return;}
   for(String cmdName:getDescription().getCommands().keySet()){PluginCommand pc=getCommand(cmdName);if(pc!=null)pc.setExecutor((sender,command,label,args)->{sender.sendMessage(org.bukkit.ChatColor.RED+"ESN system \""+command.getName()+"\" did not initialize. Check the server console for the subsystem error.");getLogger().warning("[ESNSMP] Fallback executor reached for /"+command.getName()+" by "+sender.getName());return true;});}
-  spawnManager=new SpawnManager(this);AuctionHouse auctions=new AuctionHouse(dataStore);EconomyCommand economy=new EconomyCommand(dataStore);SMPGameplay gameplay=new SMPGameplay(dataStore);
+  spawnManager=new SpawnManager(this);ServerChampionship championship=new ServerChampionship(this);registerCommand("championship",championship);getServer().getPluginManager().registerEvents(championship,this);AuctionHouse auctions=new AuctionHouse(dataStore);EconomyCommand economy=new EconomyCommand(dataStore);SMPGameplay gameplay=new SMPGameplay(dataStore);
   registerCommand("spawn",new SpawnCommand(spawnManager));registerCommand("setspawn",new SetSpawnCommand(spawnManager));registerCommand("esnspawn",new ESNSpawnCommand(spawnManager));registerCommand("ah",auctions);registerCommand("balance",economy);registerCommand("pay",economy);
   for(String name:new String[]{"shop","crates","daily","quests","leaderboard"})registerCommand(name,gameplay);getServer().getPluginManager().registerEvents(gameplay,this);ServerMenus serverMenus=new ServerMenus(this);registerCommand("menu",serverMenus);getServer().getPluginManager().registerEvents(serverMenus,this);AdventureJournal journal=new AdventureJournal(this);registerCommand("journal",journal);getServer().getPluginManager().registerEvents(journal,this);
   HomesWarps homesWarps=new HomesWarps(this);for(String name:new String[]{"sethome","home","delhome","homes","rtp","warp","warps","setwarp","delwarp"})registerCommand(name,homesWarps);
