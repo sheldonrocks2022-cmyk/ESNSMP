@@ -23,7 +23,8 @@ public final class SpawnManager {
     private static final int HUB_RADIUS = 200;
     private static final int CLEAR_HEIGHT = 18;
     private static final int LOGO_RADIUS = 26;
-    private static final int BLOCKS_PER_TICK = 6000;
+    private static final int BLOCKS_PER_TICK = 1200;
+    private static final long BUILD_BUDGET_NANOS = 8_000_000L;
 
     private final ESNSMPPlugin plugin;
     private boolean building;
@@ -138,7 +139,7 @@ public final class SpawnManager {
         List<BlockChange> changes = prepareBuild(center);
         sender.sendMessage(ChatColor.GOLD + "Building the massive ESN SMP spawn...");
         sender.sendMessage(ChatColor.YELLOW + "Do not restart/reload the server until /esnspawn status reports building=false.");
-        sender.sendMessage(ChatColor.GRAY + "Size: " + (HUB_RADIUS * 2 + 1) + " blocks across. Changes are applied safely in batches.");
+        sender.sendMessage(ChatColor.GRAY + "Size: " + (HUB_RADIUS * 2 + 1) + " blocks across. Changes are applied with an 8ms/tick safety budget.");
 
         try {
             this.activeBackup = new BackupWriter(backupFile, world);
@@ -157,13 +158,14 @@ public final class SpawnManager {
         buildTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             try {
                 int processed = 0;
-                while (cursor[0] < changes.size() && processed < BLOCKS_PER_TICK) {
+                long tickStart = System.nanoTime();
+                while (cursor[0] < changes.size() && processed < BLOCKS_PER_TICK && System.nanoTime()-tickStart < BUILD_BUDGET_NANOS) {
                     BlockChange change = changes.get(cursor[0]++);
                     Block block = world.getBlockAt(change.x(), change.y(), change.z());
                     activeBackup.set(block, change.material());
                     processed++;
                 }
-                if((cursor[0] % 30000)<BLOCKS_PER_TICK){plugin.getConfig().set("spawn.build-processed-blocks",cursor[0]);plugin.saveConfig();}
+                if((cursor[0] % 30000)<Math.max(1,processed)){plugin.getConfig().set("spawn.build-processed-blocks",cursor[0]);plugin.saveConfig();}
 
                 if (cursor[0] >= changes.size()) {
                     finishSuccessfulBuild(sender, center, backupFile);
