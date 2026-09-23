@@ -334,9 +334,23 @@ commands:
     description: Give an ESN Mega Castle Core.
     permission: esnsmp.staff
   jail:
-    description: Open the ESN prison control menu.
-    usage: /jail [player] [cell|release]
+    description: Open the ESN prison control menu or issue a timed sentence.
+    usage: /jail [player] [cell] [30m|2h|1d|release]
     permission: esnsmp.staff
+
+  stall:
+    aliases: [marketstall, stalls]
+    description: 'Rent, stock, and browse ESN player marketplace stalls'
+    usage: '/stall <browse|rent|setprice|close>'
+  blackmarket:
+    aliases: [bm]
+    description: 'Open the rotating ESN Black Market'
+  backpack:
+    aliases: [bp]
+    description: 'Create or open an ESN backpack'
+  bunker:
+    description: 'Generate an ESN secret bunker beneath you'
+    permission: esnsmp.admin
 
   bosscodex:
     description: 'View the persistent boss codex'
