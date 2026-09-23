@@ -20,7 +20,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public final class SpawnManager {
-    private static final int HUB_RADIUS = 275;
+    private static final int HUB_RADIUS = 400;
     private static final int CLEAR_HEIGHT = 18;
     private static final int LOGO_RADIUS = 26;
     private static final int BLOCKS_PER_TICK = 1200;
@@ -105,7 +105,7 @@ public final class SpawnManager {
             return false;
         }
 
-        double radius = plugin.getConfig().getDouble("spawn.protection-radius", 1000.0);
+        double radius = Math.max(2000.0, plugin.getConfig().getDouble("spawn.protection-radius", 2000.0));
         double dx = location.getX() - spawn.getX();
         double dz = location.getZ() - spawn.getZ();
         return (dx * dx) + (dz * dz) <= radius * radius;
@@ -293,8 +293,8 @@ public final class SpawnManager {
 
     private void addGrandPrison(List<BlockChange> c,int cx,int cy,int cz){
         // Highly visible maximum-security prison in the south-east district, connected to spawn by a lit road.
-        int x1=cx+120,x2=cx+190,z1=cz+105,z2=cz+185;
-        for(int x=cx+8;x<=cx+120;x++)for(int z=cz+3;z<=cz+7;z++)c.add(new BlockChange(x,cy,z,Material.POLISHED_DEEPSLATE));
+        int x1=cx+235,x2=cx+305,z1=cz+210,z2=cz+290;
+        for(int x=cx+12;x<=cx+235;x++)for(int z=cz+5;z<=cz+11;z++)c.add(new BlockChange(x,cy,z,Material.POLISHED_DEEPSLATE));
         for(int x=x1;x<=x2;x++)for(int z=z1;z<=z2;z++)for(int y=cy-3;y<=cy+24;y++){
             boolean shell=x==x1||x==x2||z==z1||z==z2||y==cy-3||y==cy+24;
             if(shell)c.add(new BlockChange(x,y,z,Material.REINFORCED_DEEPSLATE));
@@ -304,10 +304,10 @@ public final class SpawnManager {
             for(int dx=-4;dx<=4;dx++)for(int dz=-4;dz<=4;dz++)for(int y=cy;y<=cy+34;y++)
                 if(Math.abs(dx)==4||Math.abs(dz)==4||y==cy+34)c.add(new BlockChange(t[0]+dx,y,t[1]+dz,Material.DEEPSLATE_BRICKS));
         // Grand barred entrance and PRISON sign frame.
-        for(int x=cx+145;x<=cx+165;x++)for(int y=cy+1;y<=cy+14;y++)if(x==cx+145||x==cx+165||y>=cy+12)c.add(new BlockChange(x,y,z1,Material.POLISHED_BLACKSTONE_BRICKS));
-        for(int x=cx+151;x<=cx+159;x++)for(int y=cy+1;y<=cy+9;y++)c.add(new BlockChange(x,y,z1,Material.IRON_BARS));
+        for(int x=cx+260;x<=cx+280;x++)for(int y=cy+1;y<=cy+14;y++)if(x==cx+260||x==cx+280||y>=cy+12)c.add(new BlockChange(x,y,z1,Material.POLISHED_BLACKSTONE_BRICKS));
+        for(int x=cx+266;x<=cx+274;x++)for(int y=cy+1;y<=cy+9;y++)c.add(new BlockChange(x,y,z1,Material.IRON_BARS));
         // Central cell block with 12 fully enclosed cells and a guarded corridor.
-        for(int n=0;n<12;n++){int bx=cx+137+(n%4)*12,bz=cz+125+(n/4)*17;
+        for(int n=0;n<12;n++){int bx=cx+252+(n%4)*12,bz=cz+230+(n/4)*17;
             for(int x=bx-5;x<=bx+5;x++)for(int z=bz-6;z<=bz+6;z++)for(int y=cy;y<=cy+7;y++){
                 boolean wall=x==bx-5||x==bx+5||z==bz-6||z==bz+6||y==cy||y==cy+7;
                 c.add(new BlockChange(x,y,z,wall?Material.REINFORCED_DEEPSLATE:Material.AIR));
@@ -323,7 +323,7 @@ public final class SpawnManager {
         for(int x=x1+4;x<=x2-4;x+=6)for(int z=z1+4;z<=z2-4;z+=6)c.add(new BlockChange(x,cy+1,z,Material.TORCH));
         for(int x=x1+3;x<=x2-3;x+=8){c.add(new BlockChange(x,cy+1,z1+2,Material.TORCH));c.add(new BlockChange(x,cy+1,z2-2,Material.TORCH));}
         for(int z=z1+3;z<=z2-3;z+=8){c.add(new BlockChange(x1+2,cy+1,z,Material.TORCH));c.add(new BlockChange(x2-2,cy+1,z,Material.TORCH));}
-        for(int n=0;n<12;n++){int bx=cx+137+(n%4)*12,bz=cz+125+(n/4)*17;c.add(new BlockChange(bx,cy+1,bz,Material.TORCH));c.add(new BlockChange(bx+3,cy+1,bz+3,Material.TORCH));c.add(new BlockChange(bx-3,cy+1,bz+3,Material.TORCH));}
+        for(int n=0;n<12;n++){int bx=cx+252+(n%4)*12,bz=cz+230+(n/4)*17;c.add(new BlockChange(bx,cy+1,bz,Material.TORCH));c.add(new BlockChange(bx+3,cy+1,bz+3,Material.TORCH));c.add(new BlockChange(bx-3,cy+1,bz+3,Material.TORCH));}
         c.add(new BlockChange(cx+155,cy+25,cz+145,Material.BEACON));
     }
 
@@ -582,7 +582,7 @@ public final class SpawnManager {
 
             plugin.getConfig().set("spawn.generated", true);
             plugin.getConfig().set("spawn.build-incomplete", false);
-            plugin.getConfig().set("spawn.design-version", 6);
+            plugin.getConfig().set("spawn.design-version", 7);
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
             plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) {
