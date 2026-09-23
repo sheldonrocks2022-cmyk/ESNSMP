@@ -20,7 +20,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public final class SpawnManager {
-    private static final int HUB_RADIUS = 200;
+    private static final int HUB_RADIUS = 275;
     private static final int CLEAR_HEIGHT = 18;
     private static final int LOGO_RADIUS = 26;
     private static final int BLOCKS_PER_TICK = 1200;
@@ -259,7 +259,7 @@ public final class SpawnManager {
         addRoadLighting(changes, cx, cy, cz);
         addServiceStations(changes, cx, cy, cz);
         addServiceDistrict(changes, cx, cy, cz);
-        addFloatingIslandAndWaterfall(changes, cx, cy, cz); addGrandPrison(changes,cx,cy,cz);
+        addFloatingIslandAndWaterfall(changes, cx, cy, cz); addGrandPrison(changes,cx,cy,cz); addMarketplaceStalls(changes,cx,cy,cz);
 
         // Exact player landing spot: keep the configured feet position clear.
         for (int dx = -1; dx <= 1; dx++) {
@@ -272,6 +272,23 @@ public final class SpawnManager {
         }
 
         return changes;
+    }
+
+    private void addMarketplaceStalls(List<BlockChange> c,int cx,int cy,int cz){
+        // Dedicated marketplace district: 16 physical rentable stalls, safely off the jail road.
+        for(int x=cx-190;x<=cx-65;x++)for(int z=cz+70;z<=cz+150;z++)c.add(new BlockChange(x,cy-1,z,Material.SMOOTH_STONE));
+        for(int x=cx-190;x<=cx-65;x++)for(int z=cz+70;z<=cz+150;z++)if((x+z)%9==0)c.add(new BlockChange(x,cy-1,z,Material.POLISHED_ANDESITE));
+        for(int x=cx-190;x<=cx-65;x++)for(int z=cz+106;z<=cz+112;z++)c.add(new BlockChange(x,cy-1,z,Material.STONE_BRICKS));
+        for(int row=0;row<4;row++)for(int col=0;col<4;col++){
+            int sx=cx-178+col*32,sz=cz+82+row*20;
+            for(int dx=-6;dx<=6;dx++)for(int dz=-5;dz<=5;dz++)c.add(new BlockChange(sx+dx,cy-1,sz+dz,Material.DEEPSLATE_TILES));
+            for(int dx=-6;dx<=6;dx++)for(int dz=-5;dz<=5;dz++)if(Math.abs(dx)==6||Math.abs(dz)==5)c.add(new BlockChange(sx+dx,cy,sz+dz,Material.STONE_BRICKS));
+            for(int dx:new int[]{-6,6})for(int dz:new int[]{-5,5})for(int y=1;y<=5;y++)c.add(new BlockChange(sx+dx,cy+y,sz+dz,Material.DARK_OAK_LOG));
+            for(int dx=-6;dx<=6;dx++)for(int dz=-5;dz<=5;dz++)c.add(new BlockChange(sx+dx,cy+6,sz+dz,Material.WHITE_WOOL));
+            c.add(new BlockChange(sx,cy,sz,Material.BARREL));
+            c.add(new BlockChange(sx,cy+1,sz-4,Material.LECTERN));
+            c.add(new BlockChange(sx-5,cy+5,sz,Material.LANTERN));c.add(new BlockChange(sx+5,cy+5,sz,Material.LANTERN));
+        }
     }
 
     private void addGrandPrison(List<BlockChange> c,int cx,int cy,int cz){
@@ -565,7 +582,7 @@ public final class SpawnManager {
 
             plugin.getConfig().set("spawn.generated", true);
             plugin.getConfig().set("spawn.build-incomplete", false);
-            plugin.getConfig().set("spawn.design-version", 5);
+            plugin.getConfig().set("spawn.design-version", 6);
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
             plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) {
