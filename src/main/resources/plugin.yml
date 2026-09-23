@@ -181,6 +181,9 @@ commands:
     usage: /claim <pos1|pos2|create|remove|trust|untrust|info>
     permission: esnsmp.claim
 
+  tpmenu:
+    aliases: [teleportmenu, tpagui]
+    description: 'Open the ESN teleport request menu'
   tpa:
     description: 'Request teleport to a player'
     usage: '/tpa <player>'
