@@ -5,16 +5,22 @@ ESN SMP is a large all-in-one **Paper 1.21.x** survival/RPG server plugin built 
 > **Current server plugin version:** 2.4.5  
 > **Java:** 21  
 > **Paper API used by the build:** 1.21.4  
-> **Latest verified build:** GitHub Actions Build #440 — PASS  
-> **Verified commit:** `ca9a94dadae821c76e58936de429046d8375bd32`
+> **Latest verified build:** GitHub Actions Build #458 — PASS  
+> **Verified commit:** `c29f56b31cf17da7ea7e1a5762fe55b15b8a1e67`
 
 ## Download the current JAR
 
-The latest verified JAR is produced by the repository's **Build ESNSMP** GitHub Actions workflow. Open the latest successful workflow run and download the **ESNSMP** artifact. The artifact contains the shaded `ESNSMP.jar`.
+**Current production JAR: ESNSMP Main Build #458**
+
+[Download ESNSMP Main Build #458](https://github.com/sheldonrocks2022-cmyk/ESNSMP/actions/runs/35801465372)
+
+Build #458 was produced from **main** at commit `c29f56b31cf17da7ea7e1a5762fe55b15b8a1e67` and completed successfully. Open the workflow run above and download the **ESNSMP** artifact; it contains the current shaded `ESNSMP.jar`.
+
+Artifact SHA-256: `304285669eddd9e6d084336bc9aac68b7780485e4463f06f9a4ef7039085dd07`
 
 The JAR includes SQLite JDBC, so no separate SQLite plugin is required.
 
-**Do not use a failed/in-progress workflow artifact as a production build.** Build #440 is the currently verified successful build at the time this README was updated.
+**Replace older ESNSMP JARs with Build #458 and keep only one ESNSMP JAR in the server's plugins folder before a full restart.**
 
 ## Requirements
 
