@@ -5,8 +5,8 @@ ESN SMP is a large all-in-one **Paper 1.21.x** survival/RPG server plugin built 
 > **Current server plugin version:** 2.4.5  
 > **Java:** 21  
 > **Paper API used by the build:** 1.21.4  
-> **Latest verified build:** GitHub Actions Build #456 — PASS  
-> **Verified commit:** `c6d77a16f19e7d589a1b3d8d17db049835180e88`
+> **Latest verified build:** GitHub Actions Build #440 — PASS  
+> **Verified commit:** `ca9a94dadae821c76e58936de429046d8375bd32`
 
 ## Download the current JAR
 
@@ -14,7 +14,7 @@ The latest verified JAR is produced by the repository's **Build ESNSMP** GitHub 
 
 The JAR includes SQLite JDBC, so no separate SQLite plugin is required.
 
-**Do not use a failed/in-progress workflow artifact as a production build.** Build #456 is the current verified production JAR. Use this build instead of older ESNSMP JARs.
+**Do not use a failed/in-progress workflow artifact as a production build.** Build #440 is the currently verified successful build at the time this README was updated.
 
 ## Requirements
 
@@ -54,7 +54,7 @@ Staff can start a server-wide Championship with `/championship start`.
 - The arena uses a polished-deepslate floor, iron-bar perimeter and torch lighting.
 - Creature spawning is blocked around the arena.
 
-> Championship elimination and automatic last-player victory are active in the current verified build. Deaths, forfeits and active-fighter disconnects are handled by the tournament system.
+> Championship tournament advancement/winner persistence is still being expanded. The current source contains the arena, mandatory entry, staging, forfeiting, staff controls and solo automatic-win behavior.
 
 ## Realm progression — 1 to 100
 
@@ -229,29 +229,6 @@ Systems include:
 - Fishing events.
 - Chaos modifiers.
 - KOTH.
-
-## Season systems
-
-The current verified Season Pass includes easier progression and custom magical rewards:
-
-- Season tiers require **250 Season XP** each.
-- Boss kills award **750 Season XP**.
-- Regular mob kills, ores, logs and weekly contracts can award Season XP.
-- Tier 1 includes **Angel Wings**.
-- Tier 25 includes the **Inferno Scepter**.
-- Tier 40 includes the **Storm Crystal**.
-- Tier 60 includes **Tideheart**, with permanent Regeneration when activated.
-- Tier 75 includes the **Void Relic**.
-- Tier 90 includes the **Celestial Star**, with permanent Strength III and Resistance II when activated.
-- Major coin milestones include **50,000 / 100,000 / 200,000 / 400,000 ESN Coins** at tiers 25 / 50 / 75 / 100.
-
-## World Boss
-
-- World Boss physical health is capped at Minecraft-safe **1,000 HP**.
-- ESNSMP's virtual-health system handles the extended encounter health.
-- The World Boss now has **40 stages**.
-- Boss bars display the current stage as **Stage X/40**.
-- Stage transitions restore virtual health and trigger combat abilities.
 
 ## Season systems
 

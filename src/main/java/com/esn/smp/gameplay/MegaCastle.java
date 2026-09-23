@@ -1,71 +1,17 @@
 package com.esn.smp.gameplay;
 
-import org.bukkit.*;
-import org.bukkit.block.Block;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-import org.bukkit.event.*;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import java.util.*;
-
-public final class MegaCastle implements Listener, CommandExecutor {
- private final JavaPlugin plugin; private final NamespacedKey key; private boolean building=false;
- public MegaCastle(JavaPlugin plugin){this.plugin=plugin;this.key=new NamespacedKey(plugin,"mega_castle_core");}
- public boolean onCommand(CommandSender s,Command c,String l,String[] a){
-  if(!(s instanceof Player p)){s.sendMessage("Players only.");return true;}
-  if(!p.hasPermission("esnsmp.staff")){p.sendMessage(ChatColor.RED+"Staff only.");return true;}
-  ItemStack core=new ItemStack(Material.LODESTONE);ItemMeta m=core.getItemMeta();m.setDisplayName(ChatColor.GOLD+""+ChatColor.BOLD+"ESN MEGA CASTLE CORE");
-  m.setLore(List.of(ChatColor.GRAY+"Place to construct the ESN Mega Castle.",ChatColor.RED+"WARNING: clears the entire 230x230 build zone.",ChatColor.YELLOW+"Terrain and structures in the path are removed.",ChatColor.YELLOW+"One castle may build at a time."));
-  m.getPersistentDataContainer().set(key,PersistentDataType.BYTE,(byte)1);core.setItemMeta(m);p.getInventory().addItem(core);p.sendMessage(ChatColor.GOLD+"Castle Core granted. Place it on open terrain.");return true;
- }
- @EventHandler public void place(BlockPlaceEvent e){
-  ItemMeta m=e.getItemInHand().getItemMeta();if(m==null||!m.getPersistentDataContainer().has(key,PersistentDataType.BYTE))return;
-  Player p=e.getPlayer();if(!p.hasPermission("esnsmp.staff")){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Staff only.");return;}
-  if(building){e.setCancelled(true);p.sendMessage(ChatColor.RED+"A castle build is already running.");return;}
-  Location o=e.getBlockPlaced().getLocation();if(o.getBlockY()<20||o.getBlockY()>240){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Unsafe build height.");return;}
-  building=true;p.sendMessage(ChatColor.RED+"Clearing the 230x230 castle build zone first...");
-  build(o.clone().add(0,-1,0),p);
- }
- private record Change(int x,int y,int z,Material m){}
- private void build(Location o,Player owner){
-  List<Change> q=new ArrayList<>(); int R=115;
-  // Clear the full castle volume first so terrain, trees and existing structures cannot obstruct construction.
-  // This is deliberately queued and rate-limited with the rest of the build to protect server tick health.
-  for(int x=-R;x<R;x++)for(int z=-R;z<R;z++)for(int y=-8;y<=40;y++)q.add(new Change(x,y,z,Material.AIR));
-  // Foundation/courtyard.
-  for(int x=-R;x<=R;x++)for(int z=-R;z<=R;z++) if(Math.abs(x)==R||Math.abs(z)==R) for(int y=1;y<=10;y++)q.add(new Change(x,y,z,Material.DEEPSLATE_BRICKS));
-  for(int x=-R+1;x<R;x++)for(int z=-R+1;z<R;z++)if((x+z)%3==0)q.add(new Change(x,0,z,Material.STONE_BRICKS));
-  // Four defensive towers.
-  int[][] towers={{-105,-105},{105,-105},{-105,105},{105,105}};
-  for(int[] t:towers) cylinder(q,t[0],t[1],10,0,28,Material.DEEPSLATE_BRICKS);
-  // Central keep, 61x51, four floors.
-  shell(q,-30,30,-25,25,1,34,Material.STONE_BRICKS);
-  for(int y:new int[]{1,9,17,25})for(int x=-29;x<=29;x++)for(int z=-24;z<=24;z++)q.add(new Change(x,y,z,Material.SMOOTH_STONE));
-  // Great entrance.
-  for(int x=-5;x<=5;x++)for(int y=1;y<=9;y++)q.add(new Change(x,y,-25,Material.AIR));
-  // Throne hall.
-  for(int z=-12;z<=10;z++)for(int x=-12;x<=12;x++)q.add(new Change(x,2,z,Material.POLISHED_BLACKSTONE));
-  q.add(new Change(0,3,9,Material.GOLD_BLOCK));q.add(new Change(0,4,9,Material.RED_WOOL));
-  // Massive storage hall: 120 double-chest positions.
-  for(int z=-19;z<=19;z+=4)for(int x=-25;x<=25;x+=5){q.add(new Change(x,3,z,Material.CHEST));q.add(new Change(x,4,z,Material.CHEST));}
-  // Arena on east side: 45x45 bowl with spectator ring.
-  for(int x=35;x<=67;x++)for(int z=-22;z<=22;z++){if(Math.abs(x-51)>=15||Math.abs(z)>=20)q.add(new Change(x,1,z,Material.STONE_BRICKS));else q.add(new Change(x,1,z,Material.SAND));}
-  for(int x=34;x<=68;x++)for(int z=-23;z<=23;z++)if(x==34||x==68||z==-23||z==23)for(int y=2;y<=8;y++)q.add(new Change(x,y,z,Material.DEEPSLATE_BRICKS));
-  // West wing: forge/enchant/brewing.
-  for(int x=-67;x<=-36;x++)for(int z=-22;z<=22;z++)q.add(new Change(x,1,z,Material.POLISHED_ANDESITE));
-  for(int z=-18;z<=18;z+=6){q.add(new Change(-60,2,z,Material.ANVIL));q.add(new Change(-54,2,z,Material.SMITHING_TABLE));q.add(new Change(-48,2,z,Material.ENCHANTING_TABLE));q.add(new Change(-42,2,z,Material.BREWING_STAND));}
-  // Underground vault.
-  shell(q,-24,24,-18,18,-8,-1,Material.REINFORCED_DEEPSLATE);
-  for(int x=-20;x<=20;x+=4)for(int z=-14;z<=14;z+=4)q.add(new Change(x,-6,z,Material.BARREL));
-  // Lighting.
-  for(int x=-100;x<=100;x+=12)for(int z=-100;z<=100;z+=12)q.add(new Change(x,2,z,Material.SEA_LANTERN));
-  final int total=q.size(); new BukkitRunnable(){int i=0;public void run(){try{int budget=1800;while(budget-->0&&i<total){Change c=q.get(i++);Block b=o.clone().add(c.x,c.y,c.z).getBlock();b.setType(c.m,false);}if(i%18000<1800)owner.sendMessage(ChatColor.YELLOW+"Castle clearing/building: "+(i*100/total)+"%");if(i>=total){building=false;owner.sendMessage(ChatColor.GREEN+"ESN Mega Castle construction complete.");cancel();}}catch(Exception ex){building=false;plugin.getLogger().severe("Castle build stopped safely: "+ex.getMessage());owner.sendMessage(ChatColor.RED+"Castle build stopped safely. Check console.");cancel();}}}.runTaskTimer(plugin,1L,1L);
- }
- private void shell(List<Change> q,int x1,int x2,int z1,int z2,int y1,int y2,Material m){for(int y=y1;y<=y2;y++)for(int x=x1;x<=x2;x++)for(int z=z1;z<=z2;z++)if(y==y1||y==y2||x==x1||x==x2||z==z1||z==z2)q.add(new Change(x,y,z,m));}
- private void cylinder(List<Change> q,int cx,int cz,int r,int y1,int y2,Material m){for(int y=y1;y<=y2;y++)for(int x=-r;x<=r;x++)for(int z=-r;z<=r;z++){double d=Math.sqrt(x*x+z*z);if(d>=r-1&&d<=r+.5)q.add(new Change(cx+x,y,cz+z,m));}}
+import org.bukkit.*;import org.bukkit.block.Block;import org.bukkit.command.*;import org.bukkit.entity.Player;import org.bukkit.event.*;import org.bukkit.event.block.BlockPlaceEvent;import org.bukkit.inventory.ItemStack;import org.bukkit.inventory.meta.ItemMeta;import org.bukkit.persistence.PersistentDataType;import org.bukkit.plugin.java.JavaPlugin;import org.bukkit.scheduler.BukkitRunnable;import java.util.*;
+public final class MegaCastle implements Listener,CommandExecutor{
+ private final JavaPlugin plugin;private final NamespacedKey key;private boolean building=false;public MegaCastle(JavaPlugin plugin){this.plugin=plugin;key=new NamespacedKey(plugin,"mega_castle_core");}
+ public boolean onCommand(CommandSender s,Command c,String l,String[]a){if(!(s instanceof Player p)){s.sendMessage("Players only.");return true;}if(!p.hasPermission("esnsmp.staff")){p.sendMessage(ChatColor.RED+"Staff only.");return true;}ItemStack core=new ItemStack(Material.LODESTONE);ItemMeta m=core.getItemMeta();m.setDisplayName(ChatColor.GOLD+""+ChatColor.BOLD+"ESN MEGA CASTLE CORE");m.setLore(List.of(ChatColor.GRAY+"Builds the fully furnished ESN Citadel.",ChatColor.RED+"WARNING: clears the entire 230x230 build zone.",ChatColor.YELLOW+"Terrain and structures in its path are removed.",ChatColor.YELLOW+"One castle may build at a time."));m.getPersistentDataContainer().set(key,PersistentDataType.BYTE,(byte)1);core.setItemMeta(m);p.getInventory().addItem(core);p.sendMessage(ChatColor.GOLD+"Citadel Core granted. Place it on open terrain.");return true;}
+ @EventHandler public void place(BlockPlaceEvent e){ItemMeta m=e.getItemInHand().getItemMeta();if(m==null||!m.getPersistentDataContainer().has(key,PersistentDataType.BYTE))return;Player p=e.getPlayer();if(!p.hasPermission("esnsmp.staff")){e.setCancelled(true);return;}if(building){e.setCancelled(true);p.sendMessage(ChatColor.RED+"A castle build is already running.");return;}Location o=e.getBlockPlaced().getLocation();if(o.getBlockY()<20||o.getBlockY()>170){e.setCancelled(true);p.sendMessage(ChatColor.RED+"Unsafe build height.");return;}building=true;build(o.clone().add(0,-1,0),p);}
+ private record Change(int x,int y,int z,Material m){}private void add(List<Change>q,int x,int y,int z,Material m){q.add(new Change(x,y,z,m));}private void fill(List<Change>q,int x1,int x2,int y1,int y2,int z1,int z2,Material m){for(int x=x1;x<=x2;x++)for(int y=y1;y<=y2;y++)for(int z=z1;z<=z2;z++)add(q,x,y,z,m);}private void floor(List<Change>q,int x1,int x2,int y,int z1,int z2,Material m){fill(q,x1,x2,y,y,z1,z2,m);}private void shell(List<Change>q,int x1,int x2,int z1,int z2,int y1,int y2,Material m){for(int y=y1;y<=y2;y++)for(int x=x1;x<=x2;x++)for(int z=z1;z<=z2;z++)if(y==y1||y==y2||x==x1||x==x2||z==z1||z==z2)add(q,x,y,z,m);}private void room(List<Change>q,int x1,int x2,int z1,int z2,int y,Material wall,Material fl){floor(q,x1,x2,y,z1,z2,fl);for(int h=1;h<=6;h++){for(int x=x1;x<=x2;x++){add(q,x,y+h,z1,wall);add(q,x,y+h,z2,wall);}for(int z=z1;z<=z2;z++){add(q,x1,y+h,z,wall);add(q,x2,y+h,z,wall);}}floor(q,x1,x2,y+7,z1,z2,Material.DARK_OAK_PLANKS);for(int h=1;h<=3;h++){add(q,(x1+x2)/2,y+h,z1,Material.AIR);add(q,(x1+x2)/2,y+h,z2,Material.AIR);}}
+ private void cylinder(List<Change>q,int cx,int cz,int r,int y1,int y2,Material m){for(int y=y1;y<=y2;y++)for(int x=-r;x<=r;x++)for(int z=-r;z<=r;z++){double d=Math.sqrt(x*x+z*z);if(d>=r-1&&d<=r+.5)add(q,cx+x,y,cz+z,m);}}private void roof(List<Change>q,int cx,int cz,int rx,int rz,int y){int max=Math.min(rx,rz);for(int n=0;n<=max;n++){int x1=cx-rx+n,x2=cx+rx-n,z1=cz-rz+n,z2=cz+rz-n,yy=y+n/2;Material rm=n%4<2?Material.DEEPSLATE_TILES:Material.DARK_OAK_PLANKS;for(int x=x1;x<=x2;x++){add(q,x,yy,z1,rm);add(q,x,yy,z2,rm);}for(int z=z1;z<=z2;z++){add(q,x1,yy,z,rm);add(q,x2,yy,z,rm);}}}private void tower(List<Change>q,int cx,int cz,int r,int y1,int y2){cylinder(q,cx,cz,r,y1,y2,Material.STONE_BRICKS);for(int y=y1+5;y<y2;y+=7)floor(q,cx-r+1,cx+r-1,y,cz-r+1,cz+r-1,Material.DARK_OAK_PLANKS);roof(q,cx,cz,r+3,r+3,y2+2);}private void spire(List<Change>q,int cx,int cz,int r,int y){for(int layer=0;layer<=r;layer++){int rr=Math.max(0,r-layer);for(int x=-rr;x<=rr;x++)for(int z=-rr;z<=rr;z++)if(Math.abs(x)==rr||Math.abs(z)==rr)add(q,cx+x,y+layer,cz+z,Material.DARK_OAK_PLANKS);}}
+ private boolean occupiedWard(int x,int z){return(Math.abs(x)<=58&&Math.abs(z)<=58)||(x>=48&&z>=-48&&z<=48)||(x<=-48&&z>=-38&&z<=38)||(x<=-55&&z>=48)||(x>=48&&z>=48)||(z<=-44&&Math.abs(x)<=22)||(Math.abs(x)<=12)||(Math.abs(z)<=12);}
+ private void tree(List<Change>q,int x,int y,int z){fill(q,x,x,y,y+5,z,z,Material.SPRUCE_LOG);for(int yy=y+3;yy<=y+7;yy++)for(int dx=-3;dx<=3;dx++)for(int dz=-3;dz<=3;dz++)if(Math.abs(dx)+Math.abs(dz)<=5-(yy-y-3)/2)add(q,x+dx,yy,z+dz,Material.SPRUCE_LEAVES);}
+ private void build(Location o,Player owner){List<Change>q=new ArrayList<>();int R=115;for(int x=-R;x<=R;x++)for(int z=-R;z<=R;z++)for(int y=-8;y<=75;y++)add(q,x,y,z,Material.AIR);fill(q,-115,115,-3,-1,-115,115,Material.DEEPSLATE_BRICKS);floor(q,-115,115,0,-115,115,Material.STONE_BRICKS);for(int y=1;y<=15;y++){for(int x=-115;x<=115;x++){add(q,x,y,-115,Material.DEEPSLATE_BRICKS);add(q,x,y,115,Material.DEEPSLATE_BRICKS);}for(int z=-114;z<=114;z++){add(q,-115,y,z,Material.DEEPSLATE_BRICKS);add(q,115,y,z,Material.DEEPSLATE_BRICKS);}}int[][]ts={{-104,-104},{104,-104},{-104,104},{104,104},{-55,-104},{55,-104},{-55,104},{55,104}};for(int[]t:ts){tower(q,t[0],t[1],9,0,30);spire(q,t[0],t[1],8,32);}fill(q,-15,15,1,22,-114,-104,Material.STONE_BRICKS);fill(q,-6,6,1,10,-115,-103,Material.AIR);for(int x=-6;x<=6;x+=2)fill(q,x,x,1,9,-104,-104,Material.IRON_BARS);
+ shell(q,-52,52,-50,50,1,40,Material.STONE_BRICKS);for(int y:new int[]{1,10,19,28,37})floor(q,-51,51,y,-49,49,Material.DARK_OAK_PLANKS);for(int[]t:new int[][]{{-48,-46},{48,-46},{-48,46},{48,46},{0,-46},{0,46}}){tower(q,t[0],t[1],7,1,46);spire(q,t[0],t[1],7,48);}roof(q,0,0,54,52,42);floor(q,-22,22,2,-28,10,Material.POLISHED_BLACKSTONE);fill(q,-2,2,3,3,-26,15,Material.RED_CARPET);floor(q,-7,7,3,13,20,Material.POLISHED_DEEPSLATE);add(q,0,4,18,Material.GOLD_BLOCK);add(q,0,5,18,Material.RED_WOOL);
+ room(q,-94,-55,-30,30,1,Material.DEEPSLATE_BRICKS,Material.POLISHED_ANDESITE);for(int z=-24;z<=24;z+=6){add(q,-88,2,z,Material.BLAST_FURNACE);add(q,-80,2,z,Material.ANVIL);add(q,-72,2,z,Material.SMITHING_TABLE);}floor(q,55,99,1,-34,34,Material.SMOOTH_SANDSTONE);room(q,-100,-60,55,100,1,Material.STONE_BRICKS,Material.SMOOTH_STONE);room(q,55,100,55,100,1,Material.STONE_BRICKS,Material.MOSS_BLOCK);fill(q,75,80,2,2,75,80,Material.WATER);shell(q,-38,38,-34,34,-8,-1,Material.REINFORCED_DEEPSLATE);floor(q,-37,37,-7,-33,33,Material.DEEPSLATE_TILES);for(int x=-34;x<=-4;x+=10){room(q,x,x+7,-30,-18,-7,Material.DEEPSLATE_BRICKS,Material.DEEPSLATE_TILES);fill(q,x+2,x+5,-6,-3,-18,-18,Material.IRON_BARS);}room(q,5,34,-30,-5,-7,Material.REINFORCED_DEEPSLATE,Material.GOLD_BLOCK);
+ for(int x=-92;x<=92;x+=16)for(int z=-92;z<=92;z+=18)if((Math.abs(x)>45||Math.abs(z)>45)&&!occupiedWard(x,z))tree(q,x,2,z);floor(q,-8,8,1,-104,-39,Material.POLISHED_ANDESITE);floor(q,-8,8,1,39,104,Material.POLISHED_ANDESITE);floor(q,-104,-41,1,-5,5,Material.POLISHED_ANDESITE);floor(q,41,104,1,-5,5,Material.POLISHED_ANDESITE);for(int[]t:new int[][]{{-18,-108},{18,-108},{-18,108},{18,108}}){tower(q,t[0],t[1],7,1,28);spire(q,t[0],t[1],7,30);}room(q,-108,-70,-92,-48,1,Material.STONE_BRICKS,Material.SPRUCE_PLANKS);room(q,70,108,-92,-48,1,Material.STONE_BRICKS,Material.STONE_BRICKS);for(int[]b:new int[][]{{-108,-76,42,70},{76,108,42,70},{-108,-76,74,106},{76,108,74,106}}){shell(q,b[0],b[1],b[2],b[3],1,14,Material.STONE_BRICKS);floor(q,b[0]+1,b[1]-1,1,b[2]+1,b[3]-1,Material.OAK_PLANKS);roof(q,(b[0]+b[1])/2,(b[2]+b[3])/2,(b[1]-b[0])/2+1,(b[3]-b[2])/2+1,15);}fill(q,-115,115,-3,-1,-115,115,Material.DEEPSLATE_BRICKS);floor(q,-115,115,0,-115,115,Material.STONE_BRICKS);fill(q,-6,6,1,10,-115,-103,Material.AIR);for(int x=-6;x<=6;x+=2)fill(q,x,x,1,9,-104,-104,Material.IRON_BARS);
+ final int total=q.size();new BukkitRunnable(){int i=0,last=-1;public void run(){try{int budget=1200;while(budget-->0&&i<total){Change c=q.get(i++);if(!c.m.isBlock())continue;Block b=o.clone().add(c.x,c.y,c.z).getBlock();b.setType(c.m,false);}int pct=i*100/total;if(pct/10!=last/10){last=pct;owner.sendMessage(ChatColor.YELLOW+"Citadel construction: "+pct+"%");}if(i>=total){building=false;plugin.getConfig().set("castle.world",o.getWorld().getName());plugin.getConfig().set("castle.x",o.getX());plugin.getConfig().set("castle.y",o.getY());plugin.getConfig().set("castle.z",o.getZ());plugin.getConfig().set("castle.generated",true);plugin.saveConfig();owner.sendMessage(ChatColor.GREEN+"ESN Mega Castle Citadel complete. Castle services are now online.");cancel();}}catch(Exception ex){building=false;plugin.getLogger().severe("Castle build stopped safely: "+ex.getMessage());cancel();}}}.runTaskTimer(plugin,1L,1L);}
 }

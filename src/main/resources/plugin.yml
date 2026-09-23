@@ -1,11 +1,29 @@
 name: ESNSMP
-version: '2.4.2'
+version: '2.4.5'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
 description: ESN SMP core, massive spawn, economy and auction house
 
 commands:
+  championship:
+    aliases: [champ]
+    description: 'Staff-activated ESN Server Championship'
+    usage: '/championship <start|forfeit|status|cancel>'
+  realm:
+    description: 'View or advance Realm 1-100 progression'
+    usage: '/realm [advance]'
+  story:
+    aliases: [storyquest, npcquest]
+    description: 'View and advance the ESN NPC story questline'
+  discoveries:
+    aliases: [discovery]
+    description: 'View Journal world discoveries'
+  guildhq:
+    description: 'View or create your Guild Headquarters'
+    usage: '/guildhq [create <name>]'
+  titlemenu:
+    description: 'View unlockable ESN player titles'
   spawn:
     description: Teleport to ESN SMP spawn.
     permission: esnsmp.spawn
@@ -34,6 +52,34 @@ commands:
     description: 'Open ESN SMP menu'
   shop:
     description: 'Open ESN server shop'
+  journal:
+    aliases: [adventurejournal]
+    description: 'Open your ESN Adventure Journal'
+  msg:
+    aliases: [tell, whisper, w, pm]
+    description: 'Send a private message'
+    usage: '/msg <player> <message>'
+  reply:
+    aliases: [r]
+    description: 'Reply to your latest private message'
+    usage: '/reply <message>'
+  staffchat:
+    aliases: [sc]
+    description: 'Toggle or send ESN staff chat'
+    usage: '/staffchat [message]'
+    permission: esnsmp.staff
+  globalchat:
+    aliases: [gc]
+    description: 'Switch to global chat'
+  localchat:
+    aliases: [lc]
+    description: 'Switch to local chat'
+  chattoggle:
+    aliases: [chat]
+    description: 'Toggle receiving public chat'
+  chatmenu:
+    aliases: [chatsettings]
+    description: 'Open the ESN chat settings menu'
   crates:
     description: 'Open ESN loot crates'
   daily:
@@ -82,6 +128,9 @@ commands:
   team:
     description: 'Manage ESN teams'
     usage: '/team <create|join|leave|info>'
+  outlaws:
+    aliases: [outlaw]
+    description: 'View active ESN outlaws and hunter rewards'
   bounty:
     description: 'View or place player bounties'
     usage: '/bounty [player] [coins]'
@@ -284,6 +333,10 @@ commands:
   castlecore:
     description: Give an ESN Mega Castle Core.
     permission: esnsmp.staff
+  jail:
+    description: Open the ESN prison control menu.
+    usage: /jail [player] [cell|release]
+    permission: esnsmp.staff
 
   bosscodex:
     description: 'View the persistent boss codex'
@@ -366,3 +419,7 @@ permissions:
     default: op
   esnsmp.staff:
     default: op
+  esnsmp.chat.color:
+    default: op
+  esnsmp.chat.mention:
+    default: true

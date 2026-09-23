@@ -20,15 +20,18 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public final class SpawnManager {
-    private static final int HUB_RADIUS = 120;
-    private static final int CLEAR_HEIGHT = 10;
+    private static final int HUB_RADIUS = 200;
+    private static final int CLEAR_HEIGHT = 18;
     private static final int LOGO_RADIUS = 26;
-    private static final int BLOCKS_PER_TICK = 2400;
+    private static final int BLOCKS_PER_TICK = 1200;
+    private static final long BUILD_BUDGET_NANOS = 8_000_000L;
 
     private final ESNSMPPlugin plugin;
     private boolean building;
     private BukkitTask buildTask;
     private BackupWriter activeBackup;
+    private HubServiceListener hubServices;
+    public void setHubServices(HubServiceListener h){this.hubServices=h;}
 
     public SpawnManager(ESNSMPPlugin plugin) {
         this.plugin = plugin;
@@ -102,7 +105,7 @@ public final class SpawnManager {
             return false;
         }
 
-        double radius = plugin.getConfig().getDouble("spawn.protection-radius", 100.0);
+        double radius = plugin.getConfig().getDouble("spawn.protection-radius", 1000.0);
         double dx = location.getX() - spawn.getX();
         double dz = location.getZ() - spawn.getZ();
         return (dx * dx) + (dz * dz) <= radius * radius;
@@ -135,12 +138,13 @@ public final class SpawnManager {
 
         List<BlockChange> changes = prepareBuild(center);
         sender.sendMessage(ChatColor.GOLD + "Building the massive ESN SMP spawn...");
-        sender.sendMessage(ChatColor.GRAY + "Size: " + (HUB_RADIUS * 2 + 1) + " blocks across. Changes are applied safely in batches.");
+        sender.sendMessage(ChatColor.YELLOW + "Do not restart/reload the server until /esnspawn status reports building=false.");
+        sender.sendMessage(ChatColor.GRAY + "Size: " + (HUB_RADIUS * 2 + 1) + " blocks across. Changes are applied with an 8ms/tick safety budget.");
 
         try {
             this.activeBackup = new BackupWriter(backupFile, world);
         } catch (UncheckedIOException ex) {
-            plugin.getConfig().set("spawn.build-incomplete", false);
+            plugin.getConfig().set("spawn.build-incomplete", false);plugin.getConfig().set("spawn.build-processed-blocks",plugin.getConfig().getInt("spawn.build-total-blocks",0));
             plugin.saveConfig();
             sender.sendMessage(ChatColor.RED + "Could not create the rollback backup. Spawn was not changed.");
             plugin.getLogger().severe("Could not start spawn backup: " + ex.getMessage());
@@ -148,17 +152,25 @@ public final class SpawnManager {
         }
 
         building = true;
+        plugin.getConfig().set("spawn.build-total-blocks", changes.size());plugin.getConfig().set("spawn.build-processed-blocks",0);plugin.saveConfig();
         final int[] cursor = {0};
 
         buildTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             try {
                 int processed = 0;
-                while (cursor[0] < changes.size() && processed < BLOCKS_PER_TICK) {
+                long tickStart = System.nanoTime();
+                while (cursor[0] < changes.size() && processed < BLOCKS_PER_TICK && System.nanoTime()-tickStart < BUILD_BUDGET_NANOS) {
                     BlockChange change = changes.get(cursor[0]++);
                     Block block = world.getBlockAt(change.x(), change.y(), change.z());
-                    activeBackup.set(block, change.material());
+                    Material material = change.material();
+                    if (!material.isBlock()) {
+                        plugin.getLogger().warning("Skipping invalid non-block spawn material " + material + " at " + change.x() + "," + change.y() + "," + change.z());
+                        continue;
+                    }
+                    activeBackup.set(block, material);
                     processed++;
                 }
+                if((cursor[0] % 30000)<Math.max(1,processed)){plugin.getConfig().set("spawn.build-processed-blocks",cursor[0]);plugin.saveConfig();}
 
                 if (cursor[0] >= changes.size()) {
                     finishSuccessfulBuild(sender, center, backupFile);
@@ -208,7 +220,7 @@ public final class SpawnManager {
         int cy = center.getBlockY();
         int cz = center.getBlockZ();
 
-        List<BlockChange> changes = new ArrayList<>(500000);
+        List<BlockChange> changes = new ArrayList<>(2200000);
 
         // Massive circular plaza: 161 blocks across.
         for (int dx = -HUB_RADIUS; dx <= HUB_RADIUS; dx++) {
@@ -247,7 +259,7 @@ public final class SpawnManager {
         addRoadLighting(changes, cx, cy, cz);
         addServiceStations(changes, cx, cy, cz);
         addServiceDistrict(changes, cx, cy, cz);
-        addFloatingIslandAndWaterfall(changes, cx, cy, cz);
+        addFloatingIslandAndWaterfall(changes, cx, cy, cz); addGrandPrison(changes,cx,cy,cz);
 
         // Exact player landing spot: keep the configured feet position clear.
         for (int dx = -1; dx <= 1; dx++) {
@@ -260,6 +272,42 @@ public final class SpawnManager {
         }
 
         return changes;
+    }
+
+    private void addGrandPrison(List<BlockChange> c,int cx,int cy,int cz){
+        // Highly visible maximum-security prison in the south-east district, connected to spawn by a lit road.
+        int x1=cx+120,x2=cx+190,z1=cz+105,z2=cz+185;
+        for(int x=cx+8;x<=cx+120;x++)for(int z=cz+3;z<=cz+7;z++)c.add(new BlockChange(x,cy,z,Material.POLISHED_DEEPSLATE));
+        for(int x=x1;x<=x2;x++)for(int z=z1;z<=z2;z++)for(int y=cy-3;y<=cy+24;y++){
+            boolean shell=x==x1||x==x2||z==z1||z==z2||y==cy-3||y==cy+24;
+            if(shell)c.add(new BlockChange(x,y,z,Material.REINFORCED_DEEPSLATE));
+        }
+        // Four massive corner watchtowers.
+        for(int[] t:new int[][]{{x1+4,z1+4},{x2-4,z1+4},{x1+4,z2-4},{x2-4,z2-4}})
+            for(int dx=-4;dx<=4;dx++)for(int dz=-4;dz<=4;dz++)for(int y=cy;y<=cy+34;y++)
+                if(Math.abs(dx)==4||Math.abs(dz)==4||y==cy+34)c.add(new BlockChange(t[0]+dx,y,t[1]+dz,Material.DEEPSLATE_BRICKS));
+        // Grand barred entrance and PRISON sign frame.
+        for(int x=cx+145;x<=cx+165;x++)for(int y=cy+1;y<=cy+14;y++)if(x==cx+145||x==cx+165||y>=cy+12)c.add(new BlockChange(x,y,z1,Material.POLISHED_BLACKSTONE_BRICKS));
+        for(int x=cx+151;x<=cx+159;x++)for(int y=cy+1;y<=cy+9;y++)c.add(new BlockChange(x,y,z1,Material.IRON_BARS));
+        // Central cell block with 12 fully enclosed cells and a guarded corridor.
+        for(int n=0;n<12;n++){int bx=cx+137+(n%4)*12,bz=cz+125+(n/4)*17;
+            for(int x=bx-5;x<=bx+5;x++)for(int z=bz-6;z<=bz+6;z++)for(int y=cy;y<=cy+7;y++){
+                boolean wall=x==bx-5||x==bx+5||z==bz-6||z==bz+6||y==cy||y==cy+7;
+                c.add(new BlockChange(x,y,z,wall?Material.REINFORCED_DEEPSLATE:Material.AIR));
+            }
+            for(int x=bx-2;x<=bx+2;x++)for(int y=cy+1;y<=cy+4;y++)c.add(new BlockChange(x,y,bz-6,Material.IRON_BARS));
+            c.add(new BlockChange(bx,cy+1,bz+2,Material.IRON_BLOCK));c.add(new BlockChange(bx+2,cy+1,bz+2,Material.BARREL));
+            c.add(new BlockChange(bx-2,cy+1,bz+2,Material.IRON_BLOCK));c.add(new BlockChange(bx,cy+6,bz,Material.SEA_LANTERN));
+        }
+        // Yard, guard posts and beacon so staff can immediately find it.
+        for(int x=x1+8;x<=x2-8;x++)for(int z=z2-22;z<=z2-8;z++)c.add(new BlockChange(x,cy,z,Material.SMOOTH_STONE));
+        for(int x=x1+12;x<=x2-12;x+=12){c.add(new BlockChange(x,cy+1,z2-15,Material.IRON_BARS));c.add(new BlockChange(x,cy+2,z2-15,Material.IRON_BARS));}
+        // Dense prison lighting: cells, corridors, yard and perimeter stay bright.
+        for(int x=x1+4;x<=x2-4;x+=6)for(int z=z1+4;z<=z2-4;z+=6)c.add(new BlockChange(x,cy+1,z,Material.TORCH));
+        for(int x=x1+3;x<=x2-3;x+=8){c.add(new BlockChange(x,cy+1,z1+2,Material.TORCH));c.add(new BlockChange(x,cy+1,z2-2,Material.TORCH));}
+        for(int z=z1+3;z<=z2-3;z+=8){c.add(new BlockChange(x1+2,cy+1,z,Material.TORCH));c.add(new BlockChange(x2-2,cy+1,z,Material.TORCH));}
+        for(int n=0;n<12;n++){int bx=cx+137+(n%4)*12,bz=cz+125+(n/4)*17;c.add(new BlockChange(bx,cy+1,bz,Material.TORCH));c.add(new BlockChange(bx+3,cy+1,bz+3,Material.TORCH));c.add(new BlockChange(bx-3,cy+1,bz+3,Material.TORCH));}
+        c.add(new BlockChange(cx+155,cy+25,cz+145,Material.BEACON));
     }
 
     private void addCenterMedallion(List<BlockChange> changes, int cx, int cy, int cz) {
@@ -528,6 +576,7 @@ public final class SpawnManager {
             sender.sendMessage(ChatColor.GREEN + "Massive ESN SMP spawn build complete.");
             sender.sendMessage(ChatColor.GRAY + "Rollback backup: " + backupFile.getName());
             plugin.getLogger().info("Large ESN spawn build complete at " + format(center));
+            if(hubServices!=null) hubServices.respawnNpcs();
         } catch (Exception ex) {
             plugin.getLogger().severe("Could not finalize ESN spawn build: " + ex.getMessage());
             sender.sendMessage(ChatColor.RED + "Build completed but finalization failed. Keep the rollback backup.");

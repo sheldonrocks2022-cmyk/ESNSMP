@@ -1,38 +1,16 @@
 package com.esn.smp.spawn;
-
-import com.esn.smp.auction.AuctionHouse;
-import org.bukkit.*;
-import org.bukkit.entity.Player;
-import org.bukkit.event.*;
-import org.bukkit.event.player.PlayerInteractEvent;
-
-public final class HubServiceListener implements Listener {
-    private final SpawnManager spawn;
-    private final AuctionHouse auctions;
-    public HubServiceListener(SpawnManager spawn,AuctionHouse auctions){this.spawn=spawn;this.auctions=auctions;}
-
-    @EventHandler public void interact(PlayerInteractEvent e){
-        if(e.getClickedBlock()==null)return;
-        Location base=spawn.getSpawn(); if(base==null||base.getWorld()==null)return;
-        Location b=e.getClickedBlock().getLocation();
-        if(!b.getWorld().equals(base.getWorld()))return;
-        for(HubService s:HubService.values()){
-            int x=base.getBlockX()+s.offsetX(), z=base.getBlockZ()+s.offsetZ();
-            if(Math.abs(b.getBlockX()-x)<=3&&Math.abs(b.getBlockZ()-z)<=3&&b.getBlockY()>=base.getBlockY()&&b.getBlockY()<=base.getBlockY()+8){
-                e.setCancelled(true); Player p=e.getPlayer();
-                try{
-                    switch(s){
-                        case AUCTION -> auctions.open(p,0);
-                        case SHOP -> p.sendMessage(ChatColor.GREEN+"Server Shop is being stocked.");
-                        case CRATES -> p.sendMessage(ChatColor.LIGHT_PURPLE+"Crates station is ready for the crate module.");
-                        case QUESTS -> p.sendMessage(ChatColor.BLUE+"Quests station is ready for the quest module.");
-                        case WARPS -> p.sendMessage(ChatColor.DARK_PURPLE+"Warps station is ready for world destinations.");
-                        case LEADERBOARDS -> p.sendMessage(ChatColor.AQUA+"Use /balance to start climbing the ESN economy leaderboard.");
-                        case INFO -> p.sendMessage(ChatColor.GOLD+"Welcome to ESN SMP! Respect players and the server rules.");
-                    }
-                }catch(Exception ex){p.sendMessage(ChatColor.RED+"That station is temporarily unavailable.");}
-                return;
-            }
-        }
-    }
+import com.esn.smp.auction.AuctionHouse;import com.esn.smp.gameplay.SMPGameplay;import com.esn.smp.gameplay.ServerMenus;import org.bukkit.*;import org.bukkit.entity.*;import org.bukkit.event.*;import org.bukkit.event.player.*;import org.bukkit.event.entity.EntityDamageEvent;import org.bukkit.event.world.ChunkLoadEvent;import java.util.*;
+public final class HubServiceListener implements Listener{
+ private static final String NPC_TAG="esnHubNpc";
+ private final SpawnManager spawn;private final AuctionHouse auctions;private final SMPGameplay gameplay;private final ServerMenus menus;
+ public HubServiceListener(SpawnManager spawn,AuctionHouse auctions,SMPGameplay gameplay,ServerMenus menus){this.spawn=spawn;this.auctions=auctions;this.gameplay=gameplay;this.menus=menus;Bukkit.getScheduler().runTaskTimer(((com.esn.smp.ESNSMPPlugin)menusPlugin()),this::ensureNpcs,100L,1200L);}
+ private org.bukkit.plugin.java.JavaPlugin menusPlugin(){return (org.bukkit.plugin.java.JavaPlugin)Bukkit.getPluginManager().getPlugin("ESNSMP");}
+ private void openService(Player p,HubService s) throws Exception{if(s==HubService.AUCTION){auctions.open(p,0);return;}if(s==HubService.SHOP){gameplay.openShop(p);return;}if(s==HubService.CRATES){gameplay.openCrates(p);return;}if(s==HubService.INFO){menus.open(p);return;}boolean ok=p.performCommand(s.command());if(!ok)p.sendMessage(ChatColor.RED+"Could not open /"+s.command()+".");}
+ public void respawnNpcs(){Location base=spawn.getSpawn();if(base==null||base.getWorld()==null)return;World w=base.getWorld();for(Entity en:w.getEntities())if(en.getScoreboardTags().contains(NPC_TAG))en.remove();for(HubService s:HubService.values())spawnNpc(base,s);}
+ public void ensureNpcs(){Location base=spawn.getSpawn();if(base==null||base.getWorld()==null)return;World w=base.getWorld();for(HubService s:HubService.values()){boolean found=false;for(Entity en:w.getNearbyEntities(base.clone().add(s.offsetX(),1,s.offsetZ()),4,6,4)){if(en instanceof Villager&&en.getScoreboardTags().contains(NPC_TAG)&&en.getScoreboardTags().contains("esnService_"+s.name())){found=true;break;}}if(!found)spawnNpc(base,s);}}
+ private void spawnNpc(Location base,HubService s){World w=base.getWorld();if(w==null)return;Location l=base.clone().add(s.offsetX(),1,s.offsetZ());Villager v=w.spawn(l,Villager.class);v.setCustomName(ChatColor.GOLD+""+ChatColor.BOLD+s.displayName());v.setCustomNameVisible(true);v.setAI(false);v.setInvulnerable(true);v.setSilent(true);v.setCollidable(false);v.setRemoveWhenFarAway(false);v.setPersistent(true);v.addScoreboardTag(NPC_TAG);v.addScoreboardTag("esnService_"+s.name());}
+ @EventHandler public void chunk(ChunkLoadEvent e){Location base=spawn.getSpawn();if(base==null||base.getWorld()!=e.getWorld())return;Bukkit.getScheduler().runTaskLater(menusPlugin(),this::ensureNpcs,2L);}
+ @EventHandler public void npc(PlayerInteractEntityEvent e){if(!(e.getRightClicked() instanceof Villager v)||!v.getScoreboardTags().contains(NPC_TAG))return;e.setCancelled(true);for(HubService s:HubService.values())if(v.getScoreboardTags().contains("esnService_"+s.name())){try{openService(e.getPlayer(),s);}catch(Exception ex){e.getPlayer().sendMessage(ChatColor.RED+"That service is temporarily unavailable.");}return;}}
+ @EventHandler public void protect(EntityDamageEvent e){if(e.getEntity().getScoreboardTags().contains("esnHubNpc"))e.setCancelled(true);}
+ @EventHandler public void interact(PlayerInteractEvent e){if(e.getClickedBlock()==null)return;Location base=spawn.getSpawn();if(base==null||base.getWorld()==null)return;Location b=e.getClickedBlock().getLocation();if(!b.getWorld().equals(base.getWorld()))return;for(HubService s:HubService.values()){int x=base.getBlockX()+s.offsetX(),z=base.getBlockZ()+s.offsetZ();if(Math.abs(b.getBlockX()-x)<=3&&Math.abs(b.getBlockZ()-z)<=3&&b.getBlockY()>=base.getBlockY()&&b.getBlockY()<=base.getBlockY()+8){e.setCancelled(true);try{openService(e.getPlayer(),s);}catch(Exception ex){e.getPlayer().sendMessage(ChatColor.RED+"That station is temporarily unavailable.");}return;}}}
 }
