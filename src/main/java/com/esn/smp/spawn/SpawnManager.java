@@ -259,7 +259,7 @@ public final class SpawnManager {
         addRoadLighting(changes, cx, cy, cz);
         addServiceStations(changes, cx, cy, cz);
         addServiceDistrict(changes, cx, cy, cz);
-        addFloatingIslandAndWaterfall(changes, cx, cy, cz); addGrandPrison(changes,cx,cy,cz); addMarketplaceStalls(changes,cx,cy,cz);
+        addFloatingIslandAndWaterfall(changes, cx, cy, cz); addGrandPrison(changes,cx,cy,cz); addMarketplaceStalls(changes,cx,cy,cz); addOuterDistrict(changes,cx,cy,cz);
 
         // Exact player landing spot: keep the configured feet position clear.
         for (int dx = -1; dx <= 1; dx++) {
@@ -272,6 +272,19 @@ public final class SpawnManager {
         }
 
         return changes;
+    }
+
+    private void addOuterDistrict(List<BlockChange> c,int cx,int cy,int cz){
+        // Extra skyline/buildings around the outer hub so the expanded spawn feels like a city, not an empty plaza.
+        int[][] sites={{-285,-155},{-215,-230},{-105,-275},{105,-275},{215,-230},{285,-155},{285,85},{205,165},{95,245},{-65,260},{-245,215},{-300,80}};
+        for(int n=0;n<sites.length;n++){int bx=cx+sites[n][0],bz=cz+sites[n][1];int w=18+(n%3)*4,d=16+((n+1)%3)*4,h=14+(n%4)*5;
+            for(int x=-w/2;x<=w/2;x++)for(int z=-d/2;z<=d/2;z++)c.add(new BlockChange(bx+x,cy-1,bz+z,Material.DEEPSLATE_TILES));
+            for(int y=0;y<=h;y++)for(int x=-w/2;x<=w/2;x++)for(int z=-d/2;z<=d/2;z++){boolean shell=Math.abs(x)==w/2||Math.abs(z)==d/2||y==h;if(!shell)continue;Material m=(y%5==2&&(Math.abs(x)==w/2||Math.abs(z)==d/2))?Material.TINTED_GLASS:(n%2==0?Material.STONE_BRICKS:Material.POLISHED_DEEPSLATE);c.add(new BlockChange(bx+x,cy+y,bz+z,m));}
+            for(int x=-2;x<=2;x++)for(int y=1;y<=4;y++)c.add(new BlockChange(bx+x,cy+y,bz-d/2,Material.AIR));
+            for(int y=1;y<h;y+=5)for(int x=-w/2+2;x<=w/2-2;x+=5){c.add(new BlockChange(bx+x,cy+y,bz-d/2,Material.SEA_LANTERN));c.add(new BlockChange(bx+x,cy+y,bz+d/2,Material.SEA_LANTERN));}
+        }
+        // Broad ring road connecting the outer districts.
+        for(int dx=-330;dx<=330;dx++)for(int dz=-330;dz<=330;dz++){double dist=Math.sqrt(dx*dx+dz*dz);if(dist>=315&&dist<=323)c.add(new BlockChange(cx+dx,cy-1,cz+dz,dist>=318&&dist<=320?Material.SMOOTH_STONE:Material.POLISHED_DEEPSLATE));}
     }
 
     private void addMarketplaceStalls(List<BlockChange> c,int cx,int cy,int cz){
@@ -582,7 +595,7 @@ public final class SpawnManager {
 
             plugin.getConfig().set("spawn.generated", true);
             plugin.getConfig().set("spawn.build-incomplete", false);
-            plugin.getConfig().set("spawn.design-version", 7);
+            plugin.getConfig().set("spawn.design-version", 8);
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
             plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) {
