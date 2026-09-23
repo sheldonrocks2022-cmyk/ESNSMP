@@ -1,6 +1,6 @@
 package com.esn.smp.gameplay;
 import com.esn.smp.data.ESNDataStore;
-import org.bukkit.*;import org.bukkit.block.*;import org.bukkit.command.*;import org.bukkit.entity.*;import org.bukkit.event.*;import org.bukkit.event.entity.PlayerDeathEvent;import org.bukkit.event.inventory.*;import org.bukkit.event.player.*;import org.bukkit.inventory.*;import org.bukkit.inventory.meta.ItemMeta;import org.bukkit.persistence.*;import org.bukkit.plugin.java.JavaPlugin;import java.util.*;
+import org.bukkit.*;import org.bukkit.block.*;import org.bukkit.command.*;import org.bukkit.entity.*;import org.bukkit.event.*;import org.bukkit.event.entity.PlayerDeathEvent;import org.bukkit.event.inventory.*;import org.bukkit.event.player.*;import org.bukkit.inventory.*;import org.bukkit.inventory.meta.ItemMeta;import org.bukkit.persistence.*;import org.bukkit.plugin.java.JavaPlugin;import java.io.File;import java.util.*;
 public final class V19Core implements Listener,CommandExecutor{
  private final JavaPlugin p;private final ESNDataStore eco;private final Map<UUID,Grave> graves=new HashMap<>();private final Map<UUID,UUID> tradeReq=new HashMap<>();private final Map<UUID,Trade> trades=new HashMap<>();private final NamespacedKey itemKey;private final File graveFile;private final org.bukkit.configuration.file.YamlConfiguration graveDb;
  record Grave(Location loc,long expires){}
