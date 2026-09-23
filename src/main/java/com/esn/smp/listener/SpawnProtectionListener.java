@@ -29,7 +29,7 @@ public final class SpawnProtectionListener implements Listener {
     }
 
     private boolean bypass(Player player) {
-        return player.hasPermission("esnsmp.spawn.bypass");
+        return player.hasPermission("esnsmp.spawn.bypass") && player.isSneaking();
     }
 
     @EventHandler
