@@ -9,7 +9,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -42,6 +41,7 @@ import java.util.regex.Pattern;
 public final class StripeStoreBridge implements Listener, CommandExecutor, AutoCloseable {
     private static final Pattern MC_NAME = Pattern.compile("^[A-Za-z0-9_]{3,16}$");
     private static final String STRIPE_SESSIONS = "https://api.stripe.com/v1/checkout/sessions";
+    private static final long POLL_SECONDS = 30L;
 
     private final ESNSMPPlugin plugin;
     private final HttpClient http;
@@ -57,12 +57,47 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
 
     public StripeStoreBridge(ESNSMPPlugin plugin) throws Exception {
         this.plugin = plugin;
-        this.http = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
+        this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         initializeDatabase();
-        ensureConfigDefaults();
         ensureSecretKeyFile();
+    }
+
+    public static void removeLegacyStripeConfigBlock(File configFile) {
+        if (configFile == null || !configFile.isFile()) return;
+        try {
+            List<String> lines = Files.readAllLines(configFile.toPath(), StandardCharsets.UTF_8);
+            List<String> out = new ArrayList<>();
+            boolean skipping = false;
+            boolean changed = false;
+            for (String line : lines) {
+                String t = line.trim();
+                if (!skipping && t.startsWith("stripe-store:")) {
+                    skipping = true;
+                    changed = true;
+                    continue;
+                }
+                if (skipping) {
+                    if (t.isBlank()
+                            || t.startsWith("enabled:")
+                            || t.startsWith("secret-key:")
+                            || t.startsWith("poll-interval-seconds:")
+                            || t.startsWith("username-field-key:")
+                            || t.startsWith("username-field-label:")
+                            || t.startsWith("activation-time:")
+                            || t.startsWith("products:")
+                            || t.startsWith("#")) {
+                        changed = true;
+                        continue;
+                    }
+                    skipping = false;
+                }
+                out.add(line);
+            }
+            if (changed) {
+                Files.write(configFile.toPath(), out, StandardCharsets.UTF_8);
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private void initializeDatabase() throws Exception {
@@ -87,52 +122,21 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                     )
                     """);
                 s.executeUpdate("CREATE INDEX IF NOT EXISTS idx_stripe_store_pending_player ON stripe_store_orders(status, player_name)");
+                s.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS stripe_store_meta (
+                        meta_key TEXT PRIMARY KEY,
+                        meta_value TEXT NOT NULL
+                    )
+                    """);
+                s.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS stripe_store_products (
+                        product_key TEXT PRIMARY KEY,
+                        item_id TEXT NOT NULL,
+                        amount INTEGER NOT NULL
+                    )
+                    """);
             }
         }
-    }
-
-    private void ensureConfigDefaults() {
-        var cfg = plugin.getConfig();
-        boolean changed = false;
-        changed |= setDefault("stripe-store.enabled", false);
-        changed |= setDefault("stripe-store.secret-key", "");
-        changed |= setDefault("stripe-store.poll-interval-seconds", 30);
-        changed |= setDefault("stripe-store.username-field-key", "minecraft_username");
-        changed |= setDefault("stripe-store.username-field-label", "Minecraft Username");
-        changed |= setDefault("stripe-store.activation-time", 0L);
-        if (cfg.getConfigurationSection("stripe-store.products") == null) {
-            cfg.createSection("stripe-store.products");
-            changed = true;
-        }
-        if (changed) plugin.saveConfig();
-    }
-
-    private boolean setDefault(String path, Object value) {
-        if (plugin.getConfig().contains(path)) return false;
-        plugin.getConfig().set(path, value);
-        return true;
-    }
-
-    public void start() {
-        String secret = secretKey();
-        if (secret.isBlank()) {
-            lastError = "Stripe secret key is missing";
-            plugin.getLogger().warning("[ESN Store] Stripe bridge is waiting for plugins/ESNSMP/stripe-key.txt. Paste ONLY your sk_test_... or sk_live_... key into that file, save it, then restart the server.");
-            return;
-        }
-
-        long activation = plugin.getConfig().getLong("stripe-store.activation-time", 0L);
-        if (activation <= 0L) {
-            activation = System.currentTimeMillis() / 1000L;
-            plugin.getConfig().set("stripe-store.activation-time", activation);
-            plugin.saveConfig();
-            plugin.getLogger().info("[ESN Store] Activation time initialized. Orders created before this moment will not be auto-delivered.");
-        }
-
-        long seconds = Math.max(15L, plugin.getConfig().getLong("stripe-store.poll-interval-seconds", 30L));
-        running = true;
-        pollTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::pollSafely, 40L, seconds * 20L);
-        plugin.getLogger().info("[ESN Store] Stripe bridge started. Poll interval: " + seconds + "s.");
     }
 
     private File secretKeyFile() {
@@ -149,10 +153,16 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                     StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE_NEW
             );
-            plugin.getLogger().info("[ESN Store] Created plugins/ESNSMP/stripe-key.txt for easy Stripe setup.");
+            plugin.getLogger().info("[ESN Store] Created plugins/ESNSMP/stripe-key.txt.");
         } catch (Exception ex) {
             plugin.getLogger().warning("[ESN Store] Could not create stripe-key.txt: " + ex.getMessage());
         }
+    }
+
+    private boolean isStripeSecret(String value) {
+        if (value == null) return false;
+        String key = value.trim();
+        return key.startsWith("sk_test_") || key.startsWith("sk_live_");
     }
 
     private String secretKey() {
@@ -168,15 +178,27 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                 lastError = "Could not read stripe-key.txt: " + ex.getMessage();
             }
         }
-
-        String legacy = plugin.getConfig().getString("stripe-store.secret-key", "").trim();
-        return isStripeSecret(legacy) ? legacy : "";
+        return "";
     }
 
-    private boolean isStripeSecret(String value) {
-        if (value == null) return false;
-        String key = value.trim();
-        return key.startsWith("sk_test_") || key.startsWith("sk_live_");
+    public void start() {
+        String secret = secretKey();
+        if (secret.isBlank()) {
+            lastError = "Stripe secret key is missing";
+            plugin.getLogger().warning("[ESN Store] Paste ONLY your Stripe secret key into plugins/ESNSMP/stripe-key.txt, save it, then restart the server.");
+            return;
+        }
+
+        long activation = getMetaLong("activation_time", 0L);
+        if (activation <= 0L) {
+            activation = System.currentTimeMillis() / 1000L;
+            setMeta("activation_time", Long.toString(activation));
+            plugin.getLogger().info("[ESN Store] Stripe activation time initialized.");
+        }
+
+        running = true;
+        pollTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::pollSafely, 40L, POLL_SECONDS * 20L);
+        plugin.getLogger().info("[ESN Store] Stripe bridge started. Poll interval: " + POLL_SECONDS + "s.");
     }
 
     private void pollSafely() {
@@ -195,7 +217,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         String secret = secretKey();
         if (secret.isBlank()) throw new IllegalStateException("Stripe secret key is missing");
 
-        long activation = plugin.getConfig().getLong("stripe-store.activation-time", 0L);
+        long activation = getMetaLong("activation_time", 0L);
         String startingAfter = null;
 
         for (int page = 0; page < 10; page++) {
@@ -210,7 +232,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
             HttpRequest request = HttpRequest.newBuilder(URI.create(url.toString()))
                     .timeout(Duration.ofSeconds(20))
                     .header("Authorization", "Bearer " + secret)
-                    .header("User-Agent", "ESNSMP-StripeStore/1.0")
+                    .header("User-Agent", "ESNSMP-StripeStore/1.1")
                     .GET()
                     .build();
 
@@ -227,8 +249,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
 
             for (JsonNode session : data) ingestSession(session);
 
-            boolean hasMore = root.path("has_more").asBoolean(false);
-            if (!hasMore) break;
+            if (!root.path("has_more").asBoolean(false)) break;
             startingAfter = data.get(data.size() - 1).path("id").asText("");
             if (startingAfter.isBlank()) break;
         }
@@ -243,9 +264,9 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         String productKey = session.path("metadata").path("esn_product").asText("");
         if (productKey.isBlank()) productKey = paymentLink;
 
-        ConfigurationSection product = productSection(productKey);
+        ProductMapping product = findProduct(productKey);
         if (product == null) {
-            warnOnce(sessionId, "No ESN product mapping for Stripe key/payment link: " + productKey);
+            warnOnce(sessionId, "No product mapping for Stripe key/payment link: " + productKey);
             return;
         }
 
@@ -255,15 +276,13 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
             return;
         }
 
-        String itemId = product.getString("item-id", "").trim().toLowerCase(Locale.ROOT);
-        int amount = Math.max(1, Math.min(2304, product.getInt("amount", 1)));
-        if (itemId.isBlank() || ESNItemsCommand.createStoreItem(itemId) == null) {
-            warnOnce(sessionId, "Product mapping " + productKey + " has an unknown ESN item-id: " + itemId);
+        if (ESNItemsCommand.createStoreItem(product.itemId()) == null) {
+            warnOnce(sessionId, "Mapped ESN item no longer exists: " + product.itemId());
             return;
         }
 
         long created = session.path("created").asLong(System.currentTimeMillis() / 1000L);
-        if (insertPending(sessionId, username, productKey, itemId, amount, created)) {
+        if (insertPending(sessionId, username, productKey, product.itemId(), product.amount(), created)) {
             plugin.getLogger().info("[ESN Store] Queued paid Stripe order " + sessionId + " for Minecraft player " + username + ".");
             Bukkit.getScheduler().runTask(plugin, () -> {
                 Player player = Bukkit.getPlayerExact(username);
@@ -272,24 +291,16 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         }
     }
 
-    private ConfigurationSection productSection(String key) {
-        if (key == null || key.isBlank()) return null;
-        return plugin.getConfig().getConfigurationSection("stripe-store.products." + key);
-    }
-
     private String extractUsername(JsonNode session) {
         String metadata = session.path("metadata").path("minecraft_username").asText("").trim();
         if (!metadata.isBlank()) return metadata;
-
-        String wantedKey = plugin.getConfig().getString("stripe-store.username-field-key", "minecraft_username");
-        String wantedLabel = plugin.getConfig().getString("stripe-store.username-field-label", "Minecraft Username");
 
         JsonNode fields = session.path("custom_fields");
         if (fields.isArray()) {
             for (JsonNode field : fields) {
                 String key = field.path("key").asText("");
                 String label = field.path("label").path("custom").asText("");
-                if (!wantedKey.equalsIgnoreCase(key) && !wantedLabel.equalsIgnoreCase(label)) continue;
+                if (!"minecraft_username".equalsIgnoreCase(key) && !"Minecraft Username".equalsIgnoreCase(label)) continue;
 
                 String value = field.path("text").path("value").asText("");
                 if (value.isBlank()) value = field.path("numeric").path("value").asText("");
@@ -302,6 +313,93 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
 
     private void warnOnce(String sessionId, String message) {
         if (warnedSessions.add(sessionId)) plugin.getLogger().warning("[ESN Store] " + message);
+    }
+
+    private long getMetaLong(String key, long fallback) {
+        synchronized (dbLock) {
+            try (PreparedStatement p = db.prepareStatement("SELECT meta_value FROM stripe_store_meta WHERE meta_key=?")) {
+                p.setString(1, key);
+                try (ResultSet r = p.executeQuery()) {
+                    if (!r.next()) return fallback;
+                    try {
+                        return Long.parseLong(r.getString(1));
+                    } catch (NumberFormatException ex) {
+                        return fallback;
+                    }
+                }
+            } catch (Exception ex) {
+                return fallback;
+            }
+        }
+    }
+
+    private void setMeta(String key, String value) {
+        synchronized (dbLock) {
+            try (PreparedStatement p = db.prepareStatement("""
+                INSERT INTO stripe_store_meta(meta_key,meta_value) VALUES(?,?)
+                ON CONFLICT(meta_key) DO UPDATE SET meta_value=excluded.meta_value
+                """)) {
+                p.setString(1, key);
+                p.setString(2, value);
+                p.executeUpdate();
+            } catch (Exception ex) {
+                throw new IllegalStateException("Store metadata update failed", ex);
+            }
+        }
+    }
+
+    private ProductMapping findProduct(String productKey) {
+        if (productKey == null || productKey.isBlank()) return null;
+        synchronized (dbLock) {
+            try (PreparedStatement p = db.prepareStatement("SELECT item_id,amount FROM stripe_store_products WHERE product_key=?")) {
+                p.setString(1, productKey);
+                try (ResultSet r = p.executeQuery()) {
+                    return r.next() ? new ProductMapping(r.getString(1), r.getInt(2)) : null;
+                }
+            } catch (Exception ex) {
+                throw new IllegalStateException("Store product lookup failed", ex);
+            }
+        }
+    }
+
+    private void mapProduct(String productKey, String itemId, int amount) {
+        synchronized (dbLock) {
+            try (PreparedStatement p = db.prepareStatement("""
+                INSERT INTO stripe_store_products(product_key,item_id,amount) VALUES(?,?,?)
+                ON CONFLICT(product_key) DO UPDATE SET item_id=excluded.item_id, amount=excluded.amount
+                """)) {
+                p.setString(1, productKey);
+                p.setString(2, itemId);
+                p.setInt(3, amount);
+                p.executeUpdate();
+            } catch (Exception ex) {
+                throw new IllegalStateException("Store product mapping failed", ex);
+            }
+        }
+    }
+
+    private boolean unmapProduct(String productKey) {
+        synchronized (dbLock) {
+            try (PreparedStatement p = db.prepareStatement("DELETE FROM stripe_store_products WHERE product_key=?")) {
+                p.setString(1, productKey);
+                return p.executeUpdate() > 0;
+            } catch (Exception ex) {
+                throw new IllegalStateException("Store product unmap failed", ex);
+            }
+        }
+    }
+
+    private List<String> productMappings() {
+        List<String> out = new ArrayList<>();
+        synchronized (dbLock) {
+            try (PreparedStatement p = db.prepareStatement("SELECT product_key,item_id,amount FROM stripe_store_products ORDER BY product_key");
+                 ResultSet r = p.executeQuery()) {
+                while (r.next()) out.add(r.getString(1) + " -> " + r.getString(2) + " x" + r.getInt(3));
+            } catch (Exception ex) {
+                out.add("Could not read product mappings: " + ex.getMessage());
+            }
+        }
+        return out;
     }
 
     private boolean orderExists(String sessionId) {
@@ -408,7 +506,6 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                 ItemStack base = ESNItemsCommand.createStoreItem(order.itemId());
                 if (base == null) {
                     markError(order.sessionId(), "Unknown item-id: " + order.itemId());
-                    plugin.getLogger().severe("[ESN Store] Cannot deliver " + order.sessionId() + ": unknown item " + order.itemId());
                     continue;
                 }
 
@@ -450,19 +547,68 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
             return true;
         }
 
-        if (command.getName().equalsIgnoreCase("storestatus")) {
-            boolean enabled = !secretKey().isBlank();
-            sender.sendMessage(ChatColor.GOLD + "ESN Store Stripe Bridge");
-            sender.sendMessage(ChatColor.GRAY + "Key detected: " + ChatColor.WHITE + enabled);
-            sender.sendMessage(ChatColor.GRAY + "Running: " + ChatColor.WHITE + running);
-            sender.sendMessage(ChatColor.GRAY + "Pending deliveries: " + ChatColor.WHITE + pendingCount());
-            sender.sendMessage(ChatColor.GRAY + "Last successful poll: " + ChatColor.WHITE +
-                    (lastSuccessfulPoll == 0L ? "never" : ((System.currentTimeMillis() - lastSuccessfulPoll) / 1000L) + "s ago"));
-            if (!lastError.isBlank()) sender.sendMessage(ChatColor.RED + "Last error: " + lastError);
+        if (!command.getName().equalsIgnoreCase("storestatus")) return false;
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("map")) {
+            if (!sender.hasPermission("esnsmp.store.admin")) {
+                sender.sendMessage(ChatColor.RED + "No permission.");
+                return true;
+            }
+            if (args.length < 3) {
+                sender.sendMessage(ChatColor.YELLOW + "/storestatus map <plink_or_product_key> <esn_item_id> [amount]");
+                return true;
+            }
+            String key = args[1];
+            String itemId = args[2].toLowerCase(Locale.ROOT);
+            int amount = 1;
+            if (args.length >= 4) {
+                try {
+                    amount = Integer.parseInt(args[3]);
+                } catch (NumberFormatException ex) {
+                    sender.sendMessage(ChatColor.RED + "Amount must be a number.");
+                    return true;
+                }
+            }
+            amount = Math.max(1, Math.min(2304, amount));
+            if (ESNItemsCommand.createStoreItem(itemId) == null) {
+                sender.sendMessage(ChatColor.RED + "Unknown ESN item ID. Check /esnitems list.");
+                return true;
+            }
+            mapProduct(key, itemId, amount);
+            sender.sendMessage(ChatColor.GREEN + "Mapped " + key + " -> " + itemId + " x" + amount);
             return true;
         }
 
-        return false;
+        if (args.length > 0 && args[0].equalsIgnoreCase("unmap")) {
+            if (!sender.hasPermission("esnsmp.store.admin")) {
+                sender.sendMessage(ChatColor.RED + "No permission.");
+                return true;
+            }
+            if (args.length < 2) {
+                sender.sendMessage(ChatColor.YELLOW + "/storestatus unmap <plink_or_product_key>");
+                return true;
+            }
+            sender.sendMessage(unmapProduct(args[1]) ? ChatColor.GREEN + "Product mapping removed." : ChatColor.YELLOW + "No mapping found.");
+            return true;
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("products")) {
+            List<String> mappings = productMappings();
+            sender.sendMessage(ChatColor.GOLD + "ESN Store product mappings (" + mappings.size() + "):");
+            if (mappings.isEmpty()) sender.sendMessage(ChatColor.GRAY + "None yet.");
+            else mappings.forEach(x -> sender.sendMessage(ChatColor.GRAY + x));
+            return true;
+        }
+
+        sender.sendMessage(ChatColor.GOLD + "ESN Store Stripe Bridge");
+        sender.sendMessage(ChatColor.GRAY + "Key detected: " + ChatColor.WHITE + !secretKey().isBlank());
+        sender.sendMessage(ChatColor.GRAY + "Running: " + ChatColor.WHITE + running);
+        sender.sendMessage(ChatColor.GRAY + "Pending deliveries: " + ChatColor.WHITE + pendingCount());
+        sender.sendMessage(ChatColor.GRAY + "Product mappings: " + ChatColor.WHITE + productMappings().size());
+        sender.sendMessage(ChatColor.GRAY + "Last successful poll: " + ChatColor.WHITE +
+                (lastSuccessfulPoll == 0L ? "never" : ((System.currentTimeMillis() - lastSuccessfulPoll) / 1000L) + "s ago"));
+        if (!lastError.isBlank()) sender.sendMessage(ChatColor.RED + "Last error: " + lastError);
+        return true;
     }
 
     @Override
@@ -481,6 +627,6 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         }
     }
 
-    private record StoreOrder(String sessionId, String itemId, int amount) {
-    }
+    private record StoreOrder(String sessionId, String itemId, int amount) {}
+    private record ProductMapping(String itemId, int amount) {}
 }
