@@ -24,6 +24,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -60,6 +62,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                 .build();
         initializeDatabase();
         ensureConfigDefaults();
+        ensureSecretKeyFile();
     }
 
     private void initializeDatabase() throws Exception {
@@ -111,15 +114,10 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
     }
 
     public void start() {
-        if (!plugin.getConfig().getBoolean("stripe-store.enabled", false)) {
-            plugin.getLogger().info("[ESN Store] Stripe bridge is disabled. Enable stripe-store.enabled after adding your Stripe secret key and product mappings.");
-            return;
-        }
-
         String secret = secretKey();
         if (secret.isBlank()) {
             lastError = "Stripe secret key is missing";
-            plugin.getLogger().warning("[ESN Store] Stripe bridge not started: secret key is missing.");
+            plugin.getLogger().warning("[ESN Store] Stripe bridge is waiting for plugins/ESNSMP/stripe-key.txt. Paste ONLY your sk_test_... or sk_live_... key into that file, save it, then restart the server.");
             return;
         }
 
@@ -137,10 +135,48 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         plugin.getLogger().info("[ESN Store] Stripe bridge started. Poll interval: " + seconds + "s.");
     }
 
+    private File secretKeyFile() {
+        return new File(plugin.getDataFolder(), "stripe-key.txt");
+    }
+
+    private void ensureSecretKeyFile() {
+        File file = secretKeyFile();
+        if (file.exists()) return;
+        try {
+            Files.writeString(
+                    file.toPath(),
+                    "PASTE_STRIPE_SECRET_KEY_HERE\n",
+                    StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE_NEW
+            );
+            plugin.getLogger().info("[ESN Store] Created plugins/ESNSMP/stripe-key.txt for easy Stripe setup.");
+        } catch (Exception ex) {
+            plugin.getLogger().warning("[ESN Store] Could not create stripe-key.txt: " + ex.getMessage());
+        }
+    }
+
     private String secretKey() {
         String env = System.getenv("STRIPE_SECRET_KEY");
-        if (env != null && !env.isBlank()) return env.trim();
-        return plugin.getConfig().getString("stripe-store.secret-key", "").trim();
+        if (isStripeSecret(env)) return env.trim();
+
+        File file = secretKeyFile();
+        if (file.isFile()) {
+            try {
+                String value = Files.readString(file.toPath(), StandardCharsets.UTF_8).trim();
+                if (isStripeSecret(value)) return value;
+            } catch (Exception ex) {
+                lastError = "Could not read stripe-key.txt: " + ex.getMessage();
+            }
+        }
+
+        String legacy = plugin.getConfig().getString("stripe-store.secret-key", "").trim();
+        return isStripeSecret(legacy) ? legacy : "";
+    }
+
+    private boolean isStripeSecret(String value) {
+        if (value == null) return false;
+        String key = value.trim();
+        return key.startsWith("sk_test_") || key.startsWith("sk_live_");
     }
 
     private void pollSafely() {
@@ -415,9 +451,9 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         }
 
         if (command.getName().equalsIgnoreCase("storestatus")) {
-            boolean enabled = plugin.getConfig().getBoolean("stripe-store.enabled", false);
+            boolean enabled = !secretKey().isBlank();
             sender.sendMessage(ChatColor.GOLD + "ESN Store Stripe Bridge");
-            sender.sendMessage(ChatColor.GRAY + "Enabled: " + ChatColor.WHITE + enabled);
+            sender.sendMessage(ChatColor.GRAY + "Key detected: " + ChatColor.WHITE + enabled);
             sender.sendMessage(ChatColor.GRAY + "Running: " + ChatColor.WHITE + running);
             sender.sendMessage(ChatColor.GRAY + "Pending deliveries: " + ChatColor.WHITE + pendingCount());
             sender.sendMessage(ChatColor.GRAY + "Last successful poll: " + ChatColor.WHITE +
