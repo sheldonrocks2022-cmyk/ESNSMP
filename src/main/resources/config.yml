@@ -28,3 +28,21 @@ branding:
   title: "&6&lESN &f&lSMP"
   subtitle: "&7Survive • Build • Become Legendary"
   welcome-message: "&8[&6ESN&8] &fWelcome to &6ESN SMP&f!"
+
+stripe-store:
+  # Direct server-side Stripe polling. Keep this false until the key and product mappings are configured.
+  enabled: false
+  # Prefer the STRIPE_SECRET_KEY environment variable when available. Never put this key on the public website.
+  secret-key: ""
+  poll-interval-seconds: 30
+  username-field-key: "minecraft_username"
+  username-field-label: "Minecraft Username"
+  # Automatically set the first time the bridge is enabled so old historical payments are not delivered.
+  activation-time: 0
+  # Map either a Stripe Payment Link ID (plink_...) or metadata esn_product value to an ESN item.
+  # Example:
+  # products:
+  #   plink_example:
+  #     item-id: "realm001key"
+  #     amount: 5
+  products: {}
