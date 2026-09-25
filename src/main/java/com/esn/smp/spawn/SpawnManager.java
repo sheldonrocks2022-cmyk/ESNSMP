@@ -26,8 +26,8 @@ public final class SpawnManager {
     private static final int HUB_RADIUS = 400;
     private static final int CLEAR_HEIGHT = 18;
     private static final int LOGO_RADIUS = 26;
-    private static final int BLOCKS_PER_TICK = 1200;
-    private static final long BUILD_BUDGET_NANOS = 8_000_000L;
+    private static final int BLOCKS_PER_TICK = 600;
+    private static final long BUILD_BUDGET_NANOS = 6_000_000L;
 
     private final ESNSMPPlugin plugin;
     private volatile boolean building;
@@ -224,6 +224,8 @@ public final class SpawnManager {
         sender.sendMessage(ChatColor.YELLOW + "Do not restart/reload until /esnspawn status reports building=false.");
 
         final int[] cursor = {0};
+        final int[] lastChunkX = {Integer.MIN_VALUE};
+        final int[] lastChunkZ = {Integer.MIN_VALUE};
         buildTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             try {
                 int processed = 0;
@@ -232,6 +234,15 @@ public final class SpawnManager {
                         && processed < BLOCKS_PER_TICK
                         && System.nanoTime() - tickStart < BUILD_BUDGET_NANOS) {
                     BlockChange change = changes.get(cursor[0]++);
+                    int chunkX = Math.floorDiv(change.x(), 16);
+                    int chunkZ = Math.floorDiv(change.z(), 16);
+                    if (lastChunkX[0] != Integer.MIN_VALUE
+                            && (chunkX != lastChunkX[0] || chunkZ != lastChunkZ[0])) {
+                        requestChunkRelease(world, lastChunkX[0], lastChunkZ[0]);
+                    }
+                    lastChunkX[0] = chunkX;
+                    lastChunkZ[0] = chunkZ;
+
                     Block block = world.getBlockAt(change.x(), change.y(), change.z());
                     Material material = change.material();
                     if (!material.isBlock()) {
@@ -249,6 +260,9 @@ public final class SpawnManager {
                 }
 
                 if (cursor[0] >= changes.size()) {
+                    if (lastChunkX[0] != Integer.MIN_VALUE) {
+                        requestChunkRelease(world, lastChunkX[0], lastChunkZ[0]);
+                    }
                     finishSuccessfulBuild(sender, center, backupFile);
                 }
             } catch (Exception ex) {
@@ -304,33 +318,49 @@ public final class SpawnManager {
     private BlockChangeStore prepareBuild(int cx, int cy, int cz) {
         BlockChangeStore changes = createPlanStore();
 
-        // Massive circular plaza: 161 blocks across.
-        for (int dx = -HUB_RADIUS; dx <= HUB_RADIUS; dx++) {
-            for (int dz = -HUB_RADIUS; dz <= HUB_RADIUS; dz++) {
-                int distanceSquared = (dx * dx) + (dz * dz);
-                if (distanceSquared > HUB_RADIUS * HUB_RADIUS) {
-                    continue;
-                }
+        // Massive circular plaza: 801 blocks across.
+        // Build this phase chunk-by-chunk instead of long X/Z stripes. The resulting blocks
+        // are identical, but Paper can release completed chunks instead of retaining a huge
+        // portion of the 801x801 hub in memory during construction.
+        int minX = cx - HUB_RADIUS, maxX = cx + HUB_RADIUS;
+        int minZ = cz - HUB_RADIUS, maxZ = cz + HUB_RADIUS;
+        int minChunkX = Math.floorDiv(minX, 16), maxChunkX = Math.floorDiv(maxX, 16);
+        int minChunkZ = Math.floorDiv(minZ, 16), maxChunkZ = Math.floorDiv(maxZ, 16);
 
-                double distance = Math.sqrt(distanceSquared);
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            int x1 = Math.max(minX, chunkX * 16);
+            int x2 = Math.min(maxX, chunkX * 16 + 15);
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                int z1 = Math.max(minZ, chunkZ * 16);
+                int z2 = Math.min(maxZ, chunkZ * 16 + 15);
 
-                for (int dy = 0; dy < CLEAR_HEIGHT; dy++) {
-                    changes.add(new BlockChange(cx + dx, cy + dy, cz + dz, Material.AIR));
-                }
+                for (int x = x1; x <= x2; x++) {
+                    int dx = x - cx;
+                    for (int z = z1; z <= z2; z++) {
+                        int dz = z - cz;
+                        int distanceSquared = (dx * dx) + (dz * dz);
+                        if (distanceSquared > HUB_RADIUS * HUB_RADIUS) continue;
 
-                Material floor;
-                if (distance >= HUB_RADIUS - 3) {
-                    floor = Material.DEEPSLATE_BRICKS;
-                } else if (Math.abs(dx) <= 3 || Math.abs(dz) <= 3) {
-                    floor = Material.SMOOTH_STONE;
-                } else if (distance >= 50 && distance <= 53) {
-                    floor = Material.STONE_BRICKS;
-                } else if (((cx + dx) + (cz + dz)) % 11 == 0) {
-                    floor = Material.MOSSY_STONE_BRICKS;
-                } else {
-                    floor = Material.POLISHED_ANDESITE;
+                        double distance = Math.sqrt(distanceSquared);
+                        for (int dy = 0; dy < CLEAR_HEIGHT; dy++) {
+                            changes.add(new BlockChange(x, cy + dy, z, Material.AIR));
+                        }
+
+                        Material floor;
+                        if (distance >= HUB_RADIUS - 3) {
+                            floor = Material.DEEPSLATE_BRICKS;
+                        } else if (Math.abs(dx) <= 3 || Math.abs(dz) <= 3) {
+                            floor = Material.SMOOTH_STONE;
+                        } else if (distance >= 50 && distance <= 53) {
+                            floor = Material.STONE_BRICKS;
+                        } else if ((x + z) % 11 == 0) {
+                            floor = Material.MOSSY_STONE_BRICKS;
+                        } else {
+                            floor = Material.POLISHED_ANDESITE;
+                        }
+                        changes.add(new BlockChange(x, cy - 1, z, floor));
+                    }
                 }
-                changes.add(new BlockChange(cx + dx, cy - 1, cz + dz, floor));
             }
         }
 
@@ -880,6 +910,25 @@ public final class SpawnManager {
             return new BlockChangeStore(File.createTempFile("spawn-plan-", ".bin", dir), () -> building);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
+        }
+    }
+
+    private void requestChunkRelease(World world, int chunkX, int chunkZ) {
+        if (!world.isChunkLoaded(chunkX, chunkZ)) return;
+
+        // Never try to unload a chunk a player is actively standing in. Paper will also
+        // preserve chunks that still have another legitimate ticket (spawn, portal, etc.).
+        for (org.bukkit.entity.Player player : world.getPlayers()) {
+            if (Math.floorDiv(player.getLocation().getBlockX(), 16) == chunkX
+                    && Math.floorDiv(player.getLocation().getBlockZ(), 16) == chunkZ) {
+                return;
+            }
+        }
+
+        try {
+            world.unloadChunkRequest(chunkX, chunkZ);
+        } catch (Throwable ex) {
+            plugin.getLogger().fine("Chunk unload request skipped for " + chunkX + "," + chunkZ + ": " + ex.getMessage());
         }
     }
 
