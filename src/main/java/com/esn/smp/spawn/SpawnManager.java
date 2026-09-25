@@ -35,6 +35,15 @@ public final class SpawnManager {
 
     public SpawnManager(ESNSMPPlugin plugin) {
         this.plugin = plugin;
+        // v2.4.6 memory-pressure test: migrate the previous 2,000-block
+        // protection setting down by 1,200 blocks so existing servers
+        // actually use the new 800-block radius.
+        double configuredRadius = plugin.getConfig().getDouble("spawn.protection-radius", 800.0);
+        if (configuredRadius > 800.0) {
+            plugin.getConfig().set("spawn.protection-radius", 800);
+            plugin.saveConfig();
+            plugin.getLogger().info("Reduced ESN spawn protection radius from " + configuredRadius + " to 800 blocks.");
+        }
     }
 
     public synchronized void ensureConfigured() {
@@ -105,7 +114,7 @@ public final class SpawnManager {
             return false;
         }
 
-        double radius = Math.max(2000.0, plugin.getConfig().getDouble("spawn.protection-radius", 2000.0));
+        double radius = Math.max(100.0, Math.min(800.0, plugin.getConfig().getDouble("spawn.protection-radius", 800.0)));
         double dx = location.getX() - spawn.getX();
         double dz = location.getZ() - spawn.getZ();
         return (dx * dx) + (dz * dz) <= radius * radius;
