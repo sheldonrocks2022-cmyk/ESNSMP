@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.4.5'
+version: '2.4.6'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
@@ -333,9 +333,6 @@ commands:
     description: 'Open the ESN moderation menu'
     permission: esnsmp.staff
 
-  castlecore:
-    description: Give an ESN Mega Castle Core.
-    permission: esnsmp.staff
   jail:
     description: Open the ESN prison control menu or issue a timed sentence.
     usage: /jail [player] [cell] [30m|2h|1d|release]
