@@ -12,10 +12,13 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.AbstractList;
+import java.util.BitSet;
+import java.util.CancellationException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -27,8 +30,10 @@ public final class SpawnManager {
     private static final long BUILD_BUDGET_NANOS = 8_000_000L;
 
     private final ESNSMPPlugin plugin;
-    private boolean building;
+    private volatile boolean building;
+    private BukkitTask planningTask;
     private BukkitTask buildTask;
+    private BlockChangeStore activePlan;
     private BackupWriter activeBackup;
     private HubServiceListener hubServices;
     public void setHubServices(HubServiceListener h){this.hubServices=h;}
@@ -136,50 +141,112 @@ public final class SpawnManager {
         World world = center.getWorld();
         Location previousWorldSpawn = world.getSpawnLocation();
         File backupFile = createBackupFile();
+        Location buildCenter = center.clone();
+        int cx = center.getBlockX();
+        int cy = center.getBlockY();
+        int cz = center.getBlockZ();
 
-        plugin.getConfig().set("spawn.previous-world-spawn.world", previousWorldSpawn.getWorld().getName());
-        plugin.getConfig().set("spawn.previous-world-spawn.x", previousWorldSpawn.getX());
-        plugin.getConfig().set("spawn.previous-world-spawn.y", previousWorldSpawn.getY());
-        plugin.getConfig().set("spawn.previous-world-spawn.z", previousWorldSpawn.getZ());
-        plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
-        plugin.getConfig().set("spawn.build-incomplete", true);
+        building = true;
+        plugin.getConfig().set("spawn.build-planning", true);
         plugin.saveConfig();
 
-        List<BlockChange> changes = prepareBuild(center);
-        sender.sendMessage(ChatColor.GOLD + "Building the massive ESN SMP spawn...");
-        sender.sendMessage(ChatColor.YELLOW + "Do not restart/reload the server until /esnspawn status reports building=false.");
-        sender.sendMessage(ChatColor.GRAY + "Size: " + (HUB_RADIUS * 2 + 1) + " blocks across. Changes are applied with an 8ms/tick safety budget.");
+        sender.sendMessage(ChatColor.GOLD + "Preparing the massive ESN SMP spawn with the memory-safe builder...");
+        sender.sendMessage(ChatColor.YELLOW + "The spawn design is unchanged. The build plan is being streamed to disk instead of RAM.");
+        sender.sendMessage(ChatColor.GRAY + "Size: " + (HUB_RADIUS * 2 + 1) + " blocks across. Changes will still use the 8ms/tick safety budget.");
+
+        planningTask = Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            BlockChangeStore plan = null;
+            try {
+                plan = prepareBuild(cx, cy, cz);
+                plan.beginRead();
+                BlockChangeStore readyPlan = plan;
+                try {
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            startPreparedBuild(sender, buildCenter, previousWorldSpawn, backupFile, readyPlan));
+                } catch (Exception scheduleError) {
+                    readyPlan.closeQuietly();
+                    plugin.getLogger().warning("Spawn plan completed after plugin shutdown; temporary plan was discarded.");
+                }
+            } catch (CancellationException cancelled) {
+                if (plan != null) plan.closeQuietly();
+            } catch (Exception ex) {
+                if (plan != null) plan.closeQuietly();
+                try {
+                    Bukkit.getScheduler().runTask(plugin, () -> failPlanning(sender, ex));
+                } catch (Exception ignored) {
+                    plugin.getLogger().severe("Spawn planning failed during shutdown: " + ex.getMessage());
+                }
+            }
+        });
+    }
+
+    private synchronized void startPreparedBuild(CommandSender sender, Location center, Location previousWorldSpawn,
+                                                 File backupFile, BlockChangeStore changes) {
+        planningTask = null;
+        if (!building || !plugin.isEnabled()) {
+            changes.closeQuietly();
+            return;
+        }
+
+        World world = center.getWorld();
+        if (world == null || Bukkit.getWorld(world.getUID()) == null) {
+            changes.closeQuietly();
+            failPlanning(sender, new IllegalStateException("Spawn world unloaded while the build plan was being prepared."));
+            return;
+        }
 
         try {
-            this.activeBackup = new BackupWriter(backupFile, world);
+            this.activeBackup = new BackupWriter(backupFile, world, center);
         } catch (UncheckedIOException ex) {
-            plugin.getConfig().set("spawn.build-incomplete", false);plugin.getConfig().set("spawn.build-processed-blocks",plugin.getConfig().getInt("spawn.build-total-blocks",0));
+            changes.closeQuietly();
+            building = false;
+            plugin.getConfig().set("spawn.build-planning", false);
+            plugin.getConfig().set("spawn.build-incomplete", false);
             plugin.saveConfig();
             sender.sendMessage(ChatColor.RED + "Could not create the rollback backup. Spawn was not changed.");
             plugin.getLogger().severe("Could not start spawn backup: " + ex.getMessage());
             return;
         }
 
-        building = true;
-        plugin.getConfig().set("spawn.build-total-blocks", changes.size());plugin.getConfig().set("spawn.build-processed-blocks",0);plugin.saveConfig();
-        final int[] cursor = {0};
+        this.activePlan = changes;
+        plugin.getConfig().set("spawn.previous-world-spawn.world", previousWorldSpawn.getWorld().getName());
+        plugin.getConfig().set("spawn.previous-world-spawn.x", previousWorldSpawn.getX());
+        plugin.getConfig().set("spawn.previous-world-spawn.y", previousWorldSpawn.getY());
+        plugin.getConfig().set("spawn.previous-world-spawn.z", previousWorldSpawn.getZ());
+        plugin.getConfig().set("spawn.last-backup", backupFile.getAbsolutePath());
+        plugin.getConfig().set("spawn.build-planning", false);
+        plugin.getConfig().set("spawn.build-incomplete", true);
+        plugin.getConfig().set("spawn.build-total-blocks", changes.size());
+        plugin.getConfig().set("spawn.build-processed-blocks", 0);
+        plugin.saveConfig();
 
+        sender.sendMessage(ChatColor.GREEN + "Memory-safe spawn plan ready: " + changes.size() + " block operations.");
+        sender.sendMessage(ChatColor.YELLOW + "Do not restart/reload until /esnspawn status reports building=false.");
+
+        final int[] cursor = {0};
         buildTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             try {
                 int processed = 0;
                 long tickStart = System.nanoTime();
-                while (cursor[0] < changes.size() && processed < BLOCKS_PER_TICK && System.nanoTime()-tickStart < BUILD_BUDGET_NANOS) {
+                while (cursor[0] < changes.size()
+                        && processed < BLOCKS_PER_TICK
+                        && System.nanoTime() - tickStart < BUILD_BUDGET_NANOS) {
                     BlockChange change = changes.get(cursor[0]++);
                     Block block = world.getBlockAt(change.x(), change.y(), change.z());
                     Material material = change.material();
                     if (!material.isBlock()) {
-                        plugin.getLogger().warning("Skipping invalid non-block spawn material " + material + " at " + change.x() + "," + change.y() + "," + change.z());
+                        plugin.getLogger().warning("Skipping invalid non-block spawn material " + material
+                                + " at " + change.x() + "," + change.y() + "," + change.z());
                         continue;
                     }
                     activeBackup.set(block, material);
                     processed++;
                 }
-                if((cursor[0] % 30000)<Math.max(1,processed)){plugin.getConfig().set("spawn.build-processed-blocks",cursor[0]);plugin.saveConfig();}
+
+                if ((cursor[0] % 30000) < Math.max(1, processed)) {
+                    plugin.getConfig().set("spawn.build-processed-blocks", cursor[0]);
+                    plugin.saveConfig();
+                }
 
                 if (cursor[0] >= changes.size()) {
                     finishSuccessfulBuild(sender, center, backupFile);
@@ -188,6 +255,17 @@ public final class SpawnManager {
                 failBuild(sender, ex);
             }
         }, 1L, 1L);
+    }
+
+    private synchronized void failPlanning(CommandSender sender, Exception ex) {
+        planningTask = null;
+        building = false;
+        plugin.getConfig().set("spawn.build-planning", false);
+        plugin.getConfig().set("spawn.build-incomplete", false);
+        plugin.saveConfig();
+        sender.sendMessage(ChatColor.RED + "Spawn planning stopped safely. No world blocks were changed.");
+        plugin.getLogger().severe("Spawn planning failed: " + ex.getMessage());
+        ex.printStackTrace();
     }
 
     public synchronized void rebuildSpawn(CommandSender sender) {
@@ -223,13 +301,8 @@ public final class SpawnManager {
         buildSpawn(sender);
     }
 
-    private List<BlockChange> prepareBuild(Location center) {
-        World world = center.getWorld();
-        int cx = center.getBlockX();
-        int cy = center.getBlockY();
-        int cz = center.getBlockZ();
-
-        List<BlockChange> changes = new ArrayList<>(2200000);
+    private BlockChangeStore prepareBuild(int cx, int cy, int cz) {
+        BlockChangeStore changes = createPlanStore();
 
         // Massive circular plaza: 161 blocks across.
         for (int dx = -HUB_RADIUS; dx <= HUB_RADIUS; dx++) {
@@ -603,6 +676,7 @@ public final class SpawnManager {
             center.getWorld().setSpawnLocation(center.getBlockX(), center.getBlockY(), center.getBlockZ());
 
             plugin.getConfig().set("spawn.generated", true);
+            plugin.getConfig().set("spawn.build-planning", false);
             plugin.getConfig().set("spawn.build-incomplete", false);
             plugin.getConfig().set("spawn.design-version", 8);
             if (plugin.getConfig().getDouble("spawn.protection-radius", 36.0) < 100.0) plugin.getConfig().set("spawn.protection-radius", 100);
@@ -624,6 +698,7 @@ public final class SpawnManager {
                 buildTask.cancel();
                 buildTask = null;
             }
+            closeActivePlan();
             building = false;
         }
     }
@@ -639,6 +714,9 @@ public final class SpawnManager {
             buildTask.cancel();
             buildTask = null;
         }
+        closeActivePlan();
+        plugin.getConfig().set("spawn.build-planning", false);
+        plugin.saveConfig();
         building = false;
 
         sender.sendMessage(ChatColor.RED + "Spawn build stopped safely. Use /esnspawn rollback before trying again.");
@@ -746,6 +824,7 @@ public final class SpawnManager {
                 + ", incomplete=" + plugin.getConfig().getBoolean("spawn.build-incomplete", false)
                 + ", design=v" + plugin.getConfig().getInt("spawn.design-version", 1)
                 + ", building=" + building
+                + ", planning=" + (planningTask != null && buildTask == null)
                 + ", size=" + (HUB_RADIUS * 2 + 1) + "x" + (HUB_RADIUS * 2 + 1)
                 + ", location=" + (spawn == null ? "unavailable" : format(spawn));
     }
@@ -755,6 +834,13 @@ public final class SpawnManager {
     }
 
     public synchronized void shutdown() {
+        building = false;
+
+        if (planningTask != null) {
+            planningTask.cancel();
+            planningTask = null;
+        }
+
         if (buildTask != null) {
             buildTask.cancel();
             buildTask = null;
@@ -766,13 +852,34 @@ public final class SpawnManager {
             plugin.getLogger().severe("Could not close active spawn backup during shutdown: " + ex.getMessage());
         }
 
-        building = false;
+        closeActivePlan();
+        plugin.getConfig().set("spawn.build-planning", false);
+        plugin.saveConfig();
     }
 
     private void closeActiveBackup() throws IOException {
         if (activeBackup != null) {
             activeBackup.close();
             activeBackup = null;
+        }
+    }
+
+    private void closeActivePlan() {
+        if (activePlan != null) {
+            activePlan.closeQuietly();
+            activePlan = null;
+        }
+    }
+
+    private BlockChangeStore createPlanStore() {
+        File dir = new File(plugin.getDataFolder(), "build-work");
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IllegalStateException("Could not create spawn build-work directory: " + dir);
+        }
+        try {
+            return new BlockChangeStore(File.createTempFile("spawn-plan-", ".bin", dir), () -> building);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
@@ -792,12 +899,118 @@ public final class SpawnManager {
     private record BlockChange(int x, int y, int z, Material material) {
     }
 
+    /**
+     * Disk-backed sequential list. All existing spawn design methods still add the exact same
+     * BlockChange records in the exact same order, but millions of records no longer remain on heap.
+     */
+    private static final class BlockChangeStore extends AbstractList<BlockChange> implements Closeable {
+        private static final int RECORD_BYTES = 14; // x/y/z ints + unsigned material short
+        private static final Material[] MATERIALS = Material.values();
+
+        private final File backingFile;
+        private final RandomAccessFile file;
+        private final BooleanSupplier keepRunning;
+        private int count;
+        private int sequentialReadIndex = -1;
+        private boolean closed;
+
+        private BlockChangeStore(File backingFile, BooleanSupplier keepRunning) throws IOException {
+            this.backingFile = backingFile;
+            this.keepRunning = keepRunning;
+            this.file = new RandomAccessFile(backingFile, "rw");
+        }
+
+        @Override
+        public boolean add(BlockChange change) {
+            if ((count & 4095) == 0 && !keepRunning.getAsBoolean()) {
+                throw new CancellationException("Spawn planning cancelled.");
+            }
+            if (change.material().ordinal() > 65535) {
+                throw new IllegalStateException("Material ordinal exceeds disk-plan format.");
+            }
+            try {
+                file.writeInt(change.x());
+                file.writeInt(change.y());
+                file.writeInt(change.z());
+                file.writeShort(change.material().ordinal());
+                count++;
+                return true;
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        private void beginRead() {
+            try {
+                file.getFD().sync();
+                file.seek(0L);
+                sequentialReadIndex = 0;
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        @Override
+        public BlockChange get(int index) {
+            if (index < 0 || index >= count) throw new IndexOutOfBoundsException(index);
+            try {
+                if (sequentialReadIndex != index) {
+                    file.seek((long) index * RECORD_BYTES);
+                }
+                int x = file.readInt();
+                int y = file.readInt();
+                int z = file.readInt();
+                int materialOrdinal = file.readUnsignedShort();
+                sequentialReadIndex = index + 1;
+                if (materialOrdinal >= MATERIALS.length) {
+                    throw new IOException("Invalid material ordinal in spawn plan: " + materialOrdinal);
+                }
+                return new BlockChange(x, y, z, MATERIALS[materialOrdinal]);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        @Override
+        public int size() {
+            return count;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (closed) return;
+            closed = true;
+            file.close();
+            if (backingFile.exists() && !backingFile.delete()) {
+                backingFile.deleteOnExit();
+            }
+        }
+
+        private void closeQuietly() {
+            try {
+                close();
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
     private static final class BackupWriter implements AutoCloseable {
+        private static final int SIDE = HUB_RADIUS * 2 + 1;
+        private static final int Y_RADIUS = 128;
+        private static final int Y_SPAN = Y_RADIUS * 2 + 1;
+
         private final BufferedWriter writer;
-        private final Set<String> recorded = new HashSet<>();
+        private final BitSet recorded = new BitSet(SIDE * SIDE * Y_SPAN);
+        private final Set<String> overflowRecorded = new HashSet<>();
+        private final int baseX;
+        private final int baseY;
+        private final int baseZ;
         private int pending;
 
-        private BackupWriter(File file, World world) {
+        private BackupWriter(File file, World world, Location center) {
+            this.baseX = center.getBlockX() - HUB_RADIUS;
+            this.baseY = center.getBlockY() - Y_RADIUS;
+            this.baseZ = center.getBlockZ() - HUB_RADIUS;
             try {
                 this.writer = new BufferedWriter(new OutputStreamWriter(
                         new GZIPOutputStream(Files.newOutputStream(file.toPath())), StandardCharsets.UTF_8));
@@ -809,13 +1022,27 @@ public final class SpawnManager {
             }
         }
 
+        private boolean markFirstVisit(int x, int y, int z) {
+            int rx = x - baseX;
+            int ry = y - baseY;
+            int rz = z - baseZ;
+            if (rx >= 0 && rx < SIDE && ry >= 0 && ry < Y_SPAN && rz >= 0 && rz < SIDE) {
+                int index = (int) ((((long) ry * SIDE) + rx) * SIDE + rz);
+                if (recorded.get(index)) return false;
+                recorded.set(index);
+                return true;
+            }
+
+            // Only unusual out-of-bounds structure blocks land here, so this set stays tiny.
+            return overflowRecorded.add(x + "," + y + "," + z);
+        }
+
         private void set(Block block, Material material) throws IOException {
             if (block.getType() == material) {
                 return;
             }
 
-            String key = block.getX() + "," + block.getY() + "," + block.getZ();
-            if (recorded.add(key)) {
+            if (markFirstVisit(block.getX(), block.getY(), block.getZ())) {
                 writer.write(block.getX() + "|" + block.getY() + "|" + block.getZ()
                         + "|" + block.getType().name() + "|" + block.getBlockData().getAsString());
                 writer.newLine();
@@ -836,4 +1063,5 @@ public final class SpawnManager {
             writer.close();
         }
     }
+
 }
