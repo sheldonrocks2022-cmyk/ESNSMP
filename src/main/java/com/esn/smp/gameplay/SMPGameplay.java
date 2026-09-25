@@ -9,6 +9,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -90,6 +91,7 @@ public final class SMPGameplay implements CommandExecutor, Listener {
  private void warps(Player p){p.sendMessage(ChatColor.YELLOW+"Warps: "+ChatColor.WHITE+"/spawn "+ChatColor.GRAY+"• Survival exploration begins outside the protected spawn.");}
  @EventHandler public void mine(BlockBreakEvent e){mined.merge(e.getPlayer().getUniqueId(),1,Integer::sum);}
  @EventHandler public void death(EntityDeathEvent e){if(e.getEntity().getKiller()!=null)kills.merge(e.getEntity().getKiller().getUniqueId(),1,Integer::sum);}
+ @EventHandler public void quit(PlayerQuitEvent e){UUID id=e.getPlayer().getUniqueId();mined.remove(id);kills.remove(id);}
  private List<String> crateLore(String chance,String... rewards){List<String> lore=new ArrayList<>();lore.add(ChatColor.GRAY+"Requires: ESN Crate Key");lore.add(ChatColor.YELLOW+"Click to open");lore.add(ChatColor.DARK_GRAY+"--- Possible Rewards ---");for(String reward:rewards)lore.add(ChatColor.AQUA+chance+ChatColor.GRAY+" - "+ChatColor.WHITE+reward);return lore;}
  
  private int findNamedKey(Player p,String name){for(int i=0;i<p.getInventory().getSize();i++){ItemStack x=p.getInventory().getItem(i);if(x!=null&&x.hasItemMeta()&&name.equals(x.getItemMeta().getDisplayName()))return i;}return -1;}
