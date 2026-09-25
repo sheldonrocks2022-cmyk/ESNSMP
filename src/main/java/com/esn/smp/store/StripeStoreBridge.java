@@ -497,6 +497,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
     }
 
     private void warnOnce(String sessionId, String message) {
+        if (warnedSessions.size() >= 2048) warnedSessions.clear();
         if (warnedSessions.add(sessionId)) plugin.getLogger().warning("[ESN Store] " + message);
     }
 
@@ -822,6 +823,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
     public void close() {
         running = false;
         if (pollTask != null) pollTask.cancel();
+        warnedSessions.clear();
         synchronized (dbLock) {
             if (db != null) {
                 try {
