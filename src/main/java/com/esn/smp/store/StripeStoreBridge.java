@@ -255,6 +255,144 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         }
     }
 
+
+    private List<String> scanRecentSessions(boolean recover) throws Exception {
+        String secret = secretKey();
+        if (secret.isBlank()) throw new IllegalStateException("Stripe secret key is missing");
+
+        long since = (System.currentTimeMillis() / 1000L) - (7L * 24L * 60L * 60L);
+        long activation = getMetaLong("activation_time", 0L);
+        String startingAfter = null;
+        List<String> results = new ArrayList<>();
+        int examined = 0;
+        int recovered = 0;
+
+        for (int page = 0; page < 5; page++) {
+            StringBuilder url = new StringBuilder(STRIPE_SESSIONS)
+                    .append("?limit=100&status=complete&created%5Bgte%5D=")
+                    .append(since);
+            if (startingAfter != null) {
+                url.append("&starting_after=")
+                        .append(URLEncoder.encode(startingAfter, StandardCharsets.UTF_8));
+            }
+
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url.toString()))
+                    .timeout(Duration.ofSeconds(20))
+                    .header("Authorization", "Bearer " + secret)
+                    .header("User-Agent", "ESNSMP-StripeStore/1.2")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                String body = response.body() == null ? "" : response.body().replaceAll("\\s+", " ");
+                if (body.length() > 240) body = body.substring(0, 240);
+                throw new IllegalStateException("Stripe HTTP " + response.statusCode() + (body.isBlank() ? "" : " - " + body));
+            }
+
+            JsonNode root = json.readTree(response.body());
+            JsonNode data = root.path("data");
+            if (!data.isArray() || data.isEmpty()) break;
+
+            for (JsonNode session : data) {
+                examined++;
+                String sessionId = session.path("id").asText("");
+                String paymentStatus = session.path("payment_status").asText("");
+                String paymentLink = session.path("payment_link").asText("");
+                String productKey = session.path("metadata").path("esn_product").asText("");
+                if (productKey.isBlank()) productKey = paymentLink;
+                ProductMapping mapping = findProduct(productKey);
+                String username = extractUsername(session);
+                long created = session.path("created").asLong(0L);
+
+                // Keep output focused on ESN Store-relevant sessions only.
+                if (mapping == null && username.isBlank()) continue;
+
+                String shortId = sessionId.length() > 12 ? "..." + sessionId.substring(sessionId.length() - 12) : sessionId;
+                String prefix = created > 0 && activation > 0 && created < activation ? "pre-activation; " : "";
+
+                if (!"paid".equalsIgnoreCase(paymentStatus)) {
+                    results.add(shortId + " - " + prefix + "not paid");
+                    continue;
+                }
+                if (orderExists(sessionId)) {
+                    results.add(shortId + " - " + prefix + "already processed");
+                    continue;
+                }
+                if (mapping == null) {
+                    results.add(shortId + " - " + prefix + "no product mapping (" + productKey + ")");
+                    continue;
+                }
+                if (!MC_NAME.matcher(username).matches()) {
+                    results.add(shortId + " - " + prefix + "missing/invalid Minecraft Username" +
+                            (username.isBlank() ? "" : " [" + username + "]"));
+                    continue;
+                }
+                if (ESNItemsCommand.createStoreItem(mapping.itemId()) == null) {
+                    results.add(shortId + " - " + prefix + "mapped item missing: " + mapping.itemId());
+                    continue;
+                }
+
+                if (recover) {
+                    if (insertPending(sessionId, username, productKey, mapping.itemId(), mapping.amount(), created)) {
+                        recovered++;
+                        String finalUsername = username;
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            Player player = Bukkit.getPlayerExact(finalUsername);
+                            if (player != null && player.isOnline()) deliverPending(player, false);
+                        });
+                        results.add(shortId + " - RECOVERED for " + username + " -> " + mapping.itemId() + " x" + mapping.amount());
+                    } else {
+                        results.add(shortId + " - already processed");
+                    }
+                } else {
+                    results.add(shortId + " - READY for " + username + " -> " + mapping.itemId() + " x" + mapping.amount());
+                }
+            }
+
+            if (!root.path("has_more").asBoolean(false)) break;
+            startingAfter = data.get(data.size() - 1).path("id").asText("");
+            if (startingAfter.isBlank()) break;
+        }
+
+        results.add(0, "Examined " + examined + " completed Stripe session(s) from the last 7 days" +
+                (recover ? "; recovered " + recovered : "") + ".");
+        if (results.size() == 1) {
+            results.add("No ESN Store-relevant sessions were found.");
+        }
+        return results;
+    }
+
+    private void runRecentScan(CommandSender sender, boolean recover) {
+        sender.sendMessage(ChatColor.YELLOW + (recover
+                ? "Scanning recent Stripe payments and recovering valid ESN Store orders..."
+                : "Scanning recent Stripe payments in read-only debug mode..."));
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            List<String> lines;
+            try {
+                lines = scanRecentSessions(recover);
+            } catch (Exception ex) {
+                lines = List.of("Scan failed: " + ex.getClass().getSimpleName() + ": " + String.valueOf(ex.getMessage()));
+            }
+            List<String> finalLines = lines;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                sender.sendMessage(ChatColor.GOLD + (recover ? "ESN Store Rescan" : "ESN Store Debug"));
+                int shown = 0;
+                for (String line : finalLines) {
+                    if (shown >= 12) {
+                        sender.sendMessage(ChatColor.GRAY + "...more results omitted");
+                        break;
+                    }
+                    sender.sendMessage(ChatColor.GRAY + line);
+                    shown++;
+                }
+                if (recover) {
+                    sender.sendMessage(ChatColor.YELLOW + "If you are online and a purchase was recovered, delivery should happen immediately. Otherwise use /storeclaim.");
+                }
+            });
+        });
+    }
+
     private void ingestSession(JsonNode session) {
         String sessionId = session.path("id").asText("");
         if (sessionId.isBlank() || orderExists(sessionId)) return;
@@ -549,6 +687,25 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
 
         if (!command.getName().equalsIgnoreCase("storestatus")) return false;
 
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("debug")) {
+            if (!sender.hasPermission("esnsmp.store.admin")) {
+                sender.sendMessage(ChatColor.RED + "No permission.");
+                return true;
+            }
+            runRecentScan(sender, false);
+            return true;
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("rescan")) {
+            if (!sender.hasPermission("esnsmp.store.admin")) {
+                sender.sendMessage(ChatColor.RED + "No permission.");
+                return true;
+            }
+            runRecentScan(sender, true);
+            return true;
+        }
+
         if (args.length > 0 && args[0].equalsIgnoreCase("map")) {
             if (!sender.hasPermission("esnsmp.store.admin")) {
                 sender.sendMessage(ChatColor.RED + "No permission.");
@@ -601,6 +758,9 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         }
 
         sender.sendMessage(ChatColor.GOLD + "ESN Store Stripe Bridge");
+        sender.sendMessage(ChatColor.GRAY + "Admin debug: " + ChatColor.WHITE + "/storestatus debug");
+        sender.sendMessage(ChatColor.GRAY + "Recover recent purchase: " + ChatColor.WHITE + "/storestatus rescan");
+
         sender.sendMessage(ChatColor.GRAY + "Key detected: " + ChatColor.WHITE + !secretKey().isBlank());
         sender.sendMessage(ChatColor.GRAY + "Running: " + ChatColor.WHITE + running);
         sender.sendMessage(ChatColor.GRAY + "Pending deliveries: " + ChatColor.WHITE + pendingCount());
