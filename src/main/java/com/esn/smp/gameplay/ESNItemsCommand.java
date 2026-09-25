@@ -30,6 +30,11 @@ public final class ESNItemsCommand implements CommandExecutor {
   ITEMS.put("cosmicblade",CustomItems::cosmicBlade); ITEMS.put("cosmicstaff",CustomItems::cosmicStaff); ITEMS.put("cosmichelmet",CustomItems::cosmicHelmet); ITEMS.put("cosmicchest",CustomItems::cosmicChest); ITEMS.put("cosmiclegs",CustomItems::cosmicLegs); ITEMS.put("cosmicboots",CustomItems::cosmicBoots);
   ITEMS.put("voidshard",CustomItems::voidShard); ITEMS.put("titanfragment",CustomItems::titanFragment); ITEMS.put("celestialcrystal",CustomItems::celestialCrystal); ITEMS.put("bloodstone",CustomItems::bloodstone); ITEMS.put("arcanedust",CustomItems::arcaneDust); ITEMS.put("cosmiccore",CustomItems::cosmicCore);
  }
+ public static ItemStack createStoreItem(String itemId){
+  if(itemId==null)return null;
+  var supplier=ITEMS.get(itemId.toLowerCase(Locale.ROOT));
+  return supplier==null?null:supplier.get();
+ }
  public boolean onCommand(CommandSender s,Command c,String l,String[] a){
   if(!(s instanceof Player p)){s.sendMessage("Players only.");return true;}
   if(!p.hasPermission("esnsmp.items")){p.sendMessage(ChatColor.RED+"No permission.");return true;}
