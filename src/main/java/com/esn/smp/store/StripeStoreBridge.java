@@ -62,6 +62,53 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         ensureSecretKeyFile();
     }
 
+    public static void migrateLegacyStripeKey(File dataFolder) {
+        if (dataFolder == null) return;
+        File configFile = new File(dataFolder, "config.yml");
+        File keyFile = new File(dataFolder, "stripe-key.txt");
+
+        // Never overwrite an already configured key file.
+        if (keyFile.isFile()) {
+            try {
+                String existing = Files.readString(keyFile.toPath(), StandardCharsets.UTF_8).trim();
+                if (existing.startsWith("sk_test_") || existing.startsWith("sk_live_")) return;
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (!configFile.isFile()) return;
+        try {
+            List<String> lines = Files.readAllLines(configFile.toPath(), StandardCharsets.UTF_8);
+            boolean inStripeStore = false;
+            String legacyKey = "";
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (!inStripeStore && trimmed.equals("stripe-store:")) {
+                    inStripeStore = true;
+                    continue;
+                }
+                if (inStripeStore) {
+                    if (!line.isBlank() && !Character.isWhitespace(line.charAt(0))) break;
+                    if (trimmed.startsWith("secret-key:")) {
+                        legacyKey = trimmed.substring("secret-key:".length()).trim();
+                        if ((legacyKey.startsWith("\"") && legacyKey.endsWith("\"")) ||
+                            (legacyKey.startsWith("'") && legacyKey.endsWith("'"))) {
+                            legacyKey = legacyKey.substring(1, legacyKey.length() - 1).trim();
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (legacyKey.startsWith("sk_test_") || legacyKey.startsWith("sk_live_")) {
+                if (!dataFolder.exists()) dataFolder.mkdirs();
+                Files.writeString(keyFile.toPath(), legacyKey + "\n", StandardCharsets.UTF_8,
+                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
     public static void removeLegacyStripeConfigBlock(File configFile) {
         if (configFile == null || !configFile.isFile()) return;
         try {
