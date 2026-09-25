@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public final class StripeStoreBridge implements Listener, CommandExecutor, AutoCloseable {
-    private static final Pattern MC_NAME = Pattern.compile("^[A-Za-z0-9_]{3,16}$");
+    private static final Pattern MC_NAME = Pattern.compile("^\\.?[A-Za-z0-9_]{3,16}$");
     private static final String STRIPE_SESSIONS = "https://api.stripe.com/v1/checkout/sessions";
     private static final long POLL_SECONDS = 30L;
 
