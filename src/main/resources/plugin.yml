@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.4.8'
+version: '2.4.9'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '1.21'
 author: ESN
@@ -175,6 +175,10 @@ commands:
     description: Give ESN custom items and crate keys.
     usage: /esnitems <item>
     permission: esnsmp.items
+
+  esnram:
+    description: Show ESNSMP heap, chunk and custom-entity diagnostics.
+    permission: esnsmp.admin
 
   claim:
     description: Protect your base from griefing and theft.
