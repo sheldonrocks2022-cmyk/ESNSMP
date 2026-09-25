@@ -400,6 +400,13 @@ commands:
   revive:
     description: 'Revive a nearby downed teammate'
 
+  storeclaim:
+    description: 'Claim pending paid ESN Store purchases'
+    permission: esnsmp.store.claim
+  storestatus:
+    description: 'View ESN Store Stripe bridge status'
+    permission: esnsmp.store.admin
+
 permissions:
   esnsmp.owner:
     default: op
@@ -437,3 +444,7 @@ permissions:
     default: op
   esnsmp.chat.mention:
     default: true
+  esnsmp.store.claim:
+    default: true
+  esnsmp.store.admin:
+    default: op
