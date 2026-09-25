@@ -21,6 +21,7 @@ import com.esn.smp.gameplay.V18Core;
 import com.esn.smp.gameplay.V19Core;
 import com.esn.smp.gameplay.ExpansionCore;
 import com.esn.smp.gameplay.WelcomeGuide;
+import com.esn.smp.gameplay.RamDiagnostics;
 import com.esn.smp.gameplay.ESN20Core;
 import com.esn.smp.gameplay.ESN20Expansion;
 import com.esn.smp.gameplay.Fun20Core;
@@ -59,7 +60,7 @@ public final class ESNSMPPlugin extends JavaPlugin {
   registerCommand("spawn",new SpawnCommand(spawnManager));registerCommand("setspawn",new SetSpawnCommand(spawnManager));registerCommand("esnspawn",new ESNSpawnCommand(spawnManager));registerCommand("ah",auctions);registerCommand("balance",economy);registerCommand("pay",economy);
   for(String name:new String[]{"shop","crates","daily","quests","leaderboard"})registerCommand(name,gameplay);getServer().getPluginManager().registerEvents(gameplay,this);ServerMenus serverMenus=new ServerMenus(this);registerCommand("menu",serverMenus);getServer().getPluginManager().registerEvents(serverMenus,this);AdventureJournal journal=new AdventureJournal(this);registerCommand("journal",journal);getServer().getPluginManager().registerEvents(journal,this);
   HomesWarps homesWarps=new HomesWarps(this);for(String name:new String[]{"sethome","home","delhome","homes","rtp","warp","warps","setwarp","delwarp"})registerCommand(name,homesWarps);
-  ProfileCommand profiles=new ProfileCommand(dataStore);registerCommand("profile",profiles);getServer().getPluginManager().registerEvents(profiles,this);new ESNScoreboard(this,dataStore);registerCommand("esnitems",new ESNItemsCommand());
+  ProfileCommand profiles=new ProfileCommand(dataStore);registerCommand("profile",profiles);getServer().getPluginManager().registerEvents(profiles,this);new ESNScoreboard(this,dataStore);registerCommand("esnitems",new ESNItemsCommand());registerCommand("esnram",new RamDiagnostics(this));
   Teleports teleports=new Teleports(this);for(String name:new String[]{"tpa","tpahere","tpaccept","tpdeny","back","tptoggle","tpmenu"})registerCommand(name,teleports);getServer().getPluginManager().registerEvents(teleports,this);
   try{v18Core=new V18Core(this,dataStore);for(String name:new String[]{"level","streak","team","bounty","outlaws","trade","staff","invsee","ecsee","freeze","warn","mute","history"})registerCommand(name,v18Core);getServer().getPluginManager().registerEvents(v18Core,this);}catch(Exception ex){getLogger().severe("v1.8 optional systems failed to initialize; core will stay online: "+ex.getMessage());}
   AdminControlCenter adminCenter=new AdminControlCenter(this,gameplay,dataStore);registerCommand("admin",adminCenter);registerCommand("modmenu",adminCenter);getServer().getPluginManager().registerEvents(adminCenter,this);
