@@ -10,7 +10,7 @@ spawn:
   build-incomplete: false
   design-version: 3
   build-on-first-start: true
-  protection-radius: 2000
+  protection-radius: 800
   teleport-new-players: true
   teleport-on-respawn: true
   disable-pvp: true
