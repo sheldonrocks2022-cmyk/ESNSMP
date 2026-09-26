@@ -1,0 +1,44 @@
+name: Publish ESNSMP v2.6.0
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/publish-v2.6.0.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v2.6.0 >/dev/null 2>&1; then
+            gh release upload v2.6.0 target/ESNSMP.jar --clobber
+          else
+            gh release create v2.6.0 target/ESNSMP.jar \
+              --target "$GITHUB_SHA" \
+              --title "ESNSMP v2.6.0" \
+              --notes "Adds the ESN Store-exclusive Riftwalker Bundle: Riftblade, Rift Wings, Phase Boots, Rift Bow, Rift Core, and Void Compass. Riftwalker durability items are truly unbreakable and the bundle includes its custom abilities and full-set effects."
+          fi
