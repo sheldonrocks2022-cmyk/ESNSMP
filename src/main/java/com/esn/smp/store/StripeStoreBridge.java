@@ -50,6 +50,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
     private static final String BUNDLE_PREFIX = "__esn_bundle__:";
     private static final String REALM_KEYS_PLINK = "plink_1UJN5IISwShswuKdH08ewRC2";
     private static final String SEASON_RELICS_PLINK = "plink_1UJk6BISwShswuKdtQ40w2Jb";
+    private static final String RIFTWALKER_PLINK = "plink_1UJonjISwShswuKdIEKcHcDK";
 
     private final ESNSMPPlugin plugin;
     private final HttpClient http;
@@ -213,6 +214,14 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                 new ProductMapping("tideheart", 1),
                 new ProductMapping("voidrelic", 1),
                 new ProductMapping("celestialstar", 1)
+        ));
+        changed |= seedProductIfMissing(RIFTWALKER_PLINK, List.of(
+                new ProductMapping("riftblade", 1),
+                new ProductMapping("riftwings", 1),
+                new ProductMapping("phaseboots", 1),
+                new ProductMapping("riftbow", 1),
+                new ProductMapping("riftcore", 1),
+                new ProductMapping("voidcompass", 1)
         ));
 
         // Preserve any product mappings created by older builds.
