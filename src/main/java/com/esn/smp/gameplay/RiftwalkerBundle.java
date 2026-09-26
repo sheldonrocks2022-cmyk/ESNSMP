@@ -22,8 +22,11 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -78,6 +81,7 @@ public final class RiftwalkerBundle implements Listener {
     private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastSneak = new ConcurrentHashMap<>();
     private final Map<UUID, Long> dashBonusUntil = new ConcurrentHashMap<>();
+    private final Map<String, Long> activationDebounce = new ConcurrentHashMap<>();
 
     public RiftwalkerBundle(ESNSMPPlugin plugin) {
         this.plugin = plugin;
@@ -90,8 +94,9 @@ public final class RiftwalkerBundle implements Listener {
         ItemStack item = base(Material.NETHERITE_SWORD, BLADE_ID, "RIFTBLADE",
                 "Right-click: Rift Dash up to 8 blocks.",
                 "Your next melee hit after dashing deals bonus damage.",
-                "Cooldown: 8 seconds.");
-        item.addUnsafeEnchantment(Enchantment.SHARPNESS, 10);
+                "Cooldown: 8 seconds.",
+                "Realm 100 enchant power: 225 (Looting intentionally excluded).");
+        applyRealm100SwordEnchants(item);
         return item;
     }
 
@@ -106,9 +111,9 @@ public final class RiftwalkerBundle implements Listener {
         ItemStack item = base(Material.NETHERITE_BOOTS, BOOTS_ID, "PHASE BOOTS",
                 "Permanent Speed I while worn.",
                 "Reduces fall damage by 75%.",
-                "Double-sneak: Phase Step. Cooldown: 10 seconds.");
-        item.addUnsafeEnchantment(Enchantment.PROTECTION, 8);
-        item.addUnsafeEnchantment(Enchantment.FEATHER_FALLING, 10);
+                "Double-sneak: Phase Step. Cooldown: 10 seconds.",
+                "Realm 100 enchant power: 225.");
+        applyRealm100BootEnchants(item);
         return item;
     }
 
@@ -167,6 +172,50 @@ public final class RiftwalkerBundle implements Listener {
         return expected.equalsIgnoreCase(type(item));
     }
 
+
+    private static void applyRealm100SwordEnchants(ItemStack item) {
+        item.addUnsafeEnchantment(Enchantment.UNBREAKING, 225);
+        item.addUnsafeEnchantment(Enchantment.SHARPNESS, 225);
+        item.addUnsafeEnchantment(Enchantment.FIRE_ASPECT, 225);
+        item.addUnsafeEnchantment(Enchantment.KNOCKBACK, 225);
+        item.addUnsafeEnchantment(Enchantment.SMITE, 225);
+        item.addUnsafeEnchantment(Enchantment.BANE_OF_ARTHROPODS, 225);
+        // Intentionally NO Looting on the Riftblade.
+    }
+
+    private static void applyRealm100BootEnchants(ItemStack item) {
+        item.addUnsafeEnchantment(Enchantment.UNBREAKING, 225);
+        item.addUnsafeEnchantment(Enchantment.PROTECTION, 225);
+        item.addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, 225);
+        item.addUnsafeEnchantment(Enchantment.FIRE_PROTECTION, 225);
+        item.addUnsafeEnchantment(Enchantment.PROJECTILE_PROTECTION, 225);
+        item.addUnsafeEnchantment(Enchantment.THORNS, 225);
+        item.addUnsafeEnchantment(Enchantment.FEATHER_FALLING, 225);
+        item.addUnsafeEnchantment(Enchantment.DEPTH_STRIDER, 225);
+        item.addUnsafeEnchantment(Enchantment.SOUL_SPEED, 225);
+    }
+
+    private static void repairRiftItem(ItemStack item) {
+        String itemType = type(item);
+        if (itemType.isBlank() || !item.hasItemMeta()) return;
+
+        ItemMeta meta = item.getItemMeta();
+        meta.setUnbreakable(true);
+        item.setItemMeta(meta);
+
+        if (BLADE_ID.equalsIgnoreCase(itemType)) {
+            for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
+                item.removeEnchantment(enchantment);
+            }
+            applyRealm100SwordEnchants(item);
+        } else if (BOOTS_ID.equalsIgnoreCase(itemType)) {
+            for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
+                item.removeEnchantment(enchantment);
+            }
+            applyRealm100BootEnchants(item);
+        }
+    }
+
     private void passiveTick() {
         long now = System.currentTimeMillis();
         cooldowns.entrySet().removeIf(e -> e.getValue() <= now);
@@ -202,9 +251,8 @@ public final class RiftwalkerBundle implements Listener {
         if (!type(event.getItem()).isBlank()) event.setCancelled(true);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onInteract(PlayerInteractEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND) return;
         Action action = event.getAction();
         if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
 
@@ -212,6 +260,14 @@ public final class RiftwalkerBundle implements Listener {
         ItemStack item = event.getItem();
         String itemType = type(item);
         if (itemType.isBlank()) return;
+
+        repairRiftItem(item);
+
+        long now = System.currentTimeMillis();
+        String debounceKey = player.getUniqueId() + ":" + itemType;
+        long previous = activationDebounce.getOrDefault(debounceKey, 0L);
+        if (now - previous < 150L) return;
+        activationDebounce.put(debounceKey, now);
 
         switch (itemType.toLowerCase(Locale.ROOT)) {
             case BLADE_ID -> {
@@ -232,8 +288,11 @@ public final class RiftwalkerBundle implements Listener {
                 if (!startCooldown(player, "core", 45_000L, "Rift Core")) return;
                 player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 160, 1, true, true, true));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 160, 1, true, true, true));
+                player.setAbsorptionAmount(Math.max(player.getAbsorptionAmount(), 8.0));
                 riftBurstParticles(player.getLocation().add(0, 1, 0), 60);
                 player.sendActionBar(ChatColor.LIGHT_PURPLE + "Rift Armor active for 8 seconds.");
+                player.sendMessage(ChatColor.DARK_PURPLE + "[Rift Core] " + ChatColor.LIGHT_PURPLE +
+                        "Rift Armor activated: Resistance II + Absorption for 8 seconds.");
             }
             case COMPASS_ID -> {
                 event.setCancelled(true);
@@ -352,10 +411,15 @@ public final class RiftwalkerBundle implements Listener {
             return;
         }
 
-        if (compass.getItemMeta() instanceof CompassMeta meta) {
-            meta.setLodestone(death);
-            meta.setLodestoneTracked(false);
-            compass.setItemMeta(meta);
+        try {
+            if (compass.getItemMeta() instanceof CompassMeta meta) {
+                meta.setLodestone(death);
+                meta.setLodestoneTracked(false);
+                compass.setItemMeta(meta);
+            }
+        } catch (Exception ex) {
+            plugin.getLogger().warning("Void Compass could not bind its lodestone target for " +
+                    player.getName() + ": " + ex.getMessage());
         }
 
         String worldName = death.getWorld().getName();
@@ -373,6 +437,9 @@ public final class RiftwalkerBundle implements Listener {
         } else {
             player.sendActionBar(ChatColor.LIGHT_PURPLE +
                     "Void Compass bound to your last death in " + worldName + ".");
+            player.sendMessage(ChatColor.DARK_PURPLE + "[Void Compass] " + ChatColor.LIGHT_PURPLE +
+                    "Pointing to your last death in " + worldName + " at " +
+                    death.getBlockX() + ", " + death.getBlockY() + ", " + death.getBlockZ() + ".");
         }
     }
 
@@ -384,14 +451,22 @@ public final class RiftwalkerBundle implements Listener {
         Double x = pdc.get(DEATH_X, PersistentDataType.DOUBLE);
         Double y = pdc.get(DEATH_Y, PersistentDataType.DOUBLE);
         Double z = pdc.get(DEATH_Z, PersistentDataType.DOUBLE);
-        if (worldId == null || x == null || y == null || z == null) return null;
 
-        try {
-            World world = Bukkit.getWorld(UUID.fromString(worldId));
-            return world == null ? null : new Location(world, x, y, z);
-        } catch (IllegalArgumentException ignored) {
-            return null;
+        if (worldId != null && x != null && y != null && z != null) {
+            try {
+                World world = Bukkit.getWorld(UUID.fromString(worldId));
+                if (world != null) return new Location(world, x, y, z);
+            } catch (IllegalArgumentException ignored) {
+            }
         }
+
+        // Paper/Bedrock fallback: use the server's own last-death location if available.
+        try {
+            Object value = player.getClass().getMethod("getLastDeathLocation").invoke(player);
+            if (value instanceof Location location && location.getWorld() != null) return location;
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     private boolean startCooldown(Player player, String ability, long millis, String display) {
@@ -434,11 +509,29 @@ public final class RiftwalkerBundle implements Listener {
         location.getWorld().spawnParticle(Particle.REVERSE_PORTAL, location, Math.max(4, count / 3), 0.7, 0.7, 0.7, 0.04);
     }
 
+
+    @EventHandler
+    public void repairOnJoin(PlayerJoinEvent event) {
+        for (ItemStack item : event.getPlayer().getInventory().getContents()) repairRiftItem(item);
+        for (ItemStack item : event.getPlayer().getEnderChest().getContents()) repairRiftItem(item);
+    }
+
+    @EventHandler
+    public void repairOnHeld(PlayerItemHeldEvent event) {
+        repairRiftItem(event.getPlayer().getInventory().getItem(event.getNewSlot()));
+    }
+
+    @EventHandler
+    public void repairOnOpen(InventoryOpenEvent event) {
+        for (ItemStack item : event.getInventory().getContents()) repairRiftItem(item);
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         String prefix = id.toString() + ":";
         cooldowns.keySet().removeIf(key -> key.startsWith(prefix));
+        activationDebounce.keySet().removeIf(key -> key.startsWith(prefix));
         lastSneak.remove(id);
         dashBonusUntil.remove(id);
     }
