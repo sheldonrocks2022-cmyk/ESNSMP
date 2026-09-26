@@ -205,24 +205,48 @@ public final class RiftwalkerBundle implements Listener {
         if (itemType.isBlank() || !item.hasItemMeta()) return;
 
         ItemMeta meta = item.getItemMeta();
-        meta.setUnbreakable(true);
-        item.setItemMeta(meta);
+        if (!meta.isUnbreakable()) {
+            meta.setUnbreakable(true);
+            item.setItemMeta(meta);
+        }
 
         if (BLADE_ID.equalsIgnoreCase(itemType)) {
-            for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
-                item.removeEnchantment(enchantment);
+            if (!hasExactEnchants(item, 6,
+                    Enchantment.UNBREAKING, Enchantment.SHARPNESS, Enchantment.FIRE_ASPECT,
+                    Enchantment.KNOCKBACK, Enchantment.SMITE, Enchantment.BANE_OF_ARTHROPODS)) {
+                resetEnchants(item);
+                applyRealm100SwordEnchants(item);
             }
-            applyRealm100SwordEnchants(item);
         } else if (BOOTS_ID.equalsIgnoreCase(itemType)) {
-            for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
-                item.removeEnchantment(enchantment);
+            if (!hasExactEnchants(item, 9,
+                    Enchantment.UNBREAKING, Enchantment.PROTECTION, Enchantment.BLAST_PROTECTION,
+                    Enchantment.FIRE_PROTECTION, Enchantment.PROJECTILE_PROTECTION, Enchantment.THORNS,
+                    Enchantment.FEATHER_FALLING, Enchantment.DEPTH_STRIDER, Enchantment.SOUL_SPEED)) {
+                resetEnchants(item);
+                applyRealm100BootEnchants(item);
             }
-            applyRealm100BootEnchants(item);
         } else if (BOW_ID.equalsIgnoreCase(itemType)) {
-            for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
-                item.removeEnchantment(enchantment);
+            if (!hasExactEnchants(item, 5,
+                    Enchantment.UNBREAKING, Enchantment.POWER, Enchantment.PUNCH,
+                    Enchantment.FLAME, Enchantment.INFINITY)) {
+                resetEnchants(item);
+                applyRealm100BowEnchants(item);
             }
-            applyRealm100BowEnchants(item);
+        }
+    }
+
+    private static boolean hasExactEnchants(ItemStack item, int expectedCount, Enchantment... expected) {
+        Map<Enchantment, Integer> enchants = item.getEnchantments();
+        if (enchants.size() != expectedCount) return false;
+        for (Enchantment enchantment : expected) {
+            if (enchants.getOrDefault(enchantment, 0) != 225) return false;
+        }
+        return true;
+    }
+
+    private static void resetEnchants(ItemStack item) {
+        for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
+            item.removeEnchantment(enchantment);
         }
     }
 
