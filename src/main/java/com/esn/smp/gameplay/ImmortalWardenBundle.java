@@ -31,10 +31,10 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Admin-test version of the ESN Immortal Warden Bundle.
@@ -57,14 +57,13 @@ public final class ImmortalWardenBundle implements Listener {
     private static final NamespacedKey WARDEN_ARROW = new NamespacedKey("esnsmp", "warden_arrow");
 
     private final ESNSMPPlugin plugin;
-    private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
-    private final Map<UUID, Mark> marked = new ConcurrentHashMap<>();
+    private final Map<String, Long> cooldowns = new HashMap<>();
+    private final Map<UUID, Mark> marked = new HashMap<>();
 
     private record Mark(UUID owner, long expiresAt) {}
 
     public ImmortalWardenBundle(ESNSMPPlugin plugin) {
         this.plugin = plugin;
-        Bukkit.getScheduler().runTaskTimer(plugin, this::passiveTick, 20L, 10L);
     }
 
     public static ItemStack helmet() {
@@ -221,55 +220,89 @@ public final class ImmortalWardenBundle implements Listener {
         if (itemType.isBlank() || !item.hasItemMeta()) return;
 
         ItemMeta meta = item.getItemMeta();
-        meta.setUnbreakable(true);
-        item.setItemMeta(meta);
+        if (!meta.isUnbreakable()) {
+            meta.setUnbreakable(true);
+            item.setItemMeta(meta);
+        }
 
-        if (HELMET_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applyHelmetEnchants);
-        else if (CHEST_ID.equals(itemType) || LEGS_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applyChestLegEnchants);
-        else if (BOOTS_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applyBootEnchants);
-        else if (BLADE_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applySwordEnchants);
-        else if (BOW_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applyBowEnchants);
+        if (HELMET_ID.equals(itemType)) {
+            repairEnchants(item, 8, ImmortalWardenBundle::applyHelmetEnchants,
+                    Enchantment.UNBREAKING, Enchantment.PROTECTION, Enchantment.BLAST_PROTECTION,
+                    Enchantment.FIRE_PROTECTION, Enchantment.PROJECTILE_PROTECTION, Enchantment.THORNS,
+                    Enchantment.RESPIRATION, Enchantment.AQUA_AFFINITY);
+        } else if (CHEST_ID.equals(itemType) || LEGS_ID.equals(itemType)) {
+            repairEnchants(item, 6, ImmortalWardenBundle::applyChestLegEnchants,
+                    Enchantment.UNBREAKING, Enchantment.PROTECTION, Enchantment.BLAST_PROTECTION,
+                    Enchantment.FIRE_PROTECTION, Enchantment.PROJECTILE_PROTECTION, Enchantment.THORNS);
+        } else if (BOOTS_ID.equals(itemType)) {
+            repairEnchants(item, 9, ImmortalWardenBundle::applyBootEnchants,
+                    Enchantment.UNBREAKING, Enchantment.PROTECTION, Enchantment.BLAST_PROTECTION,
+                    Enchantment.FIRE_PROTECTION, Enchantment.PROJECTILE_PROTECTION, Enchantment.THORNS,
+                    Enchantment.FEATHER_FALLING, Enchantment.DEPTH_STRIDER, Enchantment.SOUL_SPEED);
+        } else if (BLADE_ID.equals(itemType)) {
+            repairEnchants(item, 7, ImmortalWardenBundle::applySwordEnchants,
+                    Enchantment.UNBREAKING, Enchantment.SHARPNESS, Enchantment.LOOTING,
+                    Enchantment.FIRE_ASPECT, Enchantment.KNOCKBACK, Enchantment.SMITE,
+                    Enchantment.BANE_OF_ARTHROPODS);
+        } else if (BOW_ID.equals(itemType)) {
+            repairEnchants(item, 5, ImmortalWardenBundle::applyBowEnchants,
+                    Enchantment.UNBREAKING, Enchantment.POWER, Enchantment.PUNCH,
+                    Enchantment.FLAME, Enchantment.INFINITY);
+        }
     }
 
-    private static void resetEnchants(ItemStack item, java.util.function.Consumer<ItemStack> applier) {
-        for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
+    private static void repairEnchants(ItemStack item, int expectedCount,
+                                       java.util.function.Consumer<ItemStack> applier,
+                                       Enchantment... expected) {
+        Map<Enchantment, Integer> enchants = item.getEnchantments();
+        boolean correct = enchants.size() == expectedCount;
+        if (correct) {
+            for (Enchantment enchantment : expected) {
+                if (enchants.getOrDefault(enchantment, 0) != 225) {
+                    correct = false;
+                    break;
+                }
+            }
+        }
+        if (correct) return;
+
+        for (Enchantment enchantment : new ArrayList<>(enchants.keySet())) {
             item.removeEnchantment(enchantment);
         }
         applier.accept(item);
     }
 
-    private void passiveTick() {
-        long now = System.currentTimeMillis();
+    void cleanupPassiveState(long now) {
         cooldowns.entrySet().removeIf(e -> e.getValue() <= now);
         marked.entrySet().removeIf(e -> e.getValue().expiresAt() <= now);
+    }
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            boolean helmet = is(player.getInventory().getHelmet(), HELMET_ID);
-            boolean chest = is(player.getInventory().getChestplate(), CHEST_ID);
-            boolean legs = is(player.getInventory().getLeggings(), LEGS_ID);
-            boolean boots = is(player.getInventory().getBoots(), BOOTS_ID);
-            boolean fullSet = helmet && chest && legs && boots;
+    void passiveTick(Player player) {
+        boolean helmet = is(player.getInventory().getHelmet(), HELMET_ID);
+        boolean chest = is(player.getInventory().getChestplate(), CHEST_ID);
+        boolean legs = is(player.getInventory().getLeggings(), LEGS_ID);
+        boolean boots = is(player.getInventory().getBoots(), BOOTS_ID);
+        boolean fullSet = helmet && chest && legs && boots;
 
-            if (helmet) {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 40, 0, true, false, false));
-                player.removePotionEffect(PotionEffectType.BLINDNESS);
-                player.removePotionEffect(PotionEffectType.DARKNESS);
-            }
+        if (helmet) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 40, 0, true, false, false));
+            player.removePotionEffect(PotionEffectType.BLINDNESS);
+            player.removePotionEffect(PotionEffectType.DARKNESS);
+        }
 
-            if (chest && player.getAbsorptionAmount() < 4.0) {
-                player.setAbsorptionAmount(4.0);
-            }
+        if (chest && player.getAbsorptionAmount() < 4.0) {
+            player.setAbsorptionAmount(4.0);
+        }
 
-            if (boots) {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 30, 0, true, false, false));
-            }
+        if (boots) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 30, 0, true, false, false));
+        }
 
-            if (fullSet) {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 30, 0, true, false, false));
-                player.getWorld().spawnParticle(
-                        Particle.SCULK_SOUL, player.getLocation().add(0, 1.0, 0),
-                        3, 0.35, 0.55, 0.35, 0.01);
-            }
+        if (fullSet) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 30, 0, true, false, false));
+            player.getWorld().spawnParticle(
+                    Particle.SCULK_SOUL, player.getLocation().add(0, 1.0, 0),
+                    3, 0.35, 0.55, 0.35, 0.01);
         }
     }
 

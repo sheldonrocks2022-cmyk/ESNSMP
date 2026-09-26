@@ -40,11 +40,11 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -78,16 +78,13 @@ public final class RiftwalkerBundle implements Listener {
             new Particle.DustOptions(Color.fromRGB(18, 18, 25), 1.0f);
 
     private final ESNSMPPlugin plugin;
-    private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> lastSneak = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> dashBonusUntil = new ConcurrentHashMap<>();
-    private final Map<String, Long> activationDebounce = new ConcurrentHashMap<>();
+    private final Map<String, Long> cooldowns = new HashMap<>();
+    private final Map<UUID, Long> lastSneak = new HashMap<>();
+    private final Map<UUID, Long> dashBonusUntil = new HashMap<>();
+    private final Map<String, Long> activationDebounce = new HashMap<>();
 
     public RiftwalkerBundle(ESNSMPPlugin plugin) {
         this.plugin = plugin;
-
-        // Lightweight passive effects only; one task for the entire server.
-        Bukkit.getScheduler().runTaskTimer(plugin, this::passiveTick, 20L, 10L);
     }
 
     public static ItemStack riftBlade() {
@@ -208,54 +205,78 @@ public final class RiftwalkerBundle implements Listener {
         if (itemType.isBlank() || !item.hasItemMeta()) return;
 
         ItemMeta meta = item.getItemMeta();
-        meta.setUnbreakable(true);
-        item.setItemMeta(meta);
+        if (!meta.isUnbreakable()) {
+            meta.setUnbreakable(true);
+            item.setItemMeta(meta);
+        }
 
         if (BLADE_ID.equalsIgnoreCase(itemType)) {
-            for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
-                item.removeEnchantment(enchantment);
+            if (!hasExactEnchants(item, 6,
+                    Enchantment.UNBREAKING, Enchantment.SHARPNESS, Enchantment.FIRE_ASPECT,
+                    Enchantment.KNOCKBACK, Enchantment.SMITE, Enchantment.BANE_OF_ARTHROPODS)) {
+                resetEnchants(item);
+                applyRealm100SwordEnchants(item);
             }
-            applyRealm100SwordEnchants(item);
         } else if (BOOTS_ID.equalsIgnoreCase(itemType)) {
-            for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
-                item.removeEnchantment(enchantment);
+            if (!hasExactEnchants(item, 9,
+                    Enchantment.UNBREAKING, Enchantment.PROTECTION, Enchantment.BLAST_PROTECTION,
+                    Enchantment.FIRE_PROTECTION, Enchantment.PROJECTILE_PROTECTION, Enchantment.THORNS,
+                    Enchantment.FEATHER_FALLING, Enchantment.DEPTH_STRIDER, Enchantment.SOUL_SPEED)) {
+                resetEnchants(item);
+                applyRealm100BootEnchants(item);
             }
-            applyRealm100BootEnchants(item);
         } else if (BOW_ID.equalsIgnoreCase(itemType)) {
-            for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
-                item.removeEnchantment(enchantment);
+            if (!hasExactEnchants(item, 5,
+                    Enchantment.UNBREAKING, Enchantment.POWER, Enchantment.PUNCH,
+                    Enchantment.FLAME, Enchantment.INFINITY)) {
+                resetEnchants(item);
+                applyRealm100BowEnchants(item);
             }
-            applyRealm100BowEnchants(item);
         }
     }
 
-    private void passiveTick() {
-        long now = System.currentTimeMillis();
+    private static boolean hasExactEnchants(ItemStack item, int expectedCount, Enchantment... expected) {
+        Map<Enchantment, Integer> enchants = item.getEnchantments();
+        if (enchants.size() != expectedCount) return false;
+        for (Enchantment enchantment : expected) {
+            if (enchants.getOrDefault(enchantment, 0) != 225) return false;
+        }
+        return true;
+    }
+
+    private static void resetEnchants(ItemStack item) {
+        for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
+            item.removeEnchantment(enchantment);
+        }
+    }
+
+    void cleanupPassiveState(long now) {
         cooldowns.entrySet().removeIf(e -> e.getValue() <= now);
         dashBonusUntil.entrySet().removeIf(e -> e.getValue() <= now);
+        activationDebounce.entrySet().removeIf(e -> now - e.getValue() > 5_000L);
+    }
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            boolean boots = is(player.getInventory().getBoots(), BOOTS_ID);
-            boolean fullSet = boots
-                    && is(player.getInventory().getChestplate(), WINGS_ID)
-                    && is(player.getInventory().getItemInMainHand(), BLADE_ID);
+    void passiveTick(Player player) {
+        boolean boots = is(player.getInventory().getBoots(), BOOTS_ID);
+        boolean fullSet = boots
+                && is(player.getInventory().getChestplate(), WINGS_ID)
+                && is(player.getInventory().getItemInMainHand(), BLADE_ID);
 
-            if (boots) {
-                player.addPotionEffect(new PotionEffect(
-                        PotionEffectType.SPEED, 30, fullSet ? 1 : 0, true, false, false));
-            }
+        if (boots) {
+            player.addPotionEffect(new PotionEffect(
+                    PotionEffectType.SPEED, 30, fullSet ? 1 : 0, true, false, false));
+        }
 
-            if (is(player.getInventory().getChestplate(), WINGS_ID) && player.isGliding()) {
-                Location at = player.getLocation().add(0, 0.8, 0);
-                player.getWorld().spawnParticle(Particle.DUST, at, 5, 0.35, 0.25, 0.35, 0, PURPLE_DUST);
-                player.getWorld().spawnParticle(Particle.DUST, at, 3, 0.25, 0.2, 0.25, 0, BLACK_DUST);
-            }
+        if (is(player.getInventory().getChestplate(), WINGS_ID) && player.isGliding()) {
+            Location at = player.getLocation().add(0, 0.8, 0);
+            player.getWorld().spawnParticle(Particle.DUST, at, 5, 0.35, 0.25, 0.35, 0, PURPLE_DUST);
+            player.getWorld().spawnParticle(Particle.DUST, at, 3, 0.25, 0.2, 0.25, 0, BLACK_DUST);
+        }
 
-            if (fullSet) {
-                player.getWorld().spawnParticle(
-                        Particle.REVERSE_PORTAL, player.getLocation().add(0, 0.15, 0),
-                        4, 0.25, 0.05, 0.25, 0.01);
-            }
+        if (fullSet) {
+            player.getWorld().spawnParticle(
+                    Particle.REVERSE_PORTAL, player.getLocation().add(0, 0.15, 0),
+                    4, 0.25, 0.05, 0.25, 0.01);
         }
     }
 
