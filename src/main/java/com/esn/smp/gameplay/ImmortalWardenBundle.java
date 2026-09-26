@@ -15,6 +15,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityResurrectEvent;
@@ -353,6 +354,7 @@ public final class ImmortalWardenBundle implements Listener {
         Player player = event.getPlayer();
 
         if (BLADE_ID.equals(itemType)) {
+            if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
             event.setCancelled(true);
             if (!startCooldown(player, "warden_cleave", 12_000L, "Warden Cleave")) return;
             cleave(player);
