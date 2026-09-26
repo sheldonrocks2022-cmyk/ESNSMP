@@ -729,7 +729,9 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         }
     }
 
-    // Product mappings are stored in store-products.yml; the legacy SQLite table is read only for migration.\n\n    private boolean orderExists(String sessionId) {
+    // Product mappings are stored in store-products.yml; the legacy SQLite table is read only for migration.
+
+    private boolean orderExists(String sessionId) {
         synchronized (dbLock) {
             try (PreparedStatement p = db.prepareStatement("SELECT 1 FROM stripe_store_orders WHERE session_id=?")) {
                 p.setString(1, sessionId);
