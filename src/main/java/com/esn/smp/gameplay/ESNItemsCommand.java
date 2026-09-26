@@ -1,5 +1,10 @@
 package com.esn.smp.gameplay;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -29,7 +34,10 @@ public final class ESNItemsCommand implements CommandExecutor {
   ITEMS.put("dragonblade",CustomItems::dragonBlade); ITEMS.put("dragonaxe",CustomItems::dragonAxe); ITEMS.put("dragonhelmet",CustomItems::dragonHelmet); ITEMS.put("dragonchest",CustomItems::dragonChest); ITEMS.put("dragonlegs",CustomItems::dragonLegs); ITEMS.put("dragonboots",CustomItems::dragonBoots);
   ITEMS.put("cosmicblade",CustomItems::cosmicBlade); ITEMS.put("cosmicstaff",CustomItems::cosmicStaff); ITEMS.put("cosmichelmet",CustomItems::cosmicHelmet); ITEMS.put("cosmicchest",CustomItems::cosmicChest); ITEMS.put("cosmiclegs",CustomItems::cosmicLegs); ITEMS.put("cosmicboots",CustomItems::cosmicBoots);
   ITEMS.put("voidshard",CustomItems::voidShard); ITEMS.put("titanfragment",CustomItems::titanFragment); ITEMS.put("celestialcrystal",CustomItems::celestialCrystal); ITEMS.put("bloodstone",CustomItems::bloodstone); ITEMS.put("arcanedust",CustomItems::arcaneDust); ITEMS.put("cosmiccore",CustomItems::cosmicCore);
+  ITEMS.put("angelwings",ESNItemsCommand::seasonAngelWings); ITEMS.put("infernoscepter",()->seasonMagic(Material.BLAZE_ROD,"Inferno Scepter","inferno","Launches a burning blast.")); ITEMS.put("stormcrystal",()->seasonMagic(Material.AMETHYST_SHARD,"Storm Crystal","storm","Calls lightning where you aim.")); ITEMS.put("tideheart",()->seasonMagic(Material.HEART_OF_THE_SEA,"Tideheart","tide","Heals and empowers you.")); ITEMS.put("voidrelic",()->seasonMagic(Material.ECHO_SHARD,"Void Relic","void","Blink through space.")); ITEMS.put("celestialstar",()->seasonMagic(Material.NETHER_STAR,"Celestial Star","celestial","Unleashes celestial power."));
  }
+ private static ItemStack seasonAngelWings(){ItemStack i=new ItemStack(Material.ELYTRA);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.WHITE+""+ChatColor.BOLD+"✦ ANGEL WINGS ✦");m.setLore(List.of(ChatColor.AQUA+"Season Pass Reward I",ChatColor.GRAY+"A celestial relic from ESN.",ChatColor.GOLD+"Unbreaking CC"));i.setItemMeta(m);i.addUnsafeEnchantment(Enchantment.UNBREAKING,200);return i;}
+ private static ItemStack seasonMagic(Material mat,String name,String id,String lore){ItemStack i=new ItemStack(mat);ItemMeta m=i.getItemMeta();m.setDisplayName(ChatColor.LIGHT_PURPLE+""+ChatColor.BOLD+name);m.setLore(List.of(ChatColor.AQUA+lore,ChatColor.GRAY+"Right-click to unleash its magic."));NamespacedKey key=NamespacedKey.fromString("esnsmp:season_magic");if(key!=null)m.getPersistentDataContainer().set(key,PersistentDataType.STRING,id);i.setItemMeta(m);i.addUnsafeEnchantment(Enchantment.UNBREAKING,10);return i;}
  public static ItemStack createStoreItem(String itemId){
   if(itemId==null)return null;
   var supplier=ITEMS.get(itemId.toLowerCase(Locale.ROOT));

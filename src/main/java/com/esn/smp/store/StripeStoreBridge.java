@@ -9,6 +9,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -33,6 +35,8 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,14 +46,21 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
     private static final Pattern MC_NAME = Pattern.compile("^\\.?[A-Za-z0-9_]{3,16}$");
     private static final String STRIPE_SESSIONS = "https://api.stripe.com/v1/checkout/sessions";
     private static final long POLL_SECONDS = 30L;
+    private static final int MAX_ITEMS_PER_PRODUCT = 30;
+    private static final String BUNDLE_PREFIX = "__esn_bundle__:";
+    private static final String REALM_KEYS_PLINK = "plink_1UJN5IISwShswuKdH08ewRC2";
+    private static final String SEASON_RELICS_PLINK = "plink_1UJk6BISwShswuKdtQ40w2Jb";
 
     private final ESNSMPPlugin plugin;
     private final HttpClient http;
     private final ObjectMapper json = new ObjectMapper();
     private final Object dbLock = new Object();
+    private final Object productLock = new Object();
     private final Set<String> warnedSessions = ConcurrentHashMap.newKeySet();
 
     private Connection db;
+    private File productFile;
+    private YamlConfiguration productConfig;
     private BukkitTask pollTask;
     private volatile boolean running;
     private volatile long lastSuccessfulPoll;
@@ -59,6 +70,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         this.plugin = plugin;
         this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         initializeDatabase();
+        initializeProductCatalog();
         ensureSecretKeyFile();
     }
 
@@ -184,6 +196,179 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                     """);
             }
         }
+    }
+
+    private void initializeProductCatalog() throws Exception {
+        productFile = new File(plugin.getDataFolder(), "store-products.yml");
+        productConfig = YamlConfiguration.loadConfiguration(productFile);
+        boolean changed = false;
+
+        changed |= seedProductIfMissing(REALM_KEYS_PLINK, List.of(
+                new ProductMapping("realm100key", 20)
+        ));
+        changed |= seedProductIfMissing(SEASON_RELICS_PLINK, List.of(
+                new ProductMapping("angelwings", 1),
+                new ProductMapping("infernoscepter", 1),
+                new ProductMapping("stormcrystal", 1),
+                new ProductMapping("tideheart", 1),
+                new ProductMapping("voidrelic", 1),
+                new ProductMapping("celestialstar", 1)
+        ));
+
+        // Preserve any product mappings created by older builds.
+        synchronized (dbLock) {
+            try (PreparedStatement p = db.prepareStatement("SELECT product_key,item_id,amount FROM stripe_store_products");
+                 ResultSet r = p.executeQuery()) {
+                while (r.next()) {
+                    String key = r.getString(1);
+                    if (key == null || key.isBlank()) continue;
+                    synchronized (productLock) {
+                        if (readProductUnlocked(key).isEmpty()) {
+                            writeProductUnlocked(key, List.of(new ProductMapping(r.getString(2), r.getInt(3))));
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (changed || !productFile.isFile()) saveProductCatalog();
+        plugin.getLogger().info("[ESN Store] Loaded " + productMappings().size() +
+                " product link(s) from store-products.yml.");
+    }
+
+    private boolean seedProductIfMissing(String key, List<ProductMapping> items) {
+        synchronized (productLock) {
+            if (!readProductUnlocked(key).isEmpty()) return false;
+            writeProductUnlocked(key, items);
+            return true;
+        }
+    }
+
+    private List<ProductMapping> readProductUnlocked(String productKey) {
+        if (productConfig == null || productKey == null || productKey.isBlank()) return List.of();
+        List<?> rows = productConfig.getList("products." + productKey + ".items");
+        if (rows == null || rows.isEmpty()) return List.of();
+
+        List<ProductMapping> out = new ArrayList<>();
+        for (Object rowObj : rows) {
+            if (!(rowObj instanceof Map<?, ?> row)) continue;
+            Object idObj = row.get("id");
+            Object amountObj = row.get("amount");
+            if (idObj == null) continue;
+            String id = String.valueOf(idObj).trim().toLowerCase(Locale.ROOT);
+            int amount = amountObj instanceof Number n ? n.intValue() : 1;
+            amount = Math.max(1, Math.min(2304, amount));
+            if (!id.isBlank()) out.add(new ProductMapping(id, amount));
+            if (out.size() >= MAX_ITEMS_PER_PRODUCT) break;
+        }
+        return List.copyOf(out);
+    }
+
+    private void writeProductUnlocked(String productKey, List<ProductMapping> items) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (ProductMapping item : items) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", item.itemId());
+            row.put("amount", item.amount());
+            rows.add(row);
+        }
+        productConfig.set("products." + productKey + ".items", rows);
+    }
+
+    private void saveProductCatalog() {
+        synchronized (productLock) {
+            try {
+                productConfig.save(productFile);
+            } catch (Exception ex) {
+                throw new IllegalStateException("Could not save store-products.yml", ex);
+            }
+        }
+    }
+
+    private List<ProductMapping> findProducts(String productKey) {
+        synchronized (productLock) {
+            return readProductUnlocked(productKey);
+        }
+    }
+
+    private String mapProduct(String productKey, String itemId, int amount) {
+        synchronized (productLock) {
+            List<ProductMapping> items = new ArrayList<>(readProductUnlocked(productKey));
+            int existing = -1;
+            for (int i = 0; i < items.size(); i++) {
+                if (items.get(i).itemId().equalsIgnoreCase(itemId)) {
+                    existing = i;
+                    break;
+                }
+            }
+            if (existing >= 0) {
+                items.set(existing, new ProductMapping(itemId, amount));
+            } else {
+                if (items.size() >= MAX_ITEMS_PER_PRODUCT) return "LIMIT";
+                items.add(new ProductMapping(itemId, amount));
+            }
+            writeProductUnlocked(productKey, items);
+            saveProductCatalog();
+            return existing >= 0 ? "UPDATED" : "ADDED";
+        }
+    }
+
+    private boolean unmapProduct(String productKey) {
+        synchronized (productLock) {
+            String path = "products." + productKey;
+            if (!productConfig.contains(path)) return false;
+            productConfig.set(path, null);
+            saveProductCatalog();
+            return true;
+        }
+    }
+
+    private List<String> productMappings() {
+        List<String> out = new ArrayList<>();
+        synchronized (productLock) {
+            ConfigurationSection root = productConfig == null ? null : productConfig.getConfigurationSection("products");
+            if (root == null) return out;
+            for (String key : root.getKeys(false)) {
+                List<ProductMapping> items = readProductUnlocked(key);
+                out.add(key + " -> " + formatBundle(items));
+            }
+        }
+        return out;
+    }
+
+    private String formatBundle(List<ProductMapping> items) {
+        if (items == null || items.isEmpty()) return "(no items)";
+        List<String> parts = new ArrayList<>();
+        for (ProductMapping item : items) parts.add(item.itemId() + " x" + item.amount());
+        return String.join(", ", parts);
+    }
+
+    private String encodeBundle(List<ProductMapping> items) {
+        List<String> parts = new ArrayList<>();
+        for (ProductMapping item : items) parts.add(item.itemId() + "*" + item.amount());
+        return BUNDLE_PREFIX + String.join(",", parts);
+    }
+
+    private List<ProductMapping> decodeStoredItems(String storedItemId, int storedAmount) {
+        if (storedItemId == null) return List.of();
+        if (!storedItemId.startsWith(BUNDLE_PREFIX)) {
+            return List.of(new ProductMapping(storedItemId, Math.max(1, storedAmount)));
+        }
+        String body = storedItemId.substring(BUNDLE_PREFIX.length());
+        List<ProductMapping> out = new ArrayList<>();
+        if (body.isBlank()) return out;
+        for (String token : body.split(",")) {
+            String[] bits = token.split("\\*", 2);
+            if (bits.length != 2 || bits[0].isBlank()) continue;
+            try {
+                int amount = Math.max(1, Math.min(2304, Integer.parseInt(bits[1])));
+                out.add(new ProductMapping(bits[0].toLowerCase(Locale.ROOT), amount));
+            } catch (NumberFormatException ignored) {
+            }
+            if (out.size() >= MAX_ITEMS_PER_PRODUCT) break;
+        }
+        return out;
     }
 
     private File secretKeyFile() {
@@ -348,12 +533,12 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                 String paymentLink = session.path("payment_link").asText("");
                 String productKey = session.path("metadata").path("esn_product").asText("");
                 if (productKey.isBlank()) productKey = paymentLink;
-                ProductMapping mapping = findProduct(productKey);
+                List<ProductMapping> mapping = findProducts(productKey);
                 String username = extractUsername(session);
                 long created = session.path("created").asLong(0L);
 
                 // Keep output focused on ESN Store-relevant sessions only.
-                if (mapping == null && username.isBlank()) continue;
+                if (mapping.isEmpty() && username.isBlank()) continue;
 
                 String shortId = sessionId.length() > 12 ? "..." + sessionId.substring(sessionId.length() - 12) : sessionId;
                 String prefix = created > 0 && activation > 0 && created < activation ? "pre-activation; " : "";
@@ -366,7 +551,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                     results.add(shortId + " - " + prefix + "already processed");
                     continue;
                 }
-                if (mapping == null) {
+                if (mapping.isEmpty()) {
                     results.add(shortId + " - " + prefix + "no product mapping (" + productKey + ")");
                     continue;
                 }
@@ -375,25 +560,32 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                             (username.isBlank() ? "" : " [" + username + "]"));
                     continue;
                 }
-                if (ESNItemsCommand.createStoreItem(mapping.itemId()) == null) {
-                    results.add(shortId + " - " + prefix + "mapped item missing: " + mapping.itemId());
+                String missingItem = "";
+                for (ProductMapping item : mapping) {
+                    if (ESNItemsCommand.createStoreItem(item.itemId()) == null) {
+                        missingItem = item.itemId();
+                        break;
+                    }
+                }
+                if (!missingItem.isBlank()) {
+                    results.add(shortId + " - " + prefix + "mapped item missing: " + missingItem);
                     continue;
                 }
 
                 if (recover) {
-                    if (insertPending(sessionId, username, productKey, mapping.itemId(), mapping.amount(), created)) {
+                    if (insertPending(sessionId, username, productKey, encodeBundle(mapping), 1, created)) {
                         recovered++;
                         String finalUsername = username;
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             Player player = Bukkit.getPlayerExact(finalUsername);
                             if (player != null && player.isOnline()) deliverPending(player, false);
                         });
-                        results.add(shortId + " - RECOVERED for " + username + " -> " + mapping.itemId() + " x" + mapping.amount());
+                        results.add(shortId + " - RECOVERED for " + username + " -> " + formatBundle(mapping));
                     } else {
                         results.add(shortId + " - already processed");
                     }
                 } else {
-                    results.add(shortId + " - READY for " + username + " -> " + mapping.itemId() + " x" + mapping.amount());
+                    results.add(shortId + " - READY for " + username + " -> " + formatBundle(mapping));
                 }
             }
 
@@ -449,8 +641,8 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         String productKey = session.path("metadata").path("esn_product").asText("");
         if (productKey.isBlank()) productKey = paymentLink;
 
-        ProductMapping product = findProduct(productKey);
-        if (product == null) {
+        List<ProductMapping> products = findProducts(productKey);
+        if (products.isEmpty()) {
             warnOnce(sessionId, "No product mapping for Stripe key/payment link: " + productKey);
             return;
         }
@@ -461,14 +653,17 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
             return;
         }
 
-        if (ESNItemsCommand.createStoreItem(product.itemId()) == null) {
-            warnOnce(sessionId, "Mapped ESN item no longer exists: " + product.itemId());
-            return;
+        for (ProductMapping product : products) {
+            if (ESNItemsCommand.createStoreItem(product.itemId()) == null) {
+                warnOnce(sessionId, "Mapped ESN item no longer exists: " + product.itemId());
+                return;
+            }
         }
 
         long created = session.path("created").asLong(System.currentTimeMillis() / 1000L);
-        if (insertPending(sessionId, username, productKey, product.itemId(), product.amount(), created)) {
-            plugin.getLogger().info("[ESN Store] Queued paid Stripe order " + sessionId + " for Minecraft player " + username + ".");
+        if (insertPending(sessionId, username, productKey, encodeBundle(products), 1, created)) {
+            plugin.getLogger().info("[ESN Store] Queued paid Stripe order " + sessionId + " for Minecraft player " +
+                    username + " (" + products.size() + " item type(s)).");
             Bukkit.getScheduler().runTask(plugin, () -> {
                 Player player = Bukkit.getPlayerExact(username);
                 if (player != null && player.isOnline()) deliverPending(player, false);
@@ -534,59 +729,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         }
     }
 
-    private ProductMapping findProduct(String productKey) {
-        if (productKey == null || productKey.isBlank()) return null;
-        synchronized (dbLock) {
-            try (PreparedStatement p = db.prepareStatement("SELECT item_id,amount FROM stripe_store_products WHERE product_key=?")) {
-                p.setString(1, productKey);
-                try (ResultSet r = p.executeQuery()) {
-                    return r.next() ? new ProductMapping(r.getString(1), r.getInt(2)) : null;
-                }
-            } catch (Exception ex) {
-                throw new IllegalStateException("Store product lookup failed", ex);
-            }
-        }
-    }
-
-    private void mapProduct(String productKey, String itemId, int amount) {
-        synchronized (dbLock) {
-            try (PreparedStatement p = db.prepareStatement("""
-                INSERT INTO stripe_store_products(product_key,item_id,amount) VALUES(?,?,?)
-                ON CONFLICT(product_key) DO UPDATE SET item_id=excluded.item_id, amount=excluded.amount
-                """)) {
-                p.setString(1, productKey);
-                p.setString(2, itemId);
-                p.setInt(3, amount);
-                p.executeUpdate();
-            } catch (Exception ex) {
-                throw new IllegalStateException("Store product mapping failed", ex);
-            }
-        }
-    }
-
-    private boolean unmapProduct(String productKey) {
-        synchronized (dbLock) {
-            try (PreparedStatement p = db.prepareStatement("DELETE FROM stripe_store_products WHERE product_key=?")) {
-                p.setString(1, productKey);
-                return p.executeUpdate() > 0;
-            } catch (Exception ex) {
-                throw new IllegalStateException("Store product unmap failed", ex);
-            }
-        }
-    }
-
-    private List<String> productMappings() {
-        List<String> out = new ArrayList<>();
-        synchronized (dbLock) {
-            try (PreparedStatement p = db.prepareStatement("SELECT product_key,item_id,amount FROM stripe_store_products ORDER BY product_key");
-                 ResultSet r = p.executeQuery()) {
-                while (r.next()) out.add(r.getString(1) + " -> " + r.getString(2) + " x" + r.getInt(3));
-            } catch (Exception ex) {
-                out.add("Could not read product mappings: " + ex.getMessage());
-            }
-        }
-        return out;
-    }
+    // Product mappings are stored in store-products.yml; the legacy SQLite table is read only for migration.
 
     private boolean orderExists(String sessionId) {
         synchronized (dbLock) {
@@ -689,26 +832,32 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         int delivered = 0;
         for (StoreOrder order : orders) {
             try {
-                ItemStack base = ESNItemsCommand.createStoreItem(order.itemId());
-                if (base == null) {
-                    markError(order.sessionId(), "Unknown item-id: " + order.itemId());
+                List<ProductMapping> items = decodeStoredItems(order.itemId(), order.amount());
+                if (items.isEmpty()) {
+                    markError(order.sessionId(), "Stored bundle is empty");
                     continue;
                 }
 
-                int remaining = order.amount();
-                while (remaining > 0) {
-                    ItemStack stack = base.clone();
-                    int chunk = Math.min(remaining, Math.max(1, stack.getMaxStackSize()));
-                    stack.setAmount(chunk);
-                    var leftovers = player.getInventory().addItem(stack);
-                    leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
-                    remaining -= chunk;
+                for (ProductMapping item : items) {
+                    ItemStack base = ESNItemsCommand.createStoreItem(item.itemId());
+                    if (base == null) throw new IllegalStateException("Unknown item-id: " + item.itemId());
+
+                    int remaining = item.amount();
+                    while (remaining > 0) {
+                        ItemStack stack = base.clone();
+                        int chunk = Math.min(remaining, Math.max(1, stack.getMaxStackSize()));
+                        stack.setAmount(chunk);
+                        var leftovers = player.getInventory().addItem(stack);
+                        leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
+                        remaining -= chunk;
+                    }
                 }
 
                 markDelivered(order.sessionId());
                 delivered++;
-                player.sendMessage(ChatColor.GREEN + "ESN Store purchase delivered: " + ChatColor.WHITE + order.itemId() + " x" + order.amount());
-                plugin.getLogger().info("[ESN Store] Delivered Stripe order " + order.sessionId() + " to " + player.getName() + ".");
+                player.sendMessage(ChatColor.GREEN + "ESN Store purchase delivered: " + ChatColor.WHITE + formatBundle(items));
+                plugin.getLogger().info("[ESN Store] Delivered Stripe order " + order.sessionId() + " to " +
+                        player.getName() + " (" + items.size() + " item type(s)).");
             } catch (Exception ex) {
                 markError(order.sessionId(), String.valueOf(ex.getMessage()));
                 plugin.getLogger().severe("[ESN Store] Delivery failed for " + order.sessionId() + ": " + ex.getMessage());
@@ -761,6 +910,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
             }
             if (args.length < 3) {
                 sender.sendMessage(ChatColor.YELLOW + "/storestatus map <plink_or_product_key> <esn_item_id> [amount]");
+                sender.sendMessage(ChatColor.GRAY + "Adds or updates one item; each payment link can hold up to " + MAX_ITEMS_PER_PRODUCT + " item entries.");
                 return true;
             }
             String key = args[1];
@@ -779,8 +929,13 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                 sender.sendMessage(ChatColor.RED + "Unknown ESN item ID. Check /esnitems list.");
                 return true;
             }
-            mapProduct(key, itemId, amount);
-            sender.sendMessage(ChatColor.GREEN + "Mapped " + key + " -> " + itemId + " x" + amount);
+            String result = mapProduct(key, itemId, amount);
+            if ("LIMIT".equals(result)) {
+                sender.sendMessage(ChatColor.RED + "That payment link already has " + MAX_ITEMS_PER_PRODUCT + " item entries.");
+                return true;
+            }
+            sender.sendMessage(ChatColor.GREEN + ("UPDATED".equals(result) ? "Updated " : "Added ") +
+                    itemId + " x" + amount + " for " + key);
             return true;
         }
 
