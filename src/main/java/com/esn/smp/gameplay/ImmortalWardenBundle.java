@@ -55,6 +55,7 @@ public final class ImmortalWardenBundle implements Listener {
     private static final NamespacedKey WARDEN_TYPE = new NamespacedKey("esnsmp", "immortal_warden_type");
     private static final NamespacedKey ADMIN_TEST = new NamespacedKey("esnsmp", "admin_test_item");
     private static final NamespacedKey WARDEN_ARROW = new NamespacedKey("esnsmp", "warden_arrow");
+    private static final NamespacedKey CORE_ACTIVE = new NamespacedKey("esnsmp", "immortal_core_active");
 
     private final ESNSMPPlugin plugin;
     private final Map<String, Long> cooldowns = new HashMap<>();
@@ -123,9 +124,9 @@ public final class ImmortalWardenBundle implements Listener {
 
     public static ItemStack core() {
         return base(Material.NETHER_STAR, CORE_ID, "IMMORTAL CORE",
-                "Right-click: Last Stand.",
-                "Resistance II + Strength II + Absorption for 12 seconds.",
-                "Cooldown: 60 seconds.");
+                "Right-click: activate Immortal Core.",
+                "Resistance II + Strength II + Absorption remain active indefinitely.",
+                "Once activated, the buffs automatically return after death or relog.");
     }
 
     public static ItemStack totem() {
@@ -196,11 +197,11 @@ public final class ImmortalWardenBundle implements Listener {
     private static void applySwordEnchants(ItemStack item) {
         add(item, Enchantment.UNBREAKING);
         add(item, Enchantment.SHARPNESS);
-        add(item, Enchantment.LOOTING);
         add(item, Enchantment.FIRE_ASPECT);
         add(item, Enchantment.KNOCKBACK);
         add(item, Enchantment.SMITE);
         add(item, Enchantment.BANE_OF_ARTHROPODS);
+        // Intentionally NO Looting on the Immortal Warden Blade.
     }
 
     private static void applyBowEnchants(ItemStack item) {
@@ -240,8 +241,8 @@ public final class ImmortalWardenBundle implements Listener {
                     Enchantment.FIRE_PROTECTION, Enchantment.PROJECTILE_PROTECTION, Enchantment.THORNS,
                     Enchantment.FEATHER_FALLING, Enchantment.DEPTH_STRIDER, Enchantment.SOUL_SPEED);
         } else if (BLADE_ID.equals(itemType)) {
-            repairEnchants(item, 7, ImmortalWardenBundle::applySwordEnchants,
-                    Enchantment.UNBREAKING, Enchantment.SHARPNESS, Enchantment.LOOTING,
+            repairEnchants(item, 6, ImmortalWardenBundle::applySwordEnchants,
+                    Enchantment.UNBREAKING, Enchantment.SHARPNESS,
                     Enchantment.FIRE_ASPECT, Enchantment.KNOCKBACK, Enchantment.SMITE,
                     Enchantment.BANE_OF_ARTHROPODS);
         } else if (BOW_ID.equals(itemType)) {
@@ -309,6 +310,31 @@ public final class ImmortalWardenBundle implements Listener {
                     Particle.SCULK_SOUL, player.getLocation().add(0, 1.0, 0),
                     3, 0.35, 0.55, 0.35, 0.01);
         }
+
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (is(held, BLADE_ID)) {
+            repair(held);
+        }
+
+        Byte coreActive = player.getPersistentDataContainer().get(CORE_ACTIVE, PersistentDataType.BYTE);
+        if (coreActive != null && coreActive == (byte) 1) {
+            applyInfiniteCoreBuffs(player);
+        }
+    }
+
+    private static void applyInfiniteCoreBuffs(Player player) {
+        ensureInfiniteEffect(player, PotionEffectType.RESISTANCE, 1);
+        ensureInfiniteEffect(player, PotionEffectType.STRENGTH, 1);
+        ensureInfiniteEffect(player, PotionEffectType.ABSORPTION, 2);
+        if (player.getAbsorptionAmount() < 12.0) {
+            player.setAbsorptionAmount(12.0);
+        }
+    }
+
+    private static void ensureInfiniteEffect(Player player, PotionEffectType type, int amplifier) {
+        PotionEffect current = player.getPotionEffect(type);
+        if (current != null && current.getAmplifier() >= amplifier && current.isInfinite()) return;
+        player.addPotionEffect(new PotionEffect(type, PotionEffect.INFINITE_DURATION, amplifier, true, true, true), true);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -332,13 +358,11 @@ public final class ImmortalWardenBundle implements Listener {
             cleave(player);
         } else if (CORE_ID.equals(itemType)) {
             event.setCancelled(true);
-            if (!startCooldown(player, "immortal_core", 60_000L, "Last Stand")) return;
-            player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 240, 1, true, true, true));
-            player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 240, 1, true, true, true));
-            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 240, 2, true, true, true));
-            player.setAbsorptionAmount(Math.max(player.getAbsorptionAmount(), 12.0));
+            player.getPersistentDataContainer().set(CORE_ACTIVE, PersistentDataType.BYTE, (byte) 1);
+            applyInfiniteCoreBuffs(player);
             player.getWorld().spawnParticle(Particle.SCULK_SOUL, player.getLocation().add(0, 1, 0), 70, 1.2, 1.2, 1.2, 0.04);
-            player.sendMessage(ChatColor.DARK_AQUA + "[Immortal Core] " + ChatColor.AQUA + "Last Stand activated for 12 seconds.");
+            player.sendMessage(ChatColor.DARK_AQUA + "[Immortal Core] " + ChatColor.AQUA + "IMMORTAL CORE ACTIVATED");
+            player.sendActionBar(ChatColor.AQUA + "" + ChatColor.BOLD + "IMMORTAL CORE ACTIVATED");
         } else if (TOTEM_ID.equals(itemType)) {
             event.setCancelled(true);
             if (!startCooldown(player, "warden_totem", 60_000L, "Warden Totem")) return;
