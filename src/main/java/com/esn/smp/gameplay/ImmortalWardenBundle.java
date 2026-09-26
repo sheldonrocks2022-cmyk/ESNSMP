@@ -77,7 +77,7 @@ public final class ImmortalWardenBundle implements Listener {
 
     public static ItemStack chestplate() {
         ItemStack item = base(Material.NETHERITE_CHESTPLATE, CHEST_ID, "IMMORTAL WARDEN CHESTPLATE",
-                "Maintains bonus Absorption while worn.",
+                "Maintains a full row of Absorption hearts while worn.",
                 "Low health triggers a short Resistance boost.",
                 "Realm 100 armor enchant power: 225.");
         applyChestLegEnchants(item);
@@ -290,8 +290,13 @@ public final class ImmortalWardenBundle implements Listener {
             player.removePotionEffect(PotionEffectType.DARKNESS);
         }
 
-        if (chest && player.getAbsorptionAmount() < 4.0) {
-            player.setAbsorptionAmount(4.0);
+        if (chest) {
+            // Absorption V = 10 extra hearts (20 health points), i.e. one full row.
+            // Refresh the effect and refill the row while the Warden chestplate is worn.
+            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 30, 4, true, false, false));
+            if (player.getAbsorptionAmount() < 20.0) {
+                player.setAbsorptionAmount(20.0);
+            }
         }
 
         if (boots) {
