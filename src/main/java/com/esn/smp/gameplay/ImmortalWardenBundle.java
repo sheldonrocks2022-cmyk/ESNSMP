@@ -392,7 +392,7 @@ public final class ImmortalWardenBundle implements Listener {
             double dot = forward.dot(toTarget.clone().normalize());
             if (dot < 0.55) continue;
 
-            target.damage(8.0, player);
+            target.damage(1000.0, player);
             Vector push = toTarget.normalize().multiply(0.7);
             push.setY(0.18);
             target.setVelocity(target.getVelocity().add(push));
