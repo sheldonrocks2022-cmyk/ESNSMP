@@ -1,0 +1,44 @@
+name: Publish ESNSMP v2.8.2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/publish-v2.8.2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v2.8.2 >/dev/null 2>&1; then
+            gh release upload v2.8.2 target/ESNSMP.jar --clobber
+          else
+            gh release create v2.8.2 target/ESNSMP.jar \
+              --target "$GITHUB_SHA" \
+              --title "ESNSMP v2.8.2" \
+              --notes "Removes Looting from the Immortal Warden Blade and automatically repairs existing Warden Blades to the no-Looting enchant set. Immortal Core now permanently activates Resistance II, Strength II and Absorption, persists activation across relogs/deaths, and displays IMMORTAL CORE ACTIVATED."
+          fi
