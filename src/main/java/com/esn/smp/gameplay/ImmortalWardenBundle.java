@@ -220,18 +220,53 @@ public final class ImmortalWardenBundle implements Listener {
         if (itemType.isBlank() || !item.hasItemMeta()) return;
 
         ItemMeta meta = item.getItemMeta();
-        meta.setUnbreakable(true);
-        item.setItemMeta(meta);
+        if (!meta.isUnbreakable()) {
+            meta.setUnbreakable(true);
+            item.setItemMeta(meta);
+        }
 
-        if (HELMET_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applyHelmetEnchants);
-        else if (CHEST_ID.equals(itemType) || LEGS_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applyChestLegEnchants);
-        else if (BOOTS_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applyBootEnchants);
-        else if (BLADE_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applySwordEnchants);
-        else if (BOW_ID.equals(itemType)) resetEnchants(item, ImmortalWardenBundle::applyBowEnchants);
+        if (HELMET_ID.equals(itemType)) {
+            repairEnchants(item, 8, ImmortalWardenBundle::applyHelmetEnchants,
+                    Enchantment.UNBREAKING, Enchantment.PROTECTION, Enchantment.BLAST_PROTECTION,
+                    Enchantment.FIRE_PROTECTION, Enchantment.PROJECTILE_PROTECTION, Enchantment.THORNS,
+                    Enchantment.RESPIRATION, Enchantment.AQUA_AFFINITY);
+        } else if (CHEST_ID.equals(itemType) || LEGS_ID.equals(itemType)) {
+            repairEnchants(item, 6, ImmortalWardenBundle::applyChestLegEnchants,
+                    Enchantment.UNBREAKING, Enchantment.PROTECTION, Enchantment.BLAST_PROTECTION,
+                    Enchantment.FIRE_PROTECTION, Enchantment.PROJECTILE_PROTECTION, Enchantment.THORNS);
+        } else if (BOOTS_ID.equals(itemType)) {
+            repairEnchants(item, 9, ImmortalWardenBundle::applyBootEnchants,
+                    Enchantment.UNBREAKING, Enchantment.PROTECTION, Enchantment.BLAST_PROTECTION,
+                    Enchantment.FIRE_PROTECTION, Enchantment.PROJECTILE_PROTECTION, Enchantment.THORNS,
+                    Enchantment.FEATHER_FALLING, Enchantment.DEPTH_STRIDER, Enchantment.SOUL_SPEED);
+        } else if (BLADE_ID.equals(itemType)) {
+            repairEnchants(item, 7, ImmortalWardenBundle::applySwordEnchants,
+                    Enchantment.UNBREAKING, Enchantment.SHARPNESS, Enchantment.LOOTING,
+                    Enchantment.FIRE_ASPECT, Enchantment.KNOCKBACK, Enchantment.SMITE,
+                    Enchantment.BANE_OF_ARTHROPODS);
+        } else if (BOW_ID.equals(itemType)) {
+            repairEnchants(item, 5, ImmortalWardenBundle::applyBowEnchants,
+                    Enchantment.UNBREAKING, Enchantment.POWER, Enchantment.PUNCH,
+                    Enchantment.FLAME, Enchantment.INFINITY);
+        }
     }
 
-    private static void resetEnchants(ItemStack item, java.util.function.Consumer<ItemStack> applier) {
-        for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
+    private static void repairEnchants(ItemStack item, int expectedCount,
+                                       java.util.function.Consumer<ItemStack> applier,
+                                       Enchantment... expected) {
+        Map<Enchantment, Integer> enchants = item.getEnchantments();
+        boolean correct = enchants.size() == expectedCount;
+        if (correct) {
+            for (Enchantment enchantment : expected) {
+                if (enchants.getOrDefault(enchantment, 0) != 225) {
+                    correct = false;
+                    break;
+                }
+            }
+        }
+        if (correct) return;
+
+        for (Enchantment enchantment : new ArrayList<>(enchants.keySet())) {
             item.removeEnchantment(enchantment);
         }
         applier.accept(item);
