@@ -479,7 +479,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
             JsonNode data = root.path("data");
             if (!data.isArray() || data.isEmpty()) break;
 
-            for (JsonNode session : data) ingestSession(session);
+            for (JsonNode session : data) ingestSession(session, secret);
 
             if (!root.path("has_more").asBoolean(false)) break;
             startingAfter = data.get(data.size() - 1).path("id").asText("");
@@ -534,7 +534,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                 String productKey = session.path("metadata").path("esn_product").asText("");
                 if (productKey.isBlank()) productKey = paymentLink;
                 List<ProductMapping> mapping = findProducts(productKey);
-                String username = extractUsername(session);
+                String username = extractUsername(session, secret);
                 long created = session.path("created").asLong(0L);
 
                 // Keep output focused on ESN Store-relevant sessions only.
@@ -632,7 +632,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         });
     }
 
-    private void ingestSession(JsonNode session) {
+    private void ingestSession(JsonNode session, String secret) {
         String sessionId = session.path("id").asText("");
         if (sessionId.isBlank() || orderExists(sessionId)) return;
         if (!"paid".equalsIgnoreCase(session.path("payment_status").asText(""))) return;
@@ -647,7 +647,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
             return;
         }
 
-        String username = extractUsername(session);
+        String username = extractUsername(session, secret);
         if (!MC_NAME.matcher(username).matches()) {
             warnOnce(sessionId, "Missing or invalid Minecraft username on Stripe session " + sessionId);
             return;
@@ -671,23 +671,89 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         }
     }
 
-    private String extractUsername(JsonNode session) {
-        String metadata = session.path("metadata").path("minecraft_username").asText("").trim();
-        if (!metadata.isBlank()) return metadata;
+    private JsonNode retrieveSession(String sessionId, String secret) throws Exception {
+        String url = STRIPE_SESSIONS + "/" + URLEncoder.encode(sessionId, StandardCharsets.UTF_8);
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(20))
+                .header("Authorization", "Bearer " + secret)
+                .header("User-Agent", "ESNSMP-StripeStore/1.3")
+                .GET()
+                .build();
+
+        HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            String body = response.body() == null ? "" : response.body().replaceAll("\\s+", " ");
+            if (body.length() > 240) body = body.substring(0, 240);
+            throw new IllegalStateException("Stripe session lookup HTTP " + response.statusCode() +
+                    (body.isBlank() ? "" : " - " + body));
+        }
+        return json.readTree(response.body());
+    }
+
+    private String extractUsername(JsonNode session, String secret) {
+        String username = extractUsernameFromNode(session);
+        if (!username.isBlank()) return username;
+
+        // Stripe list responses can omit or simplify nested custom-field data.
+        // If the username was not present, retrieve the completed Session directly
+        // and read the submitted custom-field value from the full object.
+        String sessionId = session.path("id").asText("").trim();
+        if (!sessionId.isBlank() && secret != null && !secret.isBlank()) {
+            try {
+                JsonNode fullSession = retrieveSession(sessionId, secret);
+                username = extractUsernameFromNode(fullSession);
+                if (!username.isBlank()) return username;
+            } catch (Exception ex) {
+                plugin.getLogger().warning("[ESN Store] Could not retrieve full Stripe session " +
+                        sessionId + " for username lookup: " + ex.getMessage());
+            }
+        }
+        return "";
+    }
+
+    private String extractUsernameFromNode(JsonNode session) {
+        JsonNode metadata = session.path("metadata");
+        for (String key : List.of(
+                "minecraft_username", "minecraftUsername", "mc_username",
+                "mcusername", "minecraft_name", "minecraftname")) {
+            String value = metadata.path(key).asText("").trim();
+            if (!value.isBlank()) return value;
+        }
 
         JsonNode fields = session.path("custom_fields");
+        List<String> mcLikeCandidates = new ArrayList<>();
         if (fields.isArray()) {
             for (JsonNode field : fields) {
-                String key = field.path("key").asText("");
-                String label = field.path("label").path("custom").asText("");
-                if (!"minecraft_username".equalsIgnoreCase(key) && !"Minecraft Username".equalsIgnoreCase(label)) continue;
+                String key = field.path("key").asText("").trim();
+                String label = field.path("label").path("custom").asText("").trim();
+                if (label.isBlank() && field.path("label").isTextual()) {
+                    label = field.path("label").asText("").trim();
+                }
 
                 String value = field.path("text").path("value").asText("");
                 if (value.isBlank()) value = field.path("numeric").path("value").asText("");
                 if (value.isBlank()) value = field.path("dropdown").path("value").asText("");
-                return value.trim();
+                if (value.isBlank()) value = field.path("value").asText("");
+                value = value.trim();
+                if (value.isBlank()) continue;
+
+                String hint = (key + " " + label).toLowerCase(Locale.ROOT)
+                        .replace("-", "_")
+                        .replace(" ", "_");
+                if (hint.contains("minecraft") || hint.contains("mc_username")
+                        || hint.contains("mcusername") || hint.contains("gamertag")
+                        || hint.contains("player_name") || hint.contains("playername")) {
+                    return value;
+                }
+
+                if (MC_NAME.matcher(value).matches()) mcLikeCandidates.add(value);
             }
         }
+
+        // Payment Links can generate opaque custom-field keys. When there is only one
+        // submitted custom field whose value is a valid Minecraft-style name, use it.
+        if (mcLikeCandidates.size() == 1) return mcLikeCandidates.get(0);
+
         return "";
     }
 
