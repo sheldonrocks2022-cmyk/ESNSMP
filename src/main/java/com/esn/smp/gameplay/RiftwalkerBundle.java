@@ -121,9 +121,9 @@ public final class RiftwalkerBundle implements Listener {
         ItemStack item = base(Material.BOW, BOW_ID, "RIFT BOW",
                 "Arrows inflict Slowness II.",
                 "Fully charged shots can trigger a Rift Burst.",
-                "Rift Burst damages nearby enemies without block damage.");
-        item.addUnsafeEnchantment(Enchantment.POWER, 8);
-        item.addUnsafeEnchantment(Enchantment.PUNCH, 2);
+                "Rift Burst damages nearby enemies without block damage.",
+                "Realm 100 enchant power: 225.");
+        applyRealm100BowEnchants(item);
         return item;
     }
 
@@ -195,6 +195,14 @@ public final class RiftwalkerBundle implements Listener {
         item.addUnsafeEnchantment(Enchantment.SOUL_SPEED, 225);
     }
 
+    private static void applyRealm100BowEnchants(ItemStack item) {
+        item.addUnsafeEnchantment(Enchantment.UNBREAKING, 225);
+        item.addUnsafeEnchantment(Enchantment.POWER, 225);
+        item.addUnsafeEnchantment(Enchantment.PUNCH, 225);
+        item.addUnsafeEnchantment(Enchantment.FLAME, 225);
+        item.addUnsafeEnchantment(Enchantment.INFINITY, 225);
+    }
+
     private static void repairRiftItem(ItemStack item) {
         String itemType = type(item);
         if (itemType.isBlank() || !item.hasItemMeta()) return;
@@ -213,6 +221,11 @@ public final class RiftwalkerBundle implements Listener {
                 item.removeEnchantment(enchantment);
             }
             applyRealm100BootEnchants(item);
+        } else if (BOW_ID.equalsIgnoreCase(itemType)) {
+            for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
+                item.removeEnchantment(enchantment);
+            }
+            applyRealm100BowEnchants(item);
         }
     }
 
