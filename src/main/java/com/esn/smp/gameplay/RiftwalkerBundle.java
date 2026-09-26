@@ -451,12 +451,13 @@ public final class RiftwalkerBundle implements Listener {
         Double x = pdc.get(DEATH_X, PersistentDataType.DOUBLE);
         Double y = pdc.get(DEATH_Y, PersistentDataType.DOUBLE);
         Double z = pdc.get(DEATH_Z, PersistentDataType.DOUBLE);
-        if (worldId == null || x == null || y == null || z == null) return null;
 
-        try {
-            World world = Bukkit.getWorld(UUID.fromString(worldId));
-            if (world != null) return new Location(world, x, y, z);
-        } catch (IllegalArgumentException ignored) {
+        if (worldId != null && x != null && y != null && z != null) {
+            try {
+                World world = Bukkit.getWorld(UUID.fromString(worldId));
+                if (world != null) return new Location(world, x, y, z);
+            } catch (IllegalArgumentException ignored) {
+            }
         }
 
         // Paper/Bedrock fallback: use the server's own last-death location if available.
