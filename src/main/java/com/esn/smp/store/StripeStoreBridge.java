@@ -51,6 +51,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
     private static final String REALM_KEYS_PLINK = "plink_1UJN5IISwShswuKdH08ewRC2";
     private static final String SEASON_RELICS_PLINK = "plink_1UJk6BISwShswuKdtQ40w2Jb";
     private static final String RIFTWALKER_PLINK = "plink_1UJonjISwShswuKdIEKcHcDK";
+    private static final String IMMORTAL_WARDEN_PLINK = "plink_1UK2MpISwShswuKdouJvSM5n";
 
     private final ESNSMPPlugin plugin;
     private final HttpClient http;
@@ -222,6 +223,16 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
                 new ProductMapping("riftbow", 1),
                 new ProductMapping("riftcore", 1),
                 new ProductMapping("voidcompass", 1)
+        ));
+        changed |= seedProductIfMissing(IMMORTAL_WARDEN_PLINK, List.of(
+                new ProductMapping("wardenhelmet", 1),
+                new ProductMapping("wardenchest", 1),
+                new ProductMapping("wardenlegs", 1),
+                new ProductMapping("wardenboots", 1),
+                new ProductMapping("wardenblade", 1),
+                new ProductMapping("wardenbow", 1),
+                new ProductMapping("immortalcore", 1),
+                new ProductMapping("wardentotem", 1)
         ));
 
         // Preserve any product mappings created by older builds.
