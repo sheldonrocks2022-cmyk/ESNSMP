@@ -59,7 +59,7 @@ public final class VoidWarriorBundle implements Listener {
     private static final NamespacedKey MEGA_ITEM = new NamespacedKey("esnsmp", "mega_item");
 
     private static final long CLEAVE_COOLDOWN_MS = 8_000L;
-    private static final long TELEPORT_COOLDOWN_MS = 2_000L;
+    private static final long TELEPORT_COOLDOWN_MS = 10_000L;
     private static final long STEP_COOLDOWN_MS = 7_000L;
     private static final long AEGIS_COOLDOWN_MS = 25_000L;
     private static final double TELEPORT_RANGE = 40.0;
@@ -77,7 +77,7 @@ public final class VoidWarriorBundle implements Listener {
 
     public static ItemStack crown() {
         ItemStack item = fromRealm100(5, CROWN_ID, "VOID CROWN",
-                "Night Vision + Resistance I while worn.",
+                "Resistance I while worn.",
                 "Immune to Blindness and Darkness.",
                 "Full set upgrades Resistance to II.");
         return item;
@@ -177,7 +177,6 @@ public final class VoidWarriorBundle implements Listener {
         boolean full = crown && chest && legs && boots;
 
         if (crown) {
-            ensureEffect(player, PotionEffectType.NIGHT_VISION, 0);
             ensureEffect(player, PotionEffectType.RESISTANCE, full ? 1 : 0);
             if (player.hasPotionEffect(PotionEffectType.BLINDNESS)) {
                 player.removePotionEffect(PotionEffectType.BLINDNESS);
