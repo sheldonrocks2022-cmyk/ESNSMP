@@ -1,0 +1,27 @@
+name: Publish ESNSMP v2.9.2
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.9.2.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.9.2 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.2" --notes "Deep RAM and lag optimization pass. No gameplay systems, commands, store features, items, events, bosses, abilities, or progression removed."
