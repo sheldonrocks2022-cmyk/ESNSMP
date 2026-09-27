@@ -15,6 +15,7 @@ import java.util.Collection;
  */
 public final class LowMemoryEffectsTicker {
     private int cleanupCycles;
+    private int voidVisualCycles;
 
     public LowMemoryEffectsTicker(JavaPlugin plugin,
                                   RiftwalkerBundle riftwalker,
@@ -37,7 +38,7 @@ public final class LowMemoryEffectsTicker {
             for (Player player : online) {
                 riftwalker.passiveTick(player);
                 warden.passiveTick(player);
-                voidWarrior.passiveTick(player);
+                voidWarrior.passiveTick(player, ++voidVisualCycles % 4 == 0);
             }
         }, 20L, 10L);
     }
