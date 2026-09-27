@@ -27,14 +27,14 @@ public final class JailSystem implements Listener, CommandExecutor {
     private final Set<UUID> jailedPlayers = new HashSet<>();
     private final Map<UUID, Integer> jailCells = new HashMap<>();
     private final Map<UUID, Long> jailExpires = new HashMap<>();
+    private final Map<UUID, org.bukkit.scheduler.BukkitTask> releaseTasks = new HashMap<>();
 
     public JailSystem(JavaPlugin plugin) {
         this.plugin = plugin;
         file = new File(plugin.getDataFolder(), "jails.yml");
         db = YamlConfiguration.loadConfiguration(file);
-        for (Player player : Bukkit.getOnlinePlayers()) hydrate(player);
+        for (Player player : Bukkit.getOnlinePlayers()) { hydrate(player); scheduleRelease(player); }
         Bukkit.getScheduler().runTaskLater(plugin, this::finishPrison, 60L);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::expire, 20L, 20L);
     }
 
     private void hydrate(Player player) {
@@ -49,6 +49,23 @@ public final class JailSystem implements Listener, CommandExecutor {
             jailCells.remove(id);
             jailExpires.remove(id);
         }
+    }
+
+    private void scheduleRelease(Player player) {
+        UUID id = player.getUniqueId();
+        org.bukkit.scheduler.BukkitTask old = releaseTasks.remove(id);
+        if (old != null) old.cancel();
+        Long end = jailExpires.get(id);
+        if (end == null || end <= 0L) return;
+        long delayMs = Math.max(0L, end - System.currentTimeMillis());
+        long delayTicks = Math.max(1L, (delayMs + 49L) / 50L);
+        releaseTasks.put(id, Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            releaseTasks.remove(id);
+            Player online = Bukkit.getPlayer(id);
+            if (online == null || !jailedPlayers.contains(id)) return;
+            if (System.currentTimeMillis() >= jailExpires.getOrDefault(id, Long.MAX_VALUE)) release(online);
+            else scheduleRelease(online);
+        }, delayTicks));
     }
 
     private void save() {
@@ -196,6 +213,7 @@ public final class JailSystem implements Listener, CommandExecutor {
         db.set("cell." + key, cell);
         db.set("expires." + key, end);
         save();
+        scheduleRelease(target);
 
         target.teleport(cell(cell));
         target.sendMessage(ChatColor.DARK_RED + "You have been jailed for " + format(ms) + ". Your inventory was secured.");
@@ -246,6 +264,8 @@ public final class JailSystem implements Listener, CommandExecutor {
         jailedPlayers.remove(uuid);
         jailCells.remove(uuid);
         jailExpires.remove(uuid);
+        org.bukkit.scheduler.BukkitTask releaseTask = releaseTasks.remove(uuid);
+        if (releaseTask != null) releaseTask.cancel();
 
         db.set(base, null);
         db.set("jailed." + id, false);
@@ -375,6 +395,7 @@ public final class JailSystem implements Listener, CommandExecutor {
     public void join(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         hydrate(player);
+        scheduleRelease(player);
         if (!jailed(player)) return;
 
         UUID id = player.getUniqueId();
@@ -393,6 +414,8 @@ public final class JailSystem implements Listener, CommandExecutor {
     public void quit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         selectedSentence.remove(id);
+        org.bukkit.scheduler.BukkitTask releaseTask = releaseTasks.remove(id);
+        if (releaseTask != null) releaseTask.cancel();
         jailedPlayers.remove(id);
         jailCells.remove(id);
         jailExpires.remove(id);
