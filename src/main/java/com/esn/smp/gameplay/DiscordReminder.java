@@ -48,7 +48,7 @@ public final class DiscordReminder implements Listener {
         bar.setProgress(1.0);
         for (Player player : Bukkit.getOnlinePlayers()) bar.addPlayer(player);
 
-        plugin.getServer().getScheduler().runTaskTimer(plugin, this::animate, 0L, 10L);
+        plugin.getServer().getScheduler().runTaskTimer(plugin, this::animate, 0L, 40L);
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::broadcast, 6000L, 6000L);
     }
 
