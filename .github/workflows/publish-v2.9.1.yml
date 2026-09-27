@@ -1,0 +1,27 @@
+name: Publish ESNSMP v2.9.1
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.9.1.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.9.1 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.1" --notes "Void Warrior admin-test bundle with reduced-lag shared aura cadence. All existing gameplay retained."
