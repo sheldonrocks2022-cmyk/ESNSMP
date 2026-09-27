@@ -263,8 +263,7 @@ public final class RiftwalkerBundle implements Listener {
                 && is(player.getInventory().getItemInMainHand(), BLADE_ID);
 
         if (boots) {
-            player.addPotionEffect(new PotionEffect(
-                    PotionEffectType.SPEED, 30, fullSet ? 1 : 0, true, false, false));
+            ensurePassiveEffect(player, PotionEffectType.SPEED, 30, fullSet ? 1 : 0);
         }
 
         if (is(player.getInventory().getChestplate(), WINGS_ID) && player.isGliding()) {
@@ -278,6 +277,15 @@ public final class RiftwalkerBundle implements Listener {
                     Particle.REVERSE_PORTAL, player.getLocation().add(0, 0.15, 0),
                     4, 0.25, 0.05, 0.25, 0.01);
         }
+    }
+
+    private static void ensurePassiveEffect(Player player, PotionEffectType type, int duration, int amplifier) {
+        PotionEffect current = player.getPotionEffect(type);
+        if (current != null) {
+            if (current.getAmplifier() > amplifier) return;
+            if (current.getAmplifier() == amplifier && current.getDuration() > duration / 2) return;
+        }
+        player.addPotionEffect(new PotionEffect(type, duration, amplifier, true, false, false));
     }
 
     @EventHandler(ignoreCancelled = true)

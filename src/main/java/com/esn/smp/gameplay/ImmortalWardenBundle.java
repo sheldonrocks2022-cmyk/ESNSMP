@@ -287,26 +287,26 @@ public final class ImmortalWardenBundle implements Listener {
         boolean fullSet = helmet && chest && legs && boots;
 
         if (helmet) {
-            player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 40, 0, true, false, false));
-            player.removePotionEffect(PotionEffectType.BLINDNESS);
-            player.removePotionEffect(PotionEffectType.DARKNESS);
+            ensurePassiveEffect(player, PotionEffectType.NIGHT_VISION, 40, 0);
+            if (player.hasPotionEffect(PotionEffectType.BLINDNESS)) player.removePotionEffect(PotionEffectType.BLINDNESS);
+            if (player.hasPotionEffect(PotionEffectType.DARKNESS)) player.removePotionEffect(PotionEffectType.DARKNESS);
         }
 
         if (chest) {
             // Absorption V = 10 extra hearts (20 health points), i.e. one full row.
-            // Refresh the effect and refill the row while the Warden chestplate is worn.
-            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 30, 4, true, false, false));
+            // Refresh only near expiry to cut high-frequency PotionEffect allocations.
+            ensurePassiveEffect(player, PotionEffectType.ABSORPTION, 30, 4);
             if (player.getAbsorptionAmount() < 20.0) {
                 player.setAbsorptionAmount(20.0);
             }
         }
 
         if (boots) {
-            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 30, 0, true, false, false));
+            ensurePassiveEffect(player, PotionEffectType.SPEED, 30, 0);
         }
 
         if (fullSet) {
-            player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 30, 0, true, false, false));
+            ensurePassiveEffect(player, PotionEffectType.STRENGTH, 30, 0);
             player.getWorld().spawnParticle(
                     Particle.SCULK_SOUL, player.getLocation().add(0, 1.0, 0),
                     3, 0.35, 0.55, 0.35, 0.01);
@@ -321,6 +321,15 @@ public final class ImmortalWardenBundle implements Listener {
         if (coreActive != null && coreActive == (byte) 1) {
             applyInfiniteCoreBuffs(player);
         }
+    }
+
+    private static void ensurePassiveEffect(Player player, PotionEffectType type, int duration, int amplifier) {
+        PotionEffect current = player.getPotionEffect(type);
+        if (current != null) {
+            if (current.getAmplifier() > amplifier) return;
+            if (current.getAmplifier() == amplifier && current.getDuration() > duration / 2) return;
+        }
+        player.addPotionEffect(new PotionEffect(type, duration, amplifier, true, false, false));
     }
 
     private static void applyInfiniteCoreBuffs(Player player) {
