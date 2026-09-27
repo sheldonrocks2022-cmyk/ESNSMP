@@ -1,0 +1,27 @@
+name: Publish ESNSMP v2.9.4
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.9.4.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.9.4 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.4" --notes "Deep performance pass: major recurring background tasks reduced by 75% where safe, full-world cleanup scans replaced with direct entity tracking, jail expiry polling replaced with exact one-shot tasks, and allocation-heavy set bonus checks optimized. No gameplay system, command, item, ability, menu, boss, store feature, event, or permission intentionally removed."
