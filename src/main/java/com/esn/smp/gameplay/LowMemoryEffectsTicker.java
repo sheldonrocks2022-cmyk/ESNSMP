@@ -15,6 +15,7 @@ import java.util.Collection;
  */
 public final class LowMemoryEffectsTicker {
     private int cleanupCycles;
+    private int voidVisualCycles;
 
     public LowMemoryEffectsTicker(JavaPlugin plugin,
                                   RiftwalkerBundle riftwalker,
@@ -34,10 +35,12 @@ public final class LowMemoryEffectsTicker {
             Collection<? extends Player> online = Bukkit.getOnlinePlayers();
             if (online.isEmpty()) return;
 
+            boolean showVoidVisuals = ++voidVisualCycles >= 4;
+            if (showVoidVisuals) voidVisualCycles = 0;
             for (Player player : online) {
                 riftwalker.passiveTick(player);
                 warden.passiveTick(player);
-                voidWarrior.passiveTick(player);
+                voidWarrior.passiveTick(player, showVoidVisuals);
             }
         }, 20L, 10L);
     }

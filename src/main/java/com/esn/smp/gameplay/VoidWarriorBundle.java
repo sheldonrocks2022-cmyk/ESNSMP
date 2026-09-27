@@ -167,7 +167,7 @@ public final class VoidWarriorBundle implements Listener {
         map.entrySet().removeIf(e -> e.getValue() <= now);
     }
 
-    void passiveTick(Player player) {
+    void passiveTick(Player player, boolean showAura) {
         boolean crown = is(player.getInventory().getHelmet(), CROWN_ID);
         boolean chest = is(player.getInventory().getChestplate(), CHEST_ID);
         boolean legs = is(player.getInventory().getLeggings(), LEGS_ID);
@@ -205,13 +205,16 @@ public final class VoidWarriorBundle implements Listener {
         if (full) {
             ensureEffect(player, PotionEffectType.REGENERATION, 0);
 
-            // Low-lag Void Ascension aura: 2 particles per tick cycle instead of 8.
-            // That is a 75% reduction while remaining clearly visible around the player.
-            Location aura = player.getLocation();
-            player.getWorld().spawnParticle(Particle.REVERSE_PORTAL,
-                    aura.clone().add(0, 0.45, 0), 1, 0.28, 0.35, 0.28, 0.01);
-            player.getWorld().spawnParticle(Particle.SCULK_SOUL,
-                    aura.clone().add(0, 1.05, 0), 1, 0.22, 0.38, 0.22, 0.01);
+            // The aura is still clearly visible, but visual packets are emitted only
+            // every fourth shared passive cycle. This preserves every gameplay effect
+            // while reducing particle work/network traffic another 75%.
+            if (showAura) {
+                Location aura = player.getLocation();
+                player.getWorld().spawnParticle(Particle.REVERSE_PORTAL,
+                        aura.clone().add(0, 0.45, 0), 2, 0.28, 0.35, 0.28, 0.01);
+                player.getWorld().spawnParticle(Particle.SCULK_SOUL,
+                        aura.clone().add(0, 1.05, 0), 1, 0.22, 0.38, 0.22, 0.01);
+            }
         }
     }
 
