@@ -26,7 +26,7 @@ import java.util.UUID;
 public final class BossHealthBars implements Listener {
     private final JavaPlugin plugin;
     private final Map<UUID, BossBar> bars = new HashMap<>();
-    private int discoveryCycles = 29;
+    private int discoveryCycles = 119;
 
     public BossHealthBars(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -34,7 +34,7 @@ public final class BossHealthBars implements Listener {
     }
 
     private void pulse() {
-        if (++discoveryCycles >= 30) {
+        if (++discoveryCycles >= 120) {
             discoveryCycles = 0;
             discover();
         }
