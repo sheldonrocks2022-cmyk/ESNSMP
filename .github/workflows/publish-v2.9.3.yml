@@ -1,0 +1,27 @@
+name: Publish ESNSMP v2.9.3
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.9.3.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.9.3 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.3" --notes "Void Warrior update: Void Teleport now has a 10-second shared cooldown and Void gear no longer grants Night Vision. All other gameplay remains intact."
