@@ -35,10 +35,12 @@ public final class LowMemoryEffectsTicker {
             Collection<? extends Player> online = Bukkit.getOnlinePlayers();
             if (online.isEmpty()) return;
 
+            boolean showVoidVisuals = ++voidVisualCycles >= 4;
+            if (showVoidVisuals) voidVisualCycles = 0;
             for (Player player : online) {
                 riftwalker.passiveTick(player);
                 warden.passiveTick(player);
-                voidWarrior.passiveTick(player, ++voidVisualCycles % 4 == 0);
+                voidWarrior.passiveTick(player, showVoidVisuals);
             }
         }, 20L, 10L);
     }
