@@ -3,7 +3,7 @@ import com.esn.smp.auction.AuctionHouse;import com.esn.smp.gameplay.SMPGameplay;
 public final class HubServiceListener implements Listener{
  private static final String NPC_TAG="esnHubNpc";
  private final SpawnManager spawn;private final AuctionHouse auctions;private final SMPGameplay gameplay;private final ServerMenus menus;
- public HubServiceListener(SpawnManager spawn,AuctionHouse auctions,SMPGameplay gameplay,ServerMenus menus){this.spawn=spawn;this.auctions=auctions;this.gameplay=gameplay;this.menus=menus;Bukkit.getScheduler().runTaskTimer(((com.esn.smp.ESNSMPPlugin)menusPlugin()),this::ensureNpcs,100L,1200L);}
+ public HubServiceListener(SpawnManager spawn,AuctionHouse auctions,SMPGameplay gameplay,ServerMenus menus){this.spawn=spawn;this.auctions=auctions;this.gameplay=gameplay;this.menus=menus;Bukkit.getScheduler().runTaskTimer(((com.esn.smp.ESNSMPPlugin)menusPlugin()),this::ensureNpcs,100L,4800L);}
  private org.bukkit.plugin.java.JavaPlugin menusPlugin(){return (org.bukkit.plugin.java.JavaPlugin)Bukkit.getPluginManager().getPlugin("ESNSMP");}
  private void openService(Player p,HubService s) throws Exception{if(s==HubService.AUCTION){auctions.open(p,0);return;}if(s==HubService.SHOP){gameplay.openShop(p);return;}if(s==HubService.CRATES){gameplay.openCrates(p);return;}if(s==HubService.INFO){menus.open(p);return;}boolean ok=p.performCommand(s.command());if(!ok)p.sendMessage(ChatColor.RED+"Could not open /"+s.command()+".");}
  public void respawnNpcs(){Location base=spawn.getSpawn();if(base==null||base.getWorld()==null)return;World w=base.getWorld();for(Entity en:w.getEntities())if(en.getScoreboardTags().contains(NPC_TAG))en.remove();for(HubService s:HubService.values())spawnNpc(base,s);}
