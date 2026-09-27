@@ -1,0 +1,44 @@
+name: Publish ESNSMP v2.9.0
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/publish-v2.9.0.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v2.9.0 >/dev/null 2>&1; then
+            gh release upload v2.9.0 target/ESNSMP.jar --clobber
+          else
+            gh release create v2.9.0 target/ESNSMP.jar \
+              --target "$GITHUB_SHA" \
+              --title "ESNSMP v2.9.0" \
+              --notes "Adds the admin-only Void Warrior Bundle for testing through /esnitems. Includes unbreakable gear, Void Annihilation, Void Ascension, 20 absorption hearts, low-knockback leggings, 90% fall reduction, Void Step, and safe 40-block full-set teleport by right-click/sneak/jump. Void aura particle volume is reduced by 75%. Also reduces premium-gear housekeeping scans and passive PotionEffect allocation churn while preserving existing features."
+          fi
