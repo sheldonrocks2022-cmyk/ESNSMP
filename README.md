@@ -2,6 +2,17 @@
 
 ESN SMP is a large all-in-one **Paper 1.21.x** survival/RPG server plugin built for the ESN SMP. It combines the server's economy, progression, RPG systems, moderation tools, custom spawn, events, PvP systems, crates, bosses, guilds, player utilities, and endgame content into one plugin.
 
+## Official ES Network links
+
+- ES Network: https://esnoffical.com/es-network
+- ESN SMP overview: https://esnoffical.com/minecraft-smp
+- ESN SMP World Hub: https://esnoffical.com/smp-hub
+- ESN SMP beginner guide: https://esnoffical.com/guides/minecraft-smp-beginner-guide
+- SMP item encyclopedia: https://esnoffical.com/smp-items
+- ESN Guides + News: https://esnoffical.com/guides
+- Official Discord: https://discord.gg/3gxA66KZ8
+
+
 > **Current server plugin version:** 2.4.5  
 > **Java:** 21  
 > **Paper API used by the build:** 1.21.4  
