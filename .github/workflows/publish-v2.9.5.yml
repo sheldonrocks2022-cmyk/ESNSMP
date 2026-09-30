@@ -1,0 +1,27 @@
+name: Publish ESNSMP v2.9.5
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.9.5.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.9.5 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.5" --notes "Compatibility refresh for current Paper 26.3 / DaTHost environments: build toolchain moved to Java 25, Paper API target updated to 26.3, plugin output remains Java 21-compatible, and plugin metadata remains broadly loadable across 1.21+ servers. No gameplay systems, commands, store features, items, bosses, menus, permissions, or player data were intentionally removed."

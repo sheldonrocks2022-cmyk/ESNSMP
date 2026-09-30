@@ -15,7 +15,7 @@ ESN SMP is a large all-in-one **Paper 1.21.x** survival/RPG server plugin built 
 
 > **Current server plugin version:** 2.4.5  
 > **Java:** 21  
-> **Paper API used by the build:** 1.21.4  
+> **Paper API used by the build:** 26.3  
 > **Latest verified build:** GitHub Actions Build #458 — PASS  
 > **Verified commit:** `c29f56b31cf17da7ea7e1a5762fe55b15b8a1e67`
 
@@ -35,8 +35,8 @@ The JAR includes SQLite JDBC, so no separate SQLite plugin is required.
 
 ## Requirements
 
-- Paper 1.21.x server (the project currently compiles against Paper 1.21.4)
-- Java 21
+- Paper 1.21+ / 26.x server (the project compiles against Paper 26.3 while retaining `api-version: 1.21` for broad compatibility)
+- Java 21 for Minecraft 1.21.x servers; Java 25 for Paper 26.1+ / 26.3
 - A normal Paper `plugins/` directory
 - Appropriate filesystem permissions so ESNSMP can create its configuration and SQLite databases
 
@@ -396,7 +396,7 @@ Clone the repository, check out the active development branch and run:
 mvn clean verify
 ```
 
-The Maven project uses Java 21 and the Maven Shade Plugin. The packaged output is:
+The Maven project compiles with Java 25, emits Java 21-compatible plugin bytecode, and uses the Maven Shade Plugin. The packaged output is:
 
 ```text
 target/ESNSMP.jar
