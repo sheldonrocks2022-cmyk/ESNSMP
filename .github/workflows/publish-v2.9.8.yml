@@ -1,0 +1,33 @@
+name: Publish ESNSMP v2.9.8
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.9.8.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Verify Paper 26.2 metadata
+        run: |
+          set -euo pipefail
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "version: '2.9.8'"
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "api-version: '26.2'"
+          unzip -p target/ESNSMP.jar config.yml | grep -F "stripe-store:"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.9.8 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.8" --notes "DaTHost compatibility fix: targets Paper API 26.2 so the plugin loads on the current ESN server. Keeps the Stripe config.yml secret-key support and automatic paid-store delivery system."
