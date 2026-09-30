@@ -1,7 +1,7 @@
 name: ESNSMP
-version: '2.9.5'
+version: '2.9.6'
 main: com.esn.smp.ESNSMPPlugin
-api-version: '1.21'
+api-version: '26.3'
 author: ESN
 description: ESN SMP core, massive spawn, economy and auction house
 
