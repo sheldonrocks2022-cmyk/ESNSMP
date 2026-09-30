@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.9.10'
+version: '2.10.0'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -180,6 +180,14 @@ commands:
     aliases: [killeffect, keffects]
     description: Equip and preview permanent ESN Store kill effects.
     usage: /killeffects [list|equip <effect>|preview <effect>|off]
+
+  cosmetics:
+    aliases: [cosmetic, esncosmetics]
+    description: Manage ESN Store cosmetics, collections and staged releases.
+    usage: /cosmetics [category|tokens|buy|admin]
+  cosmetictokens:
+    aliases: [ctokens]
+    description: View your ESN Cosmetic Token balance.
 
   esnram:
     description: Show ESNSMP heap, chunk and custom-entity diagnostics.
