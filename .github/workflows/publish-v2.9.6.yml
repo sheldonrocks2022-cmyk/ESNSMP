@@ -1,0 +1,32 @@
+name: Publish ESNSMP v2.9.6
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.9.6.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Verify Paper 26.3 metadata
+        run: |
+          set -euo pipefail
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "version: '2.9.6'"
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "api-version: '26.3'"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.9.6 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.6" --notes "Paper 26.3 / DaTHost compatibility release. Updates plugin metadata to API 26.3 while preserving the existing ESNSMP gameplay systems, commands, store features, items, bosses, menus, permissions, and player-data behavior."
