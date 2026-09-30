@@ -200,7 +200,7 @@ public final class KillEffects implements Listener, CommandExecutor {
         }
 
         if (args.length == 0 || args[0].equalsIgnoreCase("list")) {
-            sendStatus(player);
+            CosmeticsGui.openKillEffects(player);
             return true;
         }
 
@@ -239,7 +239,7 @@ public final class KillEffects implements Listener, CommandExecutor {
                 player.sendMessage(ChatColor.RED + "Unknown kill effect.");
                 return true;
             }
-            if (!isUnlocked(player, effect) && !player.hasPermission("esnsmp.items")) {
+            if (!isUnlocked(player, effect)) {
                 player.sendMessage(ChatColor.RED + "You have not unlocked " + effect.displayName() + ".");
                 return true;
             }
@@ -249,7 +249,7 @@ public final class KillEffects implements Listener, CommandExecutor {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("unlock") && player.hasPermission("esnsmp.items")) {
+        if (args[0].equalsIgnoreCase("unlock") && isAdmin(player)) {
             if (args.length < 2) {
                 player.sendMessage(ChatColor.YELLOW + "/killeffects unlock <effect>");
                 return true;
@@ -295,7 +295,15 @@ public final class KillEffects implements Listener, CommandExecutor {
     }
 
     private static boolean isUnlocked(Player player, Effect effect) {
-        return unlocked(player).contains(effect.id());
+        return isAdmin(player) || unlocked(player).contains(effect.id());
+    }
+
+    private static boolean isAdmin(Player player) {
+        return player.isOp() ||
+                player.hasPermission("esnsmp.owner") ||
+                player.hasPermission("esnsmp.admin") ||
+                player.hasPermission("esnsmp.staff.admin") ||
+                player.hasPermission("esnsmp.items");
     }
 
     private static Set<String> unlocked(Player player) {
