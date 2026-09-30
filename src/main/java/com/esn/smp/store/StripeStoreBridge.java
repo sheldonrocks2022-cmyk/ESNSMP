@@ -421,6 +421,9 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         String env = System.getenv("STRIPE_SECRET_KEY");
         if (isStripeSecret(env)) return env.trim();
 
+        String configKey = plugin.getConfig().getString("stripe-store.secret-key", "");
+        if (isStripeSecret(configKey)) return configKey.trim();
+
         File file = secretKeyFile();
         if (file.isFile()) {
             try {
@@ -437,7 +440,7 @@ public final class StripeStoreBridge implements Listener, CommandExecutor, AutoC
         String secret = secretKey();
         if (secret.isBlank()) {
             lastError = "Stripe secret key is missing";
-            plugin.getLogger().warning("[ESN Store] Paste ONLY your Stripe secret key into plugins/ESNSMP/stripe-key.txt, save it, then restart the server.");
+            plugin.getLogger().warning("[ESN Store] Add your Stripe secret key at stripe-store.secret-key in plugins/ESNSMP/config.yml, save it, then restart the server.");
             return;
         }
 
