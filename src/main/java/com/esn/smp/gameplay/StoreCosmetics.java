@@ -690,7 +690,7 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
         }
 
         if (args.length == 0) {
-            overview(player);
+            CosmeticsGui.open(player);
             return true;
         }
 
@@ -950,6 +950,7 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
 
     private static boolean has(Player player, Category category, String id) {
         if (id == null) return false;
+        if (isAdmin(player)) return true;
         return unlocks(player).contains(category.key() + ":" + id);
     }
 
@@ -1014,7 +1015,11 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
     }
 
     private static boolean isAdmin(Player player) {
-        return player.hasPermission("esnsmp.owner") || player.hasPermission("esnsmp.items") || player.hasPermission("esnsmp.admin");
+        return player.isOp() ||
+                player.hasPermission("esnsmp.owner") ||
+                player.hasPermission("esnsmp.items") ||
+                player.hasPermission("esnsmp.admin") ||
+                player.hasPermission("esnsmp.staff.admin");
     }
 
     @Override
