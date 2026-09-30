@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.9.8'
+version: '2.9.9'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -175,6 +175,11 @@ commands:
     description: Give ESN custom items and crate keys.
     usage: /esnitems <item>
     permission: esnsmp.items
+
+  killeffects:
+    aliases: [killeffect, keffects]
+    description: Equip and preview permanent ESN Store kill effects.
+    usage: /killeffects [list|equip <effect>|preview <effect>|off]
 
   esnram:
     description: Show ESNSMP heap, chunk and custom-entity diagnostics.
