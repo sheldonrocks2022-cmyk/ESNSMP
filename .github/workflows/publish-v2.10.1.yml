@@ -1,0 +1,35 @@
+name: Publish ESNSMP v2.10.1
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.10.1.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Verify v2.10.1 menus and backpack expansion
+        run: |
+          set -euo pipefail
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "version: '2.10.1'"
+          jar tf target/ESNSMP.jar | grep -F "com/esn/smp/gameplay/CosmeticsGui.class"
+          jar tf target/ESNSMP.jar | grep -F "com/esn/smp/gameplay/StoreCosmetics.class"
+          jar tf target/ESNSMP.jar | grep -F "com/esn/smp/gameplay/KillEffects.class"
+          jar tf target/ESNSMP.jar | grep -F "com/esn/smp/gameplay/CommunitySystems.class"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.10.1 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.10.1" --notes "Adds full inventory GUIs for ESN cosmetics and Kill Effects, an admin-exclusive gear menu, automatic owner/admin access to cosmetic exclusives, a Cosmetics button in the server hub, and expands persistent backpacks to 10 pages / 450 storage slots while preserving existing backpack data."
