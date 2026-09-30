@@ -28,3 +28,10 @@ branding:
   title: "&6&lESN &f&lSMP"
   subtitle: "&7Survive • Build • Become Legendary"
   welcome-message: "&8[&6ESN&8] &fWelcome to &6ESN SMP&f!"
+
+
+# ESN Store / Stripe
+# Paste only your Stripe secret key below. It must start with sk_live_ or sk_test_.
+# Keep this file private and never commit a real key to GitHub.
+stripe-store:
+  secret-key: "PASTE_STRIPE_SECRET_KEY_HERE"
