@@ -24,4 +24,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create v2.9.5 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.5" --notes "Compatibility refresh for current Paper 26.3 / DaTHost environments: build toolchain moved to Java 25, Paper API target updated to 26.3, plugin output remains Java 21-compatible, and plugin metadata remains broadly loadable across 1.21+ servers. No gameplay systems, commands, store features, items, bosses, menus, permissions, or player data were intentionally removed."
+          gh release create v2.9.5 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.5" --notes "Compatibility refresh for current Paper 26.3 / DaTHost environments: build toolchain moved to Java 25, Paper API target updated to 26.3, plugin output remains Java 21-compatible, and plugin metadata remains broadly loadable across 1.21+ servers. The legacy chain material reference was also made version-safe for the 26.x material rename. No gameplay systems, commands, store features, items, bosses, menus, permissions, or player data were intentionally removed."
+# publish refresh after 26.3 compatibility compile fix
