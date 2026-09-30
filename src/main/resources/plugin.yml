@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.9.6'
+version: '2.9.7'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.3'
 author: ESN
