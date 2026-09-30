@@ -1,0 +1,35 @@
+name: Publish ESNSMP v2.10.0
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.10.0.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Verify v2.10.0 cosmetics expansion
+        run: |
+          set -euo pipefail
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "version: '2.10.0'"
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "cosmetics:"
+          unzip -p target/ESNSMP.jar config.yml | grep -F "store-cosmetics:"
+          jar tf target/ESNSMP.jar | grep -F "com/esn/smp/gameplay/StoreCosmetics.class"
+          jar tf target/ESNSMP.jar | grep -F "com/esn/smp/gameplay/KillEffects.class"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.10.0 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.10.0" --notes "Adds the staged ESN Store cosmetics platform: Aura Packs, Exclusive Titles, Spawn + Teleport Effects, Companion Pets, Chat Customization, Weapon Cosmetic Packs, Supporter Ranks, ESN Cosmetic Tokens, Seasonal Collections, Abyss Reaper, Dragonlord, Frostborn, Solar Guardian, Bloodmoon, Celestial Knight, Ancient Titan, plus the existing Kill Effects. All new categories start staged/off for gradual release."

@@ -26,7 +26,7 @@ public final class ESNChatSystem implements Listener, CommandExecutor {
  @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true) public void chat(AsyncPlayerChatEvent e){
   Player p=e.getPlayer();Channel ch=channels.getOrDefault(p.getUniqueId(),Channel.GLOBAL);long now=System.currentTimeMillis(),last=lastChat.getOrDefault(p.getUniqueId(),0L);
   if(!p.hasPermission("esnsmp.staff")&&now-last<750){e.setCancelled(true);p.sendMessage(ChatColor.RED+"You're chatting too quickly.");return;}
-  lastChat.put(p.getUniqueId(),now);e.setCancelled(true);String message=safeMessage(p,e.getMessage());Bukkit.getScheduler().runTask(plugin,()->deliver(p,ch,message));
+  lastChat.put(p.getUniqueId(),now);e.setCancelled(true);String message=StoreCosmetics.applyChatEmojis(p,safeMessage(p,e.getMessage()));Bukkit.getScheduler().runTask(plugin,()->deliver(p,ch,message));
  }
  private void deliver(Player p,Channel ch,String message){
   String name=identity(p)+ChatColor.GRAY+": "+ChatColor.WHITE;Collection<? extends Player> targets;
@@ -36,7 +36,7 @@ public final class ESNChatSystem implements Listener, CommandExecutor {
   for(Player x:targets)if(!publicChatOff.contains(x.getUniqueId())||x.equals(p)){x.sendMessage(name+message);mention(x,p,message);}
   Bukkit.getConsoleSender().sendMessage(ChatColor.stripColor(name+message));
  }
- private String identity(Player p){int lv=progression==null?1:progression.chatLevel(p);String title=expansion==null?"":expansion.equippedTitle(p);String champ=ServerChampionship.champion(plugin,p.getUniqueId())?ChatColor.GOLD+"[CHAMPION] ":"";return rank(p)+champ+ChatColor.GOLD+"[Lv. "+lv+"] "+(title==null||title.isBlank()?"":ChatColor.LIGHT_PURPLE+"["+title+"] ")+ChatColor.WHITE+p.getName();}
+ private String identity(Player p){int lv=progression==null?1:progression.chatLevel(p);String title=expansion==null?"":expansion.equippedTitle(p);String champ=ServerChampionship.champion(plugin,p.getUniqueId())?ChatColor.GOLD+"[CHAMPION] ":"";return rank(p)+champ+StoreCosmetics.supporterPrefix(p)+ChatColor.GOLD+"[Lv. "+lv+"] "+(title==null||title.isBlank()?"":ChatColor.LIGHT_PURPLE+"["+title+"] ")+StoreCosmetics.storeTitlePrefix(p)+StoreCosmetics.decoratePlayerName(p); }
  private void mention(Player r,Player s,String m){if(r.equals(s)||mentionOff.contains(r.getUniqueId())||!r.hasPermission("esnsmp.chat.mention"))return;if(m.toLowerCase(Locale.ROOT).contains(r.getName().toLowerCase(Locale.ROOT))){if(!soundOff.contains(r.getUniqueId()))r.playSound(r.getLocation(),Sound.BLOCK_NOTE_BLOCK_PLING,.8f,1.5f);r.sendActionBar(ChatColor.GOLD+s.getName()+" mentioned you in chat");}}
  private String rank(Player p){if(p.hasPermission("esnsmp.owner"))return ChatColor.DARK_RED+"[OWNER] ";if(p.hasPermission("esnsmp.staff.admin"))return ChatColor.RED+"[ADMIN] ";if(p.hasPermission("esnsmp.staff.seniormod"))return ChatColor.DARK_PURPLE+"[SR MOD] ";if(p.hasPermission("esnsmp.staff.moderator"))return ChatColor.LIGHT_PURPLE+"[MOD] ";if(p.hasPermission("esnsmp.staff.trialmod"))return ChatColor.BLUE+"[TRIAL MOD] ";if(p.hasPermission("esnsmp.staff.helper"))return ChatColor.GREEN+"[HELPER] ";return ChatColor.GRAY+"[MEMBER] ";}
  private String safeMessage(Player p,String s){return p.hasPermission("esnsmp.chat.color")?ChatColor.translateAlternateColorCodes('&',s):ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&',s));}
