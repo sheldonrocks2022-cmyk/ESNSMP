@@ -10,12 +10,13 @@ import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -40,7 +41,7 @@ import java.util.Set;
  *   deliver these without needing a second purchase system.
  * - Unlocks and the equipped effect live in the player's PersistentDataContainer
  *   and survive restarts/reconnects.
- * - Effects only trigger on player-vs-player kills to avoid mob-farm particle spam.
+ * - Effects trigger whenever the killer is a player and any living entity dies.
  */
 public final class KillEffects implements Listener, CommandExecutor {
     public static final String LIGHTNING_TOKEN_ID = "killeffectlightning";
@@ -179,8 +180,8 @@ public final class KillEffects implements Listener, CommandExecutor {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        Player victim = event.getEntity();
+    public void onEntityDeath(EntityDeathEvent event) {
+        LivingEntity victim = event.getEntity();
         Player killer = victim.getKiller();
         if (killer == null || killer.equals(victim)) return;
 

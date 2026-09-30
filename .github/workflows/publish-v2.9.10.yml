@@ -1,0 +1,33 @@
+name: Publish ESNSMP v2.9.10
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.9.10.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Verify v2.9.10 metadata and kill effects
+        run: |
+          set -euo pipefail
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "version: '2.9.10'"
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "killeffects:"
+          jar tf target/ESNSMP.jar | grep -F "com/esn/smp/gameplay/KillEffects.class"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.9.10 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.9.10" --notes "Kill Effects now trigger on any living-entity kill by a player, including animals, hostile mobs, bosses, and other players. Effects remain cosmetic-only and cause no damage or block changes."
