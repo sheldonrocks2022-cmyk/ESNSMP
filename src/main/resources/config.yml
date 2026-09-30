@@ -35,3 +35,24 @@ branding:
 # Keep this file private and never commit a real key to GitHub.
 stripe-store:
   secret-key: "PASTE_STRIPE_SECRET_KEY_HERE"
+
+
+# ESN Store Cosmetics
+# All new categories are staged by default. Owners/admins can test them with:
+# /cosmetics admin unlockall
+# Release a category later with: /cosmetics admin release <category> on
+# Release only one item with: /cosmetics admin release <category>:<id> on
+store-cosmetics:
+  released:
+    aura: false
+    title: false
+    teleport: false
+    pet: false
+    chatcolor: false
+    bracket: false
+    join: false
+    emoji: false
+    weapon: false
+    supporter: false
+    collection: false
+  released-items: {}
