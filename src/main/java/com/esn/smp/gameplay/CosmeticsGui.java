@@ -469,7 +469,10 @@ public final class CosmeticsGui implements Listener {
         if (isAdmin(player)) return true;
         String raw = player.getPersistentDataContainer().getOrDefault(UNLOCKS, PersistentDataType.STRING, "");
         if (raw.isBlank()) return false;
-        return Arrays.stream(raw.split(";")).map(String::trim).anyMatch((category + ":" + id)::equals);
+        Set<String> owned = new java.util.LinkedHashSet<>();
+        Arrays.stream(raw.split(";")).map(String::trim).filter(s -> !s.isBlank()).forEach(owned::add);
+        if (owned.contains(category + ":" + id)) return true;
+        return "armor".equals(category) && owned.contains("collection:" + id);
     }
 
     private static boolean ownsKill(Player player, String id) {
