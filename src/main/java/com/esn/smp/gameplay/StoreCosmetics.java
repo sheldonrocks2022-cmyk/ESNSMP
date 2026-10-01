@@ -21,6 +21,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -73,6 +74,7 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
         JOIN("join", "Join Messages"),
         EMOJI("emoji", "Cosmetic Emojis"),
         WEAPON("weapon", "Weapon Cosmetic Packs"),
+        ARMOR("armor", "Armor Cosmetic Sets"),
         SUPPORTER("supporter", "Supporter Ranks"),
         COLLECTION("collection", "Collections");
 
@@ -119,7 +121,9 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
     private static final NamespacedKey STORE_EXCLUSIVE = new NamespacedKey("esnsmp", "store_exclusive");
     private static final NamespacedKey WARDEN_TYPE = new NamespacedKey("esnsmp", "immortal_warden_type");
     private static final NamespacedKey VOID_TYPE = new NamespacedKey("esnsmp", "void_warrior_type");
+    private static final NamespacedKey ARMOR_SET = new NamespacedKey("esnsmp", "cosmetic_armor_set");
     private static final double COSMETIC_WEAPON_MULTIPLIER = 1.95;
+    private static final double COSMETIC_ARMOR_DAMAGE_MULTIPLIER = 0.88;
 
     private static final Map<String, Cosmetic> COSMETICS = new LinkedHashMap<>();
     private static final Map<Category, List<Cosmetic>> BY_CATEGORY = new EnumMap<>(Category.class);
@@ -177,7 +181,7 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
         add(Category.JOIN, "legend", "Legend Join", Material.NETHER_STAR, 25, false);
         add(Category.EMOJI, "pack", "ESN Cosmetic Emoji Pack", Material.NAME_TAG, 40, false);
 
-        // Base Weapon Cosmetic Packs — visual only; preserves the held weapon's stats.
+        // Base Weapon Cosmetic Packs — Realm 100+ combat tier.
         add(Category.WEAPON, "riftedge", "Rift Edge", Material.NETHERITE_SWORD, 80, false);
         add(Category.WEAPON, "wardenecho", "Warden Echo", Material.NETHERITE_SWORD, 80, false);
         add(Category.WEAPON, "celestialsaber", "Celestial Saber", Material.NETHERITE_SWORD, 80, false);
@@ -223,7 +227,7 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
 
         for (String id : List.of("halloween","christmas","newyear","anniversary","summer","birthday",
                 "abyssreaper","dragonlord","frostborn","solarguardian","bloodmoon","celestialknight","ancienttitan")) {
-            COLLECTION_BENEFITS.put(id, new String[]{"aura:" + id, "title:" + id, "weapon:" + id});
+            COLLECTION_BENEFITS.put(id, new String[]{"aura:" + id, "title:" + id, "weapon:" + id, "armor:" + id});
         }
     }
 
@@ -241,6 +245,7 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
         add(Category.AURA, id, auraName, Material.AMETHYST_SHARD, 0, true);
         add(Category.TITLE, id, titleName, Material.NAME_TAG, 0, true);
         add(Category.WEAPON, id, weaponName, Material.NETHERITE_SWORD, 0, true);
+        add(Category.ARMOR, id, collectionBaseName(id) + " Armor Set", Material.NETHERITE_CHESTPLATE, 0, true);
     }
 
     private final ESNSMPPlugin plugin;
@@ -283,9 +288,9 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
         tokenLore.add(ChatColor.GRAY + "Right-click to redeem.");
         tokenLore.add("");
         tokenLore.add(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "ESN STORE COSMETIC");
-        if (cosmetic.category() == Category.WEAPON) {
+        if (cosmetic.category() == Category.WEAPON || cosmetic.category() == Category.ARMOR || cosmetic.category() == Category.COLLECTION) {
             tokenLore.add(ChatColor.LIGHT_PURPLE + "Combat tier: Realm 100+");
-            tokenLore.add(ChatColor.GRAY + "Below Riftwalker / Warden / Void Warrior exclusives.");
+            tokenLore.add(ChatColor.GRAY + "Includes gear below Riftwalker / Warden / Void Warrior exclusives.");
         } else {
             tokenLore.add(ChatColor.GRAY + "Cosmetic only — no combat advantage.");
         }
@@ -691,6 +696,129 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
         item.setItemMeta(meta);
     }
 
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void cosmeticArmorDefense(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        String set = fullCosmeticArmorSet(player);
+        if (set == null || !has(player, Category.ARMOR, set)) return;
+        event.setDamage(event.getDamage() * COSMETIC_ARMOR_DAMAGE_MULTIPLIER);
+    }
+
+    private static void equipArmorSet(Player player, Cosmetic cosmetic) {
+        if (cosmetic == null || cosmetic.category() != Category.ARMOR) return;
+
+        ItemStack[] oldArmor = {
+                player.getInventory().getHelmet(),
+                player.getInventory().getChestplate(),
+                player.getInventory().getLeggings(),
+                player.getInventory().getBoots()
+        };
+        for (ItemStack old : oldArmor) {
+            if (old == null || old.getType().isAir()) continue;
+            if (armorSetId(old) != null) continue;
+            player.getInventory().addItem(old.clone()).values().forEach(left ->
+                    player.getWorld().dropItemNaturally(player.getLocation(), left));
+        }
+
+        player.getInventory().setHelmet(cosmeticArmorPiece(cosmetic.id(), 5, "Helmet"));
+        player.getInventory().setChestplate(cosmeticArmorPiece(cosmetic.id(), 6, "Chestplate"));
+        player.getInventory().setLeggings(cosmeticArmorPiece(cosmetic.id(), 7, "Leggings"));
+        player.getInventory().setBoots(cosmeticArmorPiece(cosmetic.id(), 8, "Boots"));
+        setSelected(player, Category.ARMOR, cosmetic.id());
+
+        player.sendMessage(ChatColor.GREEN + "Equipped " + ChatColor.LIGHT_PURPLE + cosmetic.name() + ChatColor.GREEN + ".");
+        player.sendMessage(ChatColor.GOLD + "Realm 100+ armor tier active: 225 enchants + 12% full-set damage reduction.");
+        player.sendMessage(ChatColor.GRAY + "Riftwalker / Immortal Warden / Void Warrior exclusives remain stronger.");
+    }
+
+    private static ItemStack cosmeticArmorPiece(String setId, int realmSlot, String pieceName) {
+        ItemStack item = MegaCrates.item(99, realmSlot).clone();
+        ItemMeta meta = item.getItemMeta();
+        String setName = collectionBaseName(setId);
+
+        meta.setDisplayName(armorColor(setId) + "" + ChatColor.BOLD + "✦ " +
+                setName.toUpperCase(Locale.ROOT) + " " + pieceName.toUpperCase(Locale.ROOT) + " ✦");
+        meta.setLore(List.of(
+                ChatColor.DARK_PURPLE + "[ESN Collection Armor]",
+                ChatColor.GRAY + "Set: " + armorColor(setId) + setName,
+                ChatColor.GOLD + "Combat Tier: Realm 100+",
+                ChatColor.LIGHT_PURPLE + "Enchant Power: 225",
+                ChatColor.AQUA + "Full Set: 12% incoming damage reduction",
+                ChatColor.DARK_GRAY + "Above Realm 100 • Below ESN Store Exclusives",
+                ChatColor.GOLD + "" + ChatColor.BOLD + "UNBREAKABLE"
+        ));
+        meta.setUnbreakable(true);
+        meta.getPersistentDataContainer().remove(MEGA_ITEM);
+        meta.getPersistentDataContainer().set(ARMOR_SET, PersistentDataType.STRING, setId);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private static void unequipCosmeticArmor(Player player) {
+        ItemStack[] equipped = {
+                player.getInventory().getHelmet(),
+                player.getInventory().getChestplate(),
+                player.getInventory().getLeggings(),
+                player.getInventory().getBoots()
+        };
+
+        for (int i = 0; i < equipped.length; i++) {
+            ItemStack piece = equipped[i];
+            if (armorSetId(piece) == null) continue;
+            player.getInventory().addItem(piece.clone()).values().forEach(left ->
+                    player.getWorld().dropItemNaturally(player.getLocation(), left));
+            switch (i) {
+                case 0 -> player.getInventory().setHelmet(null);
+                case 1 -> player.getInventory().setChestplate(null);
+                case 2 -> player.getInventory().setLeggings(null);
+                case 3 -> player.getInventory().setBoots(null);
+                default -> {}
+            }
+        }
+    }
+
+    private static String fullCosmeticArmorSet(Player player) {
+        String helmet = armorSetId(player.getInventory().getHelmet());
+        if (helmet == null) return null;
+        String chest = armorSetId(player.getInventory().getChestplate());
+        String legs = armorSetId(player.getInventory().getLeggings());
+        String boots = armorSetId(player.getInventory().getBoots());
+        return helmet.equals(chest) && helmet.equals(legs) && helmet.equals(boots) ? helmet : null;
+    }
+
+    private static String armorSetId(ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return null;
+        return item.getItemMeta().getPersistentDataContainer().get(ARMOR_SET, PersistentDataType.STRING);
+    }
+
+    private static String collectionBaseName(String id) {
+        Cosmetic collection = find(Category.COLLECTION, id);
+        if (collection != null) return collection.name().replace(" Collection", "");
+        return switch (id) {
+            case "newyear" -> "New Year";
+            case "abyssreaper" -> "Abyss Reaper";
+            case "dragonlord" -> "Dragonlord";
+            case "frostborn" -> "Frostborn";
+            case "solarguardian" -> "Solar Guardian";
+            case "bloodmoon" -> "Bloodmoon";
+            case "celestialknight" -> "Celestial Knight";
+            case "ancienttitan" -> "Ancient Titan";
+            case "anniversary" -> "ESN Anniversary";
+            case "birthday" -> "ESN Birthday";
+            default -> Character.toUpperCase(id.charAt(0)) + id.substring(1);
+        };
+    }
+
+    private static ChatColor armorColor(String id) {
+        if (id.contains("blood") || id.contains("halloween")) return ChatColor.DARK_RED;
+        if (id.contains("frost") || id.contains("christmas")) return ChatColor.AQUA;
+        if (id.contains("solar") || id.contains("summer") || id.contains("anniversary") || id.contains("birthday")) return ChatColor.GOLD;
+        if (id.contains("celestial") || id.contains("newyear")) return ChatColor.LIGHT_PURPLE;
+        if (id.contains("dragon") || id.contains("abyss")) return ChatColor.DARK_PURPLE;
+        if (id.contains("titan")) return ChatColor.YELLOW;
+        return ChatColor.LIGHT_PURPLE;
+    }
+
     public static String supporterPrefix(Player player) {
         String id = selected(player, Category.SUPPORTER);
         if (id == null || !has(player, Category.SUPPORTER, id)) return "";
@@ -803,6 +931,7 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
         if (args[1].equalsIgnoreCase("off") || args[1].equalsIgnoreCase("none")) {
             selectionKey(player, category).ifPresent(player.getPersistentDataContainer()::remove);
             if (category == Category.PET) refreshPet(player);
+            if (category == Category.ARMOR) unequipCosmeticArmor(player);
             player.sendMessage(ChatColor.YELLOW + category.display() + " disabled.");
             return true;
         }
@@ -829,6 +958,11 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
 
         if (category == Category.WEAPON) {
             applyWeaponSkin(player, cosmetic);
+            return true;
+        }
+
+        if (category == Category.ARMOR) {
+            equipArmorSet(player, cosmetic);
             return true;
         }
 
@@ -1004,7 +1138,7 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
 
     private static void autoEquip(Player player, Cosmetic cosmetic) {
         if (cosmetic.category() == Category.COLLECTION) return;
-        if (cosmetic.category() == Category.WEAPON) return;
+        if (cosmetic.category() == Category.WEAPON || cosmetic.category() == Category.ARMOR) return;
         setSelected(player, cosmetic.category(), cosmetic.id());
     }
 
