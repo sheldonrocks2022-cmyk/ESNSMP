@@ -57,6 +57,7 @@ public final class CosmeticsGui implements Listener {
             new CategoryInfo("join", "Join Messages", Material.PAPER),
             new CategoryInfo("emoji", "Cosmetic Emojis", Material.GLOW_INK_SAC),
             new CategoryInfo("weapon", "Weapon Cosmetic Packs", Material.NETHERITE_SWORD),
+            new CategoryInfo("armor", "Armor Cosmetic Sets", Material.NETHERITE_CHESTPLATE),
             new CategoryInfo("supporter", "Supporter Ranks", Material.NETHER_STAR),
             new CategoryInfo("collection", "Collections", Material.HEART_OF_THE_SEA)
     );
@@ -142,6 +143,7 @@ public final class CosmeticsGui implements Listener {
                 o("infernofang", "Inferno Fang", Material.NETHERITE_SWORD, 80),
                 o("frostbite", "Frostbite", Material.NETHERITE_SWORD, 80)
         )));
+        OPTIONS.put("armor", new ArrayList<>());
         OPTIONS.put("supporter", new ArrayList<>(List.of(
                 o("supporter", "SUPPORTER", Material.EMERALD, 0),
                 o("elite", "ELITE", Material.DIAMOND, 0),
@@ -177,6 +179,7 @@ public final class CosmeticsGui implements Listener {
             OPTIONS.get("aura").add(hidden(id, pretty(id) + " Aura", auraMaterial));
             OPTIONS.get("title").add(hidden(id, pretty(id).toUpperCase(Locale.ROOT), Material.NAME_TAG));
             OPTIONS.get("weapon").add(hidden(id, pretty(id) + " Weapon Skin", Material.NETHERITE_SWORD));
+            OPTIONS.get("armor").add(hidden(id, pretty(id) + " Armor Set", Material.NETHERITE_CHESTPLATE));
         }
     }
 
@@ -208,7 +211,7 @@ public final class CosmeticsGui implements Listener {
         inv.setItem(4, item(Material.SUNFLOWER, ChatColor.GOLD + "" + ChatColor.BOLD + "ESN Cosmetic Tokens",
                 List.of(ChatColor.YELLOW + "Balance: " + tokenBalance(player), ChatColor.GRAY + "/cosmetictokens"), "tokens"));
 
-        int[] slots = {10,11,12,13,14,15,16,19,20,21,22};
+        int[] slots = {10,11,12,13,14,15,16,19,20,21,22,23};
         for (int i = 0; i < CATEGORIES.size(); i++) {
             CategoryInfo category = CATEGORIES.get(i);
             long owned = OPTIONS.getOrDefault(category.key(), List.of()).stream().filter(o -> owns(player, category.key(), o.id())).count();
@@ -220,14 +223,14 @@ public final class CosmeticsGui implements Listener {
                     ), "category:" + category.key()));
         }
 
-        inv.setItem(23, item(Material.LIGHTNING_ROD, ChatColor.RED + "Kill Effects",
+        inv.setItem(28, item(Material.LIGHTNING_ROD, ChatColor.RED + "Kill Effects",
                 List.of(ChatColor.GRAY + "Lightning, Soul, Void, Meteor,", ChatColor.GRAY + "Warden and Fire Tornado.", ChatColor.YELLOW + "Click to open"), "killmenu"));
-        inv.setItem(24, item(Material.TOTEM_OF_UNDYING, ChatColor.GOLD + "Season Pass",
+        inv.setItem(29, item(Material.TOTEM_OF_UNDYING, ChatColor.GOLD + "Season Pass",
                 List.of(ChatColor.GRAY + "Open the ESN Season Pass menu."), "command:seasonpass"));
-        inv.setItem(25, item(Material.BUNDLE, ChatColor.DARK_AQUA + "Backpack",
+        inv.setItem(30, item(Material.BUNDLE, ChatColor.DARK_AQUA + "Backpack",
                 List.of(ChatColor.GRAY + "10 pages • 450 persistent slots"), "command:backpack"));
         if (isAdmin(player)) {
-            inv.setItem(31, item(Material.NETHERITE_BLOCK, ChatColor.DARK_RED + "" + ChatColor.BOLD + "ADMIN EXCLUSIVES",
+            inv.setItem(32, item(Material.NETHERITE_BLOCK, ChatColor.DARK_RED + "" + ChatColor.BOLD + "ADMIN EXCLUSIVES",
                     List.of(ChatColor.GOLD + "Automatic access to every cosmetic exclusive.", ChatColor.GRAY + "Click for exclusive gear sets."), "adminexclusives"));
         }
         inv.setItem(49, item(Material.BARRIER, ChatColor.RED + "Close", List.of(), "close"));
@@ -260,9 +263,16 @@ public final class CosmeticsGui implements Listener {
             else lore.add(ChatColor.DARK_GRAY + "STAGED / LOCKED");
 
             if (selected) lore.add(ChatColor.GOLD + "" + ChatColor.BOLD + "CURRENTLY EQUIPPED");
-            if ("weapon".equals(category)) lore.add(ChatColor.GRAY + "Hold a weapon and click to apply.");
-            else if ("collection".equals(category)) lore.add(ChatColor.GRAY + "Collection unlocks its matching aura/title/weapon cosmetic.");
-            else lore.add(ChatColor.GRAY + (owned || isAdmin(player) ? "Click to equip." : released ? "Click to buy." : "Not publicly released yet."));
+            if ("weapon".equals(category)) {
+                lore.add(ChatColor.GRAY + "Hold a weapon and click to apply.");
+                lore.add(ChatColor.GOLD + "Realm 100+ • below ESN exclusives");
+            } else if ("armor".equals(category)) {
+                lore.add(ChatColor.GRAY + "Click to equip the full 4-piece set.");
+                lore.add(ChatColor.GOLD + "225 enchants + 12% full-set defense");
+                lore.add(ChatColor.DARK_GRAY + "Above Realm 100 • below ESN exclusives");
+            } else if ("collection".equals(category)) {
+                lore.add(ChatColor.GRAY + "Unlocks matching aura, title, weapon + armor set.");
+            } else lore.add(ChatColor.GRAY + (owned || isAdmin(player) ? "Click to equip." : released ? "Click to buy." : "Not publicly released yet."));
 
             inv.setItem(slot++, item(option.material(),
                     (selected ? ChatColor.GOLD : owned || isAdmin(player) ? ChatColor.GREEN : ChatColor.GRAY) + option.name(),
