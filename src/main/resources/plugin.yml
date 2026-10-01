@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.10.2'
+version: '2.10.3'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -193,6 +193,12 @@ commands:
     aliases: [voidmenu]
     description: Toggle Void Warrior full-set teleport triggers.
     usage: /void
+
+  ownertag:
+    aliases: [otag]
+    description: Toggle the visible ESN SMP Owner tag without changing owner permissions.
+    usage: /ownertag
+    permission: esnsmp.owner
 
   esnram:
     description: Show ESNSMP heap, chunk and custom-entity diagnostics.
