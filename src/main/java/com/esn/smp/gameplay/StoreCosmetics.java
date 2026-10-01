@@ -12,6 +12,7 @@ import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -56,7 +57,9 @@ import java.util.function.Supplier;
  * and preview everything immediately, then enable one category or item at a time.
  * All unlocks/selections persist on the Player PDC and survive restarts.
  *
- * No system here changes combat damage, armor, drops, movement stats or economy.
+ * Most systems here are cosmetic-only. Weapon Cosmetic Packs are a deliberate
+ * combat tier: slightly above Realm 100 weapons, while remaining below ESN
+ * store-exclusive weapon bundles.
  */
 @SuppressWarnings("deprecation")
 public final class StoreCosmetics implements Listener, CommandExecutor, AutoCloseable {
@@ -111,6 +114,12 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
     private static final NamespacedKey BALANCE = new NamespacedKey("esnsmp", "cosmetic_tokens_balance");
     private static final NamespacedKey WEAPON_SKIN = new NamespacedKey("esnsmp", "weapon_cosmetic_skin");
     private static final NamespacedKey PROJECTILE_SKIN = new NamespacedKey("esnsmp", "weapon_cosmetic_projectile");
+    private static final NamespacedKey MEGA_ITEM = new NamespacedKey("esnsmp", "mega_item");
+    private static final NamespacedKey RIFT_TYPE = new NamespacedKey("esnsmp", "riftwalker_type");
+    private static final NamespacedKey STORE_EXCLUSIVE = new NamespacedKey("esnsmp", "store_exclusive");
+    private static final NamespacedKey WARDEN_TYPE = new NamespacedKey("esnsmp", "immortal_warden_type");
+    private static final NamespacedKey VOID_TYPE = new NamespacedKey("esnsmp", "void_warrior_type");
+    private static final double COSMETIC_WEAPON_MULTIPLIER = 1.95;
 
     private static final Map<String, Cosmetic> COSMETICS = new LinkedHashMap<>();
     private static final Map<Category, List<Cosmetic>> BY_CATEGORY = new EnumMap<>(Category.class);
@@ -268,14 +277,19 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
         ItemStack item = new ItemStack(cosmetic.tokenMaterial());
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "✦ " + cosmetic.name() + " UNLOCK ✦");
-        meta.setLore(List.of(
-                ChatColor.GOLD + "Permanent ESN cosmetic unlock",
-                ChatColor.GRAY + cosmetic.category().display(),
-                ChatColor.GRAY + "Right-click to redeem.",
-                "",
-                ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "ESN STORE COSMETIC",
-                ChatColor.GRAY + "No combat or gameplay advantage."
-        ));
+        List<String> tokenLore = new ArrayList<>();
+        tokenLore.add(ChatColor.GOLD + "Permanent ESN cosmetic unlock");
+        tokenLore.add(ChatColor.GRAY + cosmetic.category().display());
+        tokenLore.add(ChatColor.GRAY + "Right-click to redeem.");
+        tokenLore.add("");
+        tokenLore.add(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "ESN STORE COSMETIC");
+        if (cosmetic.category() == Category.WEAPON) {
+            tokenLore.add(ChatColor.LIGHT_PURPLE + "Combat tier: Realm 100+");
+            tokenLore.add(ChatColor.GRAY + "Below Riftwalker / Warden / Void Warrior exclusives.");
+        } else {
+            tokenLore.add(ChatColor.GRAY + "Cosmetic only — no combat advantage.");
+        }
+        meta.setLore(tokenLore);
         meta.getPersistentDataContainer().set(TOKEN, PersistentDataType.STRING, cosmetic.key());
         item.setItemMeta(meta);
         return item;
@@ -389,25 +403,32 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void shoot(EntityShootBowEvent event) {
         if (!(event.getEntity() instanceof Player player) || !(event.getProjectile() instanceof Projectile projectile)) return;
-        String skin = weaponSkin(event.getBow());
+        ItemStack bow = event.getBow();
+        if (exclusiveWeapon(bow)) return;
+        String skin = weaponSkin(bow);
         if (skin == null || !has(player, Category.WEAPON, skin)) return;
+        normalizeCosmeticWeapon(bow);
         projectile.getPersistentDataContainer().set(PROJECTILE_SKIN, PersistentDataType.STRING, skin);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void weaponHit(EntityDamageByEntityEvent event) {
         Player attacker = null;
         String skin = null;
 
         if (event.getDamager() instanceof Player player) {
+            ItemStack held = player.getInventory().getItemInMainHand();
+            if (exclusiveWeapon(held)) return;
             attacker = player;
-            skin = weaponSkin(player.getInventory().getItemInMainHand());
+            skin = weaponSkin(held);
+            if (skin != null) normalizeCosmeticWeapon(held);
         } else if (event.getDamager() instanceof Projectile projectile && projectile.getShooter() instanceof Player player) {
             attacker = player;
             skin = projectile.getPersistentDataContainer().get(PROJECTILE_SKIN, PersistentDataType.STRING);
         }
 
         if (attacker == null || skin == null || !has(attacker, Category.WEAPON, skin)) return;
+        event.setDamage(event.getDamage() * COSMETIC_WEAPON_MULTIPLIER);
         weaponVisual(attacker, event.getEntity(), skin);
     }
 
@@ -596,19 +617,78 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
             player.sendMessage(ChatColor.RED + "Hold a sword, axe, bow, crossbow, trident, or mace first.");
             return;
         }
+        if (exclusiveWeapon(item)) {
+            player.sendMessage(ChatColor.RED + "ESN Store Exclusive weapons cannot be converted into cosmetic weapons.");
+            player.sendMessage(ChatColor.GRAY + "Riftwalker, Immortal Warden and Void Warrior must remain above the cosmetic tier.");
+            return;
+        }
+
+        normalizeCosmeticWeapon(item);
 
         ItemMeta meta = item.getItemMeta();
         List<String> lore = meta.hasLore() && meta.getLore() != null ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
-        lore.removeIf(line -> ChatColor.stripColor(line).startsWith("[ESN Weapon Cosmetic]") || ChatColor.stripColor(line).startsWith("Skin: "));
+        lore.removeIf(line -> {
+            String plain = ChatColor.stripColor(line);
+            return plain.startsWith("[ESN Weapon Cosmetic]")
+                    || plain.startsWith("Skin: ")
+                    || plain.startsWith("Combat Tier: ")
+                    || plain.startsWith("Damage Multiplier: ")
+                    || plain.startsWith("MEGA CRATE TIER ")
+                    || plain.startsWith("Power ")
+                    || plain.startsWith("ENCHANT LEVELS: ")
+                    || plain.startsWith("Maximum Realm enchant level:")
+                    || plain.startsWith("Sharpness/Looting/Fire/Knockback/Smite/Bane:")
+                    || plain.startsWith("Power/Punch/Flame/Infinity:")
+                    || plain.startsWith("Unbreaking:");
+        });
         lore.add("");
         lore.add(ChatColor.DARK_PURPLE + "[ESN Weapon Cosmetic]");
         lore.add(ChatColor.GRAY + "Skin: " + ChatColor.LIGHT_PURPLE + cosmetic.name());
-        lore.add(ChatColor.DARK_GRAY + "Visual only — original item stats preserved.");
+        lore.add(ChatColor.GOLD + "Combat Tier: Realm 100+");
+        lore.add(ChatColor.LIGHT_PURPLE + "Damage Multiplier: 1.95x");
+        lore.add(ChatColor.GRAY + "Enchant power: 225");
+        lore.add(ChatColor.DARK_GRAY + "Stronger than Realm 100 • Below ESN Store Exclusives");
         meta.setLore(lore);
         meta.setDisplayName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "✦ " + cosmetic.name().toUpperCase(Locale.ROOT) + " ✦");
         meta.getPersistentDataContainer().set(WEAPON_SKIN, PersistentDataType.STRING, cosmetic.id());
+        meta.getPersistentDataContainer().remove(MEGA_ITEM);
         item.setItemMeta(meta);
         player.sendMessage(ChatColor.GREEN + "Applied weapon cosmetic: " + ChatColor.LIGHT_PURPLE + cosmetic.name());
+        player.sendMessage(ChatColor.GOLD + "Weapon upgraded to ESN Cosmetic Tier — above Realm 100, below Store Exclusives.");
+    }
+
+    private static boolean exclusiveWeapon(ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return false;
+        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+        return pdc.has(RIFT_TYPE, PersistentDataType.STRING)
+                || pdc.has(STORE_EXCLUSIVE, PersistentDataType.BYTE)
+                || pdc.has(WARDEN_TYPE, PersistentDataType.STRING)
+                || pdc.has(VOID_TYPE, PersistentDataType.STRING);
+    }
+
+    private static void normalizeCosmeticWeapon(ItemStack item) {
+        if (item == null || item.getType().isAir() || exclusiveWeapon(item)) return;
+
+        int templateSlot = switch (item.getType()) {
+            case BOW -> 9;
+            case CROSSBOW -> 10;
+            default -> item.getType().name().endsWith("_AXE") ? 1 : 0;
+        };
+
+        ItemStack template = MegaCrates.item(99, templateSlot);
+        for (Enchantment enchantment : new ArrayList<>(item.getEnchantments().keySet())) {
+            item.removeEnchantment(enchantment);
+        }
+        for (Map.Entry<Enchantment, Integer> entry : template.getEnchantments().entrySet()) {
+            item.addUnsafeEnchantment(entry.getKey(), entry.getValue());
+        }
+
+        // Cosmetic-tier weapons are combat upgrades, not farming upgrades.
+        item.removeEnchantment(Enchantment.LOOTING);
+
+        ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().remove(MEGA_ITEM);
+        item.setItemMeta(meta);
     }
 
     public static String supporterPrefix(Player player) {

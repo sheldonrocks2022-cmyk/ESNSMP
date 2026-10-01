@@ -55,7 +55,7 @@ public final class ESNScoreboard {
                 setLine(board, objective, 0, 5, ChatColor.GRAY + "play.esn");
                 setLine(board, objective, 1, 4,
                         ChatColor.YELLOW + "Rank: " + ChatColor.WHITE +
-                                (player.hasPermission("esnsmp.owner") ? "Owner" : "Member"));
+                                OwnerTagSettings.visibleRank(player));
                 setLine(board, objective, 2, 3,
                         ChatColor.YELLOW + "Coins: " + ChatColor.WHITE + data.getBalance(player));
                 setLine(board, objective, 3, 2,
