@@ -11,6 +11,9 @@ import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -21,11 +24,14 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -47,7 +53,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * /esnitems for OP/admin testing only. Passive effects share the existing ESN
  * low-memory ticker and no per-player repeating tasks are created.
  */
-public final class VoidWarriorBundle implements Listener {
+public final class VoidWarriorBundle implements Listener, CommandExecutor {
     public static final String CROWN_ID = "voidwarriorcrown";
     public static final String CHEST_ID = "voidwarriorchest";
     public static final String LEGS_ID = "voidwarriorlegs";
@@ -57,6 +63,8 @@ public final class VoidWarriorBundle implements Listener {
     private static final NamespacedKey VOID_TYPE = new NamespacedKey("esnsmp", "void_warrior_type");
     private static final NamespacedKey ADMIN_TEST = new NamespacedKey("esnsmp", "admin_test_item");
     private static final NamespacedKey MEGA_ITEM = new NamespacedKey("esnsmp", "mega_item");
+    private static final NamespacedKey VOID_TELEPORT_ENABLED = new NamespacedKey("esnsmp", "void_warrior_teleport_enabled");
+    private static final String VOID_MENU_TITLE = ChatColor.DARK_PURPLE + "Void Warrior Teleport";
 
     private static final long CLEAVE_COOLDOWN_MS = 8_000L;
     private static final long TELEPORT_COOLDOWN_MS = 10_000L;
@@ -246,7 +254,7 @@ public final class VoidWarriorBundle implements Listener {
             return;
         }
 
-        if (fullSet(player)) {
+        if (fullSet(player) && teleportEnabled(player)) {
             if (voidTeleport(player)) event.setCancelled(true);
         }
     }
@@ -257,7 +265,7 @@ public final class VoidWarriorBundle implements Listener {
         Player player = event.getPlayer();
 
         if (fullSet(player)) {
-            voidTeleport(player);
+            if (teleportEnabled(player)) voidTeleport(player);
             return;
         }
 
@@ -281,7 +289,93 @@ public final class VoidWarriorBundle implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onJump(PlayerJumpEvent event) {
         Player player = event.getPlayer();
-        if (fullSet(player)) voidTeleport(player);
+        if (fullSet(player) && teleportEnabled(player)) voidTeleport(player);
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("Players only.");
+            return true;
+        }
+        openVoidMenu(player);
+        return true;
+    }
+
+    private void openVoidMenu(Player player) {
+        Inventory menu = Bukkit.createInventory(null, 27, VOID_MENU_TITLE);
+        boolean enabled = teleportEnabled(player);
+
+        menu.setItem(11, menuItem(Material.LIME_DYE,
+                ChatColor.GREEN + "" + ChatColor.BOLD + "TURN VOID TELEPORT ON",
+                ChatColor.GRAY + "Enables full-set right-click, sneak,",
+                ChatColor.GRAY + "and jump Void Teleport triggers.",
+                enabled ? ChatColor.GREEN + "Currently enabled" : ChatColor.GRAY + "Click to enable"));
+
+        menu.setItem(13, menuItem(enabled ? Material.ENDER_EYE : Material.BARRIER,
+                (enabled ? ChatColor.GREEN : ChatColor.RED) + "" + ChatColor.BOLD +
+                        "VOID TELEPORT: " + (enabled ? "ON" : "OFF"),
+                ChatColor.GRAY + "Setting is saved per player.",
+                ChatColor.GRAY + "Default: ON"));
+
+        menu.setItem(15, menuItem(Material.RED_DYE,
+                ChatColor.RED + "" + ChatColor.BOLD + "TURN VOID TELEPORT OFF",
+                ChatColor.GRAY + "Disables full-set right-click, sneak,",
+                ChatColor.GRAY + "and jump Void Teleport triggers.",
+                !enabled ? ChatColor.RED + "Currently disabled" : ChatColor.GRAY + "Click to disable"));
+
+        menu.setItem(22, menuItem(Material.OAK_DOOR,
+                ChatColor.YELLOW + "Close",
+                ChatColor.GRAY + "Close this menu."));
+        player.openInventory(menu);
+    }
+
+    private static ItemStack menuItem(Material material, String name, String... lore) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(name);
+        meta.setLore(List.of(lore));
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private static boolean teleportEnabled(Player player) {
+        Byte value = player.getPersistentDataContainer().get(VOID_TELEPORT_ENABLED, PersistentDataType.BYTE);
+        return value == null || value != (byte) 0;
+    }
+
+    private static void setTeleportEnabled(Player player, boolean enabled) {
+        player.getPersistentDataContainer().set(VOID_TELEPORT_ENABLED, PersistentDataType.BYTE, (byte) (enabled ? 1 : 0));
+    }
+
+    @EventHandler
+    public void voidMenuClick(InventoryClickEvent event) {
+        if (!event.getView().getTitle().equals(VOID_MENU_TITLE)) return;
+        event.setCancelled(true);
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+
+        switch (event.getRawSlot()) {
+            case 11 -> {
+                setTeleportEnabled(player, true);
+                player.sendMessage(ChatColor.GREEN + "Void Warrior teleport enabled.");
+                player.sendActionBar(ChatColor.DARK_PURPLE + "Void Teleport: ON");
+                openVoidMenu(player);
+            }
+            case 15 -> {
+                setTeleportEnabled(player, false);
+                player.sendMessage(ChatColor.YELLOW + "Void Warrior teleport disabled.");
+                player.sendActionBar(ChatColor.DARK_PURPLE + "Void Teleport: OFF");
+                openVoidMenu(player);
+            }
+            case 22 -> player.closeInventory();
+            default -> {
+            }
+        }
+    }
+
+    @EventHandler
+    public void voidMenuDrag(InventoryDragEvent event) {
+        if (event.getView().getTitle().equals(VOID_MENU_TITLE)) event.setCancelled(true);
     }
 
     private boolean voidTeleport(Player player) {

@@ -1,0 +1,33 @@
+name: Publish ESNSMP v2.10.2
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths: [ ".github/workflows/publish-v2.10.2.yml" ]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build and verify
+        run: mvn -B -ntp clean verify
+      - name: Verify v2.10.2 Void teleport toggle
+        run: |
+          set -euo pipefail
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "version: '2.10.2'"
+          unzip -p target/ESNSMP.jar plugin.yml | grep -F "  void:"
+          jar tf target/ESNSMP.jar | grep -F "com/esn/smp/gameplay/VoidWarriorBundle.class"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v2.10.2 target/ESNSMP.jar --target "$GITHUB_SHA" --title "ESNSMP v2.10.2" --notes "Adds /void and /voidmenu, a persistent GUI toggle for Void Warrior full-set teleport. Players can independently turn right-click, sneak and jump Void Teleport triggers on or off. Default remains ON."

@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.10.1'
+version: '2.10.2'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -188,6 +188,11 @@ commands:
   cosmetictokens:
     aliases: [ctokens]
     description: View your ESN Cosmetic Token balance.
+
+  void:
+    aliases: [voidmenu]
+    description: Toggle Void Warrior full-set teleport triggers.
+    usage: /void
 
   esnram:
     description: Show ESNSMP heap, chunk and custom-entity diagnostics.
