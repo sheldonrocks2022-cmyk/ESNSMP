@@ -53,6 +53,7 @@ store-cosmetics:
     join: false
     emoji: false
     weapon: false
+    armor: false
     supporter: false
     collection: false
   released-items: {}
