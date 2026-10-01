@@ -1165,7 +1165,11 @@ public final class StoreCosmetics implements Listener, CommandExecutor, AutoClos
     private static boolean has(Player player, Category category, String id) {
         if (id == null) return false;
         if (isAdmin(player)) return true;
-        return unlocks(player).contains(category.key() + ":" + id);
+        Set<String> owned = unlocks(player);
+        if (owned.contains(category.key() + ":" + id)) return true;
+        // Backward compatibility: collections owned before v2.10.4 automatically
+        // inherit their newly-added matching armor set.
+        return category == Category.ARMOR && owned.contains(Category.COLLECTION.key() + ":" + id);
     }
 
     private static Set<String> unlocks(Player player) {
