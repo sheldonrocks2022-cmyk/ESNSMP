@@ -194,6 +194,11 @@ commands:
     description: Toggle Void Warrior full-set teleport triggers.
     usage: /void
 
+  lightning:
+    aliases: [lightningmenu, lkabilities]
+    description: Manage Lightning King ability toggles.
+    usage: /lightning [on|off]
+
   ownertag:
     aliases: [otag]
     description: Toggle the visible ESN SMP Owner tag without changing owner permissions.

@@ -244,6 +244,7 @@ public final class LightningKingBundle implements Listener {
         boolean legs = is(player.getInventory().getLeggings(), LEGS_ID);
         boolean boots = is(player.getInventory().getBoots(), BOOTS_ID);
         if (!crown && !chest && !legs && !boots) return;
+        if (!LightningKingSettings.masterEnabled(player)) return;
 
         boolean full = crown && chest && legs && boots;
         long now = System.currentTimeMillis();
@@ -272,14 +273,23 @@ public final class LightningKingBundle implements Listener {
             ensureEffect(player, PotionEffectType.RESISTANCE, wrath ? 5 : 4);
         }
 
-        // Storm Aura + Thunder Rush.
-        double auraDamage = player.isSprinting() ? 110.0 : 65.0;
-        for (Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), 4.5, 3.5, 4.5)) {
-            if (!(entity instanceof LivingEntity target) || target.equals(player)) continue;
-            if (entity instanceof Player other && other.getUniqueId().equals(player.getUniqueId())) continue;
-            dealLightningDamage(player, target, auraDamage);
-            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 2, true, false, false), true);
-            if (player.isSprinting()) {
+        // Storm Aura.
+        if (LightningKingSettings.enabled(player, LightningKingSettings.STORM_AURA)) {
+            for (Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), 4.5, 3.5, 4.5)) {
+                if (!(entity instanceof LivingEntity target) || target.equals(player)) continue;
+                if (entity instanceof Player other && other.getUniqueId().equals(player.getUniqueId())) continue;
+                dealLightningDamage(player, target, 65.0);
+                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 2, true, false, false), true);
+            }
+        }
+
+        // Thunder Rush.
+        if (player.isSprinting()
+                && LightningKingSettings.enabled(player, LightningKingSettings.THUNDER_RUSH)) {
+            ensureEffect(player, PotionEffectType.SPEED, 6);
+            for (Entity entity : player.getWorld().getNearbyEntities(player.getLocation(), 3.2, 2.5, 3.2)) {
+                if (!(entity instanceof LivingEntity target) || target.equals(player)) continue;
+                dealLightningDamage(player, target, 110.0);
                 Vector away = target.getLocation().toVector().subtract(player.getLocation().toVector());
                 if (away.lengthSquared() > 0.01) {
                     Vector push = away.normalize().multiply(0.35);
@@ -289,20 +299,18 @@ public final class LightningKingBundle implements Listener {
             }
         }
 
-        if (player.isSprinting()) {
-            ensureEffect(player, PotionEffectType.SPEED, 6);
-        }
-
         if (showAura) {
             Location at = player.getLocation().add(0, 1.0, 0);
             player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, at, 12, 0.8, 1.0, 0.8, 0.08);
             player.getWorld().spawnParticle(Particle.END_ROD, at, 4, 0.5, 0.8, 0.5, 0.03);
 
             // Lightning Rod: every visual cycle the nearest hostile/other living target is struck.
-            LivingEntity rodTarget = nearestTarget(player, 12.0, null);
-            if (rodTarget != null) {
-                player.getWorld().strikeLightningEffect(rodTarget.getLocation());
-                dealLightningDamage(player, rodTarget, wrath ? 1_500.0 : 900.0);
+            if (LightningKingSettings.enabled(player, LightningKingSettings.LIGHTNING_ROD)) {
+                LivingEntity rodTarget = nearestTarget(player, 12.0, null);
+                if (rodTarget != null) {
+                    player.getWorld().strikeLightningEffect(rodTarget.getLocation());
+                    dealLightningDamage(player, rodTarget, wrath ? 1_500.0 : 900.0);
+                }
             }
         }
     }
@@ -323,18 +331,26 @@ public final class LightningKingBundle implements Listener {
         if (event.getHand() != EquipmentSlot.HAND) return;
 
         Player player = event.getPlayer();
+        if (!LightningKingSettings.masterEnabled(player)) return;
         ItemStack held = event.getItem();
         Action action = event.getAction();
 
         if (is(held, BLADE_ID)) {
             if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-                event.setCancelled(true);
-                if (player.isSneaking()) thunderCage(player);
-                else kingsJudgment(player);
+                if (player.isSneaking()) {
+                    if (LightningKingSettings.enabled(player, LightningKingSettings.THUNDER_CAGE)) {
+                        event.setCancelled(true);
+                        thunderCage(player);
+                    }
+                } else if (LightningKingSettings.enabled(player, LightningKingSettings.KINGS_JUDGMENT)) {
+                    event.setCancelled(true);
+                    kingsJudgment(player);
+                }
                 return;
             }
             if (action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK) {
-                if (fullSet(player)) {
+                if (fullSet(player)
+                        && LightningKingSettings.enabled(player, LightningKingSettings.OVERCHARGE)) {
                     event.setCancelled(true);
                     overcharge(player);
                 }
@@ -344,13 +360,17 @@ public final class LightningKingBundle implements Listener {
 
         if (is(held, CORE_ID)) {
             if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-                event.setCancelled(true);
-                wrathOfKing(player);
+                if (LightningKingSettings.enabled(player, LightningKingSettings.WRATH_OF_KING)) {
+                    event.setCancelled(true);
+                    wrathOfKing(player);
+                }
                 return;
             }
             if (action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK) {
-                event.setCancelled(true);
-                stormWings(player);
+                if (LightningKingSettings.enabled(player, LightningKingSettings.STORM_WINGS)) {
+                    event.setCancelled(true);
+                    stormWings(player);
+                }
             }
         }
     }
@@ -359,6 +379,7 @@ public final class LightningKingBundle implements Listener {
     public void onToggleSneak(PlayerToggleSneakEvent event) {
         if (!event.isSneaking()) return;
         Player player = event.getPlayer();
+        if (!LightningKingSettings.enabled(player, LightningKingSettings.THUNDERSTEP)) return;
         if (!is(player.getInventory().getBoots(), BOOTS_ID)) return;
 
         long now = System.currentTimeMillis();
@@ -373,6 +394,7 @@ public final class LightningKingBundle implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onJump(PlayerJumpEvent event) {
         Player player = event.getPlayer();
+        if (!LightningKingSettings.enabled(player, LightningKingSettings.SKYFALL)) return;
         if (!player.isSneaking() || !fullSet(player)) return;
         if (!startCooldown(player, skyfallCooldown, SKYFALL_COOLDOWN_MS, "Skyfall")) return;
 
@@ -405,6 +427,7 @@ public final class LightningKingBundle implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBowShoot(EntityShootBowEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
+        if (!LightningKingSettings.enabled(player, LightningKingSettings.STORMBREAKER)) return;
         if (!is(event.getBow(), BOW_ID)) return;
         if (!(event.getProjectile() instanceof Arrow arrow)) return;
 
@@ -425,8 +448,12 @@ public final class LightningKingBundle implements Listener {
                 && event.getEntity() instanceof LivingEntity bowTarget) {
             event.setDamage(Math.max(event.getDamage(), STORMBREAKER_DAMAGE));
             bowTarget.getWorld().strikeLightningEffect(bowTarget.getLocation());
-            chainLightning(shooter, bowTarget, 10, 900.0);
-            addElectrocution(shooter, bowTarget);
+            if (LightningKingSettings.enabled(shooter, LightningKingSettings.CHAIN_LIGHTNING)) {
+                chainLightning(shooter, bowTarget, 10, 900.0);
+            }
+            if (LightningKingSettings.enabled(shooter, LightningKingSettings.ELECTROCUTION)) {
+                addElectrocution(shooter, bowTarget);
+            }
             return;
         }
 
@@ -434,32 +461,41 @@ public final class LightningKingBundle implements Listener {
                 || !(event.getEntity() instanceof LivingEntity target)) {
             // Thunder Counter can still trigger for non-player attackers.
             if (event.getEntity() instanceof Player victim && fullSet(victim)
+                    && LightningKingSettings.enabled(victim, LightningKingSettings.THUNDER_COUNTER)
                     && event.getDamager() instanceof LivingEntity source) {
                 thunderCounter(victim, source);
             }
             return;
         }
 
-        if (fullSet(attacker) && !internalDamage.contains(attacker.getUniqueId())) {
-            int charge = staticCharge.merge(attacker.getUniqueId(), 1, Integer::sum);
-            if (charge >= 3) {
-                staticCharge.put(attacker.getUniqueId(), 0);
-                event.setDamage(event.getDamage() + 2_500.0);
-                target.getWorld().strikeLightningEffect(target.getLocation());
-                attacker.sendActionBar(ChatColor.YELLOW + "" + ChatColor.BOLD + "STATIC CHARGE DETONATED");
+        if (fullSet(attacker) && LightningKingSettings.masterEnabled(attacker)
+                && !internalDamage.contains(attacker.getUniqueId())) {
+            if (LightningKingSettings.enabled(attacker, LightningKingSettings.STATIC_CHARGE)) {
+                int charge = staticCharge.merge(attacker.getUniqueId(), 1, Integer::sum);
+                if (charge >= 3) {
+                    staticCharge.put(attacker.getUniqueId(), 0);
+                    event.setDamage(event.getDamage() + 2_500.0);
+                    target.getWorld().strikeLightningEffect(target.getLocation());
+                    attacker.sendActionBar(ChatColor.YELLOW + "" + ChatColor.BOLD + "STATIC CHARGE DETONATED");
+                }
             }
 
-            addElectrocution(attacker, target);
+            if (LightningKingSettings.enabled(attacker, LightningKingSettings.ELECTROCUTION)) {
+                addElectrocution(attacker, target);
+            }
 
-            double predicted = target.getHealth() - event.getFinalDamage();
-            if (predicted <= target.getMaxHealth() * 0.30) {
-                event.setDamage(event.getDamage() + Math.max(3_500.0, target.getMaxHealth() * 0.45));
-                target.getWorld().strikeLightningEffect(target.getLocation());
-                attacker.sendActionBar(ChatColor.GOLD + "" + ChatColor.BOLD + "LIGHTNING EXECUTION");
+            if (LightningKingSettings.enabled(attacker, LightningKingSettings.LIGHTNING_EXECUTION)) {
+                double predicted = target.getHealth() - event.getFinalDamage();
+                if (predicted <= target.getMaxHealth() * 0.30) {
+                    event.setDamage(event.getDamage() + Math.max(3_500.0, target.getMaxHealth() * 0.45));
+                    target.getWorld().strikeLightningEffect(target.getLocation());
+                    attacker.sendActionBar(ChatColor.GOLD + "" + ChatColor.BOLD + "LIGHTNING EXECUTION");
+                }
             }
         }
 
-        if (event.getEntity() instanceof Player victim && fullSet(victim)) {
+        if (event.getEntity() instanceof Player victim && fullSet(victim)
+                && LightningKingSettings.enabled(victim, LightningKingSettings.THUNDER_COUNTER)) {
             thunderCounter(victim, attacker);
         }
     }
@@ -479,6 +515,7 @@ public final class LightningKingBundle implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void damage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
+        if (!LightningKingSettings.masterEnabled(player)) return;
 
         boolean boots = is(player.getInventory().getBoots(), BOOTS_ID);
         boolean crown = is(player.getInventory().getHelmet(), CROWN_ID);
@@ -502,7 +539,8 @@ public final class LightningKingBundle implements Listener {
         if (!full) return;
 
         // Thunder Revival gets first priority on lethal damage.
-        if (event.getFinalDamage() >= player.getHealth() + player.getAbsorptionAmount()) {
+        if (LightningKingSettings.enabled(player, LightningKingSettings.THUNDER_REVIVAL)
+                && event.getFinalDamage() >= player.getHealth() + player.getAbsorptionAmount()) {
             if (startCooldown(player, revivalCooldown, REVIVAL_COOLDOWN_MS, null)) {
                 event.setCancelled(true);
                 player.setHealth(Math.max(1.0, Math.min(player.getMaxHealth(), player.getMaxHealth() * 0.65)));
@@ -516,7 +554,8 @@ public final class LightningKingBundle implements Listener {
         }
 
         // Lightning Reflex: a strong periodic automatic dodge.
-        if (ThreadLocalRandom.current().nextDouble() < 0.30
+        if (LightningKingSettings.enabled(player, LightningKingSettings.LIGHTNING_REFLEX)
+                && ThreadLocalRandom.current().nextDouble() < 0.30
                 && startCooldown(player, reflexCooldown, REFLEX_COOLDOWN_MS, null)) {
             event.setCancelled(true);
             lightningReflex(player);
@@ -525,7 +564,8 @@ public final class LightningKingBundle implements Listener {
 
         // Tempest Shield when projected health falls under 60%.
         double predicted = player.getHealth() + player.getAbsorptionAmount() - event.getFinalDamage();
-        if (predicted <= player.getMaxHealth() * 0.60
+        if (LightningKingSettings.enabled(player, LightningKingSettings.TEMPEST_SHIELD)
+                && predicted <= player.getMaxHealth() * 0.60
                 && startCooldown(player, shieldCooldown, SHIELD_COOLDOWN_MS, null)) {
             player.setAbsorptionAmount(Math.max(player.getAbsorptionAmount(), 160.0));
             player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 160, 5, true, true, true), true);
@@ -548,7 +588,9 @@ public final class LightningKingBundle implements Listener {
         target.getWorld().spawnParticle(Particle.FLASH, target.getLocation().add(0, 1, 0), 3);
         dealLightningDamage(player, target, JUDGMENT_DAMAGE);
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 80, 8, true, true, true), true);
-        chainLightning(player, target, 12, CHAIN_DAMAGE);
+        if (LightningKingSettings.enabled(player, LightningKingSettings.CHAIN_LIGHTNING)) {
+            chainLightning(player, target, 12, CHAIN_DAMAGE);
+        }
         player.sendActionBar(ChatColor.GOLD + "" + ChatColor.BOLD + "KING'S JUDGMENT");
     }
 
@@ -663,29 +705,32 @@ public final class LightningKingBundle implements Listener {
         player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 300, 4, true, true, true), true);
         player.sendActionBar(ChatColor.GOLD + "" + ChatColor.BOLD + "WRATH OF THE KING — STORMCALL");
 
-        // Seven heavy storm pulses over the 15-second ultimate.
-        for (int pulse = 0; pulse < 7; pulse++) {
-            long delay = pulse * 40L;
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                if (!player.isOnline() || player.isDead()) return;
-                Location center = player.getLocation();
-                center.getWorld().strikeLightningEffect(center);
-                center.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, center.clone().add(0, 1, 0),
-                        120, 8.0, 3.0, 8.0, 0.18);
-                List<LivingEntity> targets = nearbyTargets(player, 18.0);
-                int count = 0;
-                for (LivingEntity target : targets) {
-                    if (count++ >= 14) break;
-                    target.getWorld().strikeLightningEffect(target.getLocation());
-                    dealLightningDamage(player, target, 1_400.0);
-                    Vector away = target.getLocation().toVector().subtract(center.toVector());
-                    if (away.lengthSquared() > 0.01) {
-                        Vector blast = away.normalize().multiply(1.0);
-                        blast.setY(0.35);
-                        target.setVelocity(blast);
+        // Seven heavy storm pulses over the 15-second ultimate when Stormcall is enabled.
+        if (LightningKingSettings.enabled(player, LightningKingSettings.STORMCALL)) {
+            for (int pulse = 0; pulse < 7; pulse++) {
+                long delay = pulse * 40L;
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    if (!player.isOnline() || player.isDead()
+                            || !LightningKingSettings.enabled(player, LightningKingSettings.STORMCALL)) return;
+                    Location center = player.getLocation();
+                    center.getWorld().strikeLightningEffect(center);
+                    center.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, center.clone().add(0, 1, 0),
+                            120, 8.0, 3.0, 8.0, 0.18);
+                    List<LivingEntity> targets = nearbyTargets(player, 18.0);
+                    int count = 0;
+                    for (LivingEntity target : targets) {
+                        if (count++ >= 14) break;
+                        target.getWorld().strikeLightningEffect(target.getLocation());
+                        dealLightningDamage(player, target, 1_400.0);
+                        Vector away = target.getLocation().toVector().subtract(center.toVector());
+                        if (away.lengthSquared() > 0.01) {
+                            Vector blast = away.normalize().multiply(1.0);
+                            blast.setY(0.35);
+                            target.setVelocity(blast);
+                        }
                     }
-                }
-            }, delay);
+                }, delay);
+            }
         }
     }
 
