@@ -20,7 +20,8 @@ public final class LowMemoryEffectsTicker {
     public LowMemoryEffectsTicker(JavaPlugin plugin,
                                   RiftwalkerBundle riftwalker,
                                   ImmortalWardenBundle warden,
-                                  VoidWarriorBundle voidWarrior) {
+                                  VoidWarriorBundle voidWarrior,
+                                  LightningKingBundle lightningKing) {
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             // Cleanup is housekeeping only; cooldown checks use their timestamps
             // directly, so reducing cleanup frequency cannot extend a cooldown.
@@ -30,6 +31,7 @@ public final class LowMemoryEffectsTicker {
                 riftwalker.cleanupPassiveState(now);
                 warden.cleanupPassiveState(now);
                 voidWarrior.cleanupPassiveState(now);
+                lightningKing.cleanupPassiveState(now);
             }
 
             Collection<? extends Player> online = Bukkit.getOnlinePlayers();
@@ -41,6 +43,7 @@ public final class LowMemoryEffectsTicker {
                 riftwalker.passiveTick(player);
                 warden.passiveTick(player);
                 voidWarrior.passiveTick(player, showVoidVisuals);
+                lightningKing.passiveTick(player, showVoidVisuals);
             }
         }, 20L, 10L);
     }
