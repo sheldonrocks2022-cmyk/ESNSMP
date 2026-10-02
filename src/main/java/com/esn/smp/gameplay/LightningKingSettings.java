@@ -55,7 +55,7 @@ public final class LightningKingSettings implements Listener, CommandExecutor {
     static {
         add(10, THUNDERSTEP, "Thunderstep", Material.FEATHER);
         add(11, KINGS_JUDGMENT, "King's Judgment", Material.LIGHTNING_ROD);
-        add(12, CHAIN_LIGHTNING, "Chain Lightning", Material.CHAIN);
+        add(12, CHAIN_LIGHTNING, "Chain Lightning", Material.IRON_NUGGET);
         add(13, STATIC_CHARGE, "Static Charge", Material.REDSTONE);
         add(14, STORM_AURA, "Storm Aura", Material.BEACON);
         add(15, LIGHTNING_REFLEX, "Lightning Reflex", Material.SUGAR);
