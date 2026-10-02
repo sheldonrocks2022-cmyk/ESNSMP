@@ -415,6 +415,9 @@ public final class LightningKingBundle implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void combat(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Player internalSource
+                && internalDamage.contains(internalSource.getUniqueId())) return;
+
         // Stormbreaker bow hit.
         if (event.getDamager() instanceof Arrow arrow
                 && arrow.getPersistentDataContainer().has(LIGHTNING_PROJECTILE, PersistentDataType.BYTE)
