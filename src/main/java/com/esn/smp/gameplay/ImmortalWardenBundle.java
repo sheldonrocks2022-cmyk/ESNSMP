@@ -404,7 +404,7 @@ public final class ImmortalWardenBundle implements Listener {
             target.damage(1000.0, player);
             Vector push = toTarget.normalize().multiply(0.7);
             push.setY(0.18);
-            target.setVelocity(target.getVelocity().add(push));
+            ExclusiveMovementAuthorization.setVelocity(target, target.getVelocity().add(push), "Immortal Warden knockback");
             hits++;
         }
 
@@ -469,7 +469,7 @@ public final class ImmortalWardenBundle implements Listener {
                     Vector velocity = playerVictim.getVelocity();
                     velocity.setX(velocity.getX() * 0.35);
                     velocity.setZ(velocity.getZ() * 0.35);
-                    playerVictim.setVelocity(velocity);
+                    ExclusiveMovementAuthorization.setVelocity(playerVictim, velocity, "Immortal Warden knockback control");
                 });
             }
         }
@@ -494,7 +494,7 @@ public final class ImmortalWardenBundle implements Listener {
             Vector push = target.getLocation().toVector().subtract(player.getLocation().toVector());
             if (push.lengthSquared() > 0.01) {
                 push.normalize().multiply(0.8).setY(0.35);
-                target.setVelocity(target.getVelocity().add(push));
+                ExclusiveMovementAuthorization.setVelocity(target, target.getVelocity().add(push), "Immortal Warden knockback");
             }
         }
     }
