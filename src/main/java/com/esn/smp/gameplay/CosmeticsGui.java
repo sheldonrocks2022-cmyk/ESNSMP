@@ -77,7 +77,9 @@ public final class CosmeticsGui implements Listener {
             "angelwings", "infernoscepter", "stormcrystal", "tideheart", "voidrelic", "celestialstar",
             "riftblade", "riftwings", "phaseboots", "riftbow", "riftcore", "voidcompass",
             "wardenhelmet", "wardenchest", "wardenlegs", "wardenboots", "wardenblade", "wardenbow", "immortalcore", "wardentotem",
-            "voidwarriorcrown", "voidwarriorchest", "voidwarriorlegs", "voidwarriorboots", "voidwarriorblade"
+            "voidwarriorcrown", "voidwarriorchest", "voidwarriorlegs", "voidwarriorboots", "voidwarriorblade",
+            "lightningkingcrown", "lightningkingchest", "lightningkinglegs", "lightningkingboots",
+            "lightningkingblade", "lightningkingbow", "lightningkingcore"
     );
 
     static {
