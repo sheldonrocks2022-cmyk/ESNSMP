@@ -35,6 +35,54 @@ jobs:
           name: ESNSMP
           path: target/ESNSMP.jar
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
+
+  publish-latest-main:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download verified ESNSMP build
+        uses: actions/download-artifact@v4
+        with:
+          name: ESNSMP
+          path: release
+
+      - name: Generate public build metadata
+        shell: bash
+        run: |
+          SHA256="$(sha256sum release/ESNSMP.jar | awk '{print $1}')"
+          SIZE="$(stat -c%s release/ESNSMP.jar)"
+          BUILT_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          cat > release/ESNSMP-build.json <<EOF
+          {
+            "version": "v2.10.4",
+            "filename": "ESNSMP.jar",
+            "sizeBytes": ${SIZE},
+            "sha256": "${SHA256}",
+            "source": "github-actions-main",
+            "commit": "${GITHUB_SHA}",
+            "runId": ${GITHUB_RUN_ID},
+            "runNumber": ${GITHUB_RUN_NUMBER},
+            "buildUrl": "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}",
+            "builtAt": "${BUILT_AT}"
+          }
+          EOF
+
+      - name: Publish rolling latest-main release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view latest-main --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload latest-main release/ESNSMP.jar release/ESNSMP-build.json --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit latest-main --repo "$GITHUB_REPOSITORY" --title "Latest ESNSMP Main Build" --notes "Automatically updated from the newest verified main-branch build. This rolling prerelease powers the ESN website's latest ESNSMP.jar download."
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/latest-main" -f sha="$GITHUB_SHA" -F force=true >/dev/null
+          else
+            gh release create latest-main release/ESNSMP.jar release/ESNSMP-build.json --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Latest ESNSMP Main Build" --notes "Automatically updated from the newest verified main-branch build. This rolling prerelease powers the ESN website's latest ESNSMP.jar download." --prerelease
+          fi
 
 # v2.4.2 build trigger refresh
