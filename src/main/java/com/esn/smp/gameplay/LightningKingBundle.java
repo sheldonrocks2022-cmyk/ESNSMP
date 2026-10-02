@@ -294,7 +294,7 @@ public final class LightningKingBundle implements Listener {
                 if (away.lengthSquared() > 0.01) {
                     Vector push = away.normalize().multiply(0.35);
                     push.setY(0.12);
-                    target.setVelocity(target.getVelocity().multiply(0.45).add(push));
+                    ExclusiveMovementAuthorization.setVelocity(target, target.getVelocity().multiply(0.45).add(push), "Lightning King Thunder Rush");
                 }
             }
         }
@@ -400,13 +400,13 @@ public final class LightningKingBundle implements Listener {
 
         Vector launch = player.getLocation().getDirection().setY(0).normalize().multiply(0.55);
         launch.setY(1.55);
-        player.setVelocity(launch);
+        ExclusiveMovementAuthorization.setVelocity(player, launch, "Lightning King Skyfall launch");
         player.sendActionBar(ChatColor.YELLOW + "" + ChatColor.BOLD + "SKYFALL");
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!player.isOnline() || player.isDead()) return;
             Location impact = player.getLocation();
-            player.setVelocity(new Vector(0, -3.0, 0));
+            ExclusiveMovementAuthorization.setVelocity(player, new Vector(0, -3.0, 0), "Lightning King Skyfall dive");
             player.setFallDistance(0f);
             impact.getWorld().spawnParticle(Particle.FLASH, impact.clone().add(0, 0.5, 0), 2);
             impact.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, impact.clone().add(0, 0.5, 0),
@@ -418,7 +418,7 @@ public final class LightningKingBundle implements Listener {
                 if (away.lengthSquared() > 0.01) {
                     Vector knock = away.normalize().multiply(1.8);
                     knock.setY(0.75);
-                    target.setVelocity(knock);
+                    ExclusiveMovementAuthorization.setVelocity(target, knock, "Lightning King Skyfall knockback");
                 }
             }
         }, 14L);
@@ -615,7 +615,7 @@ public final class LightningKingBundle implements Listener {
                 at.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, at.clone().add(0, 1, 0),
                         40, 1.3, 1.5, 1.3, 0.08);
                 dealLightningDamage(player, target, 900.0);
-                target.setVelocity(target.getVelocity().multiply(0.12));
+                ExclusiveMovementAuthorization.setVelocity(target, target.getVelocity().multiply(0.12), "Lightning King Thunder Cage");
             }, delay);
         }
 
@@ -651,7 +651,7 @@ public final class LightningKingBundle implements Listener {
 
         from.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, from.clone().add(0, 1, 0),
                 50, 0.8, 1.0, 0.8, 0.1);
-        player.teleport(target);
+        ExclusiveMovementAuthorization.teleport(player, target, "Lightning King Thunderstep");
         target.getWorld().spawnParticle(Particle.FLASH, target.clone().add(0, 1, 0), 2);
         target.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, target.clone().add(0, 1, 0),
                 50, 0.8, 1.0, 0.8, 0.1);
@@ -678,7 +678,7 @@ public final class LightningKingBundle implements Listener {
 
         Vector boost = player.getEyeLocation().getDirection().normalize().multiply(3.2);
         boost.setY(Math.max(1.0, boost.getY() + 1.0));
-        player.setVelocity(boost);
+        ExclusiveMovementAuthorization.setVelocity(player, boost, "Lightning King Storm Wings");
         player.setFallDistance(0f);
         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 180, 0, true, false, true), true);
         player.getWorld().strikeLightningEffect(player.getLocation());
@@ -726,7 +726,7 @@ public final class LightningKingBundle implements Listener {
                         if (away.lengthSquared() > 0.01) {
                             Vector blast = away.normalize().multiply(1.0);
                             blast.setY(0.35);
-                            target.setVelocity(blast);
+                            ExclusiveMovementAuthorization.setVelocity(target, blast, "Lightning King storm knockback");
                         }
                     }
                 }, delay);
@@ -737,7 +737,7 @@ public final class LightningKingBundle implements Listener {
     private void lightningReflex(Player player) {
         Location safe = safeSideStep(player, 4.5);
         Location from = player.getLocation();
-        if (safe != null) player.teleport(safe);
+        if (safe != null) ExclusiveMovementAuthorization.teleport(player, safe, "Lightning King Reflex");
         from.getWorld().strikeLightningEffect(from);
         player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, player.getLocation().add(0, 1, 0),
                 35, 0.7, 1.0, 0.7, 0.1);
@@ -754,7 +754,7 @@ public final class LightningKingBundle implements Listener {
         if (away.lengthSquared() > 0.01) {
             Vector blast = away.normalize().multiply(0.9);
             blast.setY(0.25);
-            attacker.setVelocity(blast);
+            ExclusiveMovementAuthorization.setVelocity(attacker, blast, "Lightning King Thunder Counter");
         }
         victim.sendActionBar(ChatColor.YELLOW + "THUNDER COUNTER");
     }
@@ -828,7 +828,7 @@ public final class LightningKingBundle implements Listener {
             if (away.lengthSquared() > 0.01) {
                 Vector blast = away.normalize().multiply(force);
                 blast.setY(0.4);
-                target.setVelocity(blast);
+                ExclusiveMovementAuthorization.setVelocity(target, blast, "Lightning King storm knockback");
             }
         }
     }
