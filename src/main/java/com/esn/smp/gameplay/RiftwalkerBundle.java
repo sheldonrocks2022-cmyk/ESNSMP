@@ -320,7 +320,7 @@ public final class RiftwalkerBundle implements Listener {
                     return;
                 }
                 if (!startCooldown(player, "blade", 8_000L, "Rift Dash")) return;
-                player.teleport(target);
+                ExclusiveMovementAuthorization.teleport(player, target, "Riftwalker");
                 dashBonusUntil.put(player.getUniqueId(), System.currentTimeMillis() + 4_000L);
                 riftBurstParticles(player.getLocation(), 28);
                 player.sendActionBar(ChatColor.LIGHT_PURPLE + "Rift Dash activated.");
@@ -354,7 +354,7 @@ public final class RiftwalkerBundle implements Listener {
         if (player.isGliding() && is(player.getInventory().getChestplate(), WINGS_ID)) {
             if (!startCooldown(player, "wings", 6_000L, "Rift Boost")) return;
             Vector direction = player.getLocation().getDirection().normalize().multiply(1.35);
-            player.setVelocity(player.getVelocity().multiply(0.35).add(direction));
+            ExclusiveMovementAuthorization.setVelocity(player, player.getVelocity().multiply(0.35).add(direction), "Riftwalker Rift Boost");
             riftBurstParticles(player.getLocation(), 24);
             return;
         }
@@ -370,7 +370,7 @@ public final class RiftwalkerBundle implements Listener {
         if (target == null || target.distanceSquared(player.getLocation()) < 1.0) return;
         if (!startCooldown(player, "boots", 10_000L, "Phase Step")) return;
 
-        player.teleport(target);
+        ExclusiveMovementAuthorization.teleport(player, target, "Riftwalker");
         riftBurstParticles(player.getLocation(), 20);
         player.sendActionBar(ChatColor.LIGHT_PURPLE + "Phase Step.");
         lastSneak.remove(player.getUniqueId());
