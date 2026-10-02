@@ -396,7 +396,7 @@ public final class VoidWarriorBundle implements Listener, CommandExecutor {
                 8, 0.35, 0.55, 0.35, 0.02);
         world.spawnParticle(Particle.SCULK_SOUL, from.clone().add(0, 1, 0),
                 4, 0.25, 0.45, 0.25, 0.01);
-        if (player.teleport(target)) {
+        if (ExclusiveMovementAuthorization.teleport(player, target, "Void Warrior Teleport")) {
             World destinationWorld = target.getWorld();
             if (destinationWorld != null) {
                 destinationWorld.spawnParticle(Particle.REVERSE_PORTAL, target.clone().add(0, 1, 0),
@@ -489,7 +489,7 @@ public final class VoidWarriorBundle implements Listener, CommandExecutor {
 
             Vector inward = player.getLocation().toVector().subtract(target.getLocation().toVector());
             if (inward.lengthSquared() > 0.01) {
-                target.setVelocity(target.getVelocity().multiply(0.25).add(inward.normalize().multiply(0.45)));
+                ExclusiveMovementAuthorization.setVelocity(target, target.getVelocity().multiply(0.25).add(inward.normalize().multiply(0.45)), "Void Warrior pull");
             }
 
             target.damage(damage, player);
@@ -511,7 +511,7 @@ public final class VoidWarriorBundle implements Listener, CommandExecutor {
                     if (away.lengthSquared() <= 0.01) continue;
                     Vector blast = away.normalize().multiply(1.25);
                     blast.setY(0.28);
-                    target.setVelocity(target.getVelocity().multiply(0.20).add(blast));
+                    ExclusiveMovementAuthorization.setVelocity(target, target.getVelocity().multiply(0.20).add(blast), "Void Warrior blast");
                 }
             }, 2L);
         }
@@ -529,7 +529,7 @@ public final class VoidWarriorBundle implements Listener, CommandExecutor {
                 Vector velocity = victim.getVelocity();
                 velocity.setX(velocity.getX() * 0.15);
                 velocity.setZ(velocity.getZ() * 0.15);
-                victim.setVelocity(velocity);
+                ExclusiveMovementAuthorization.setVelocity(victim, velocity, "Void Warrior knockback control");
             });
         }
 
