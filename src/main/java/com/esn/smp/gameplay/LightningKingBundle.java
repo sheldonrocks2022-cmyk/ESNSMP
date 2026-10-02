@@ -294,7 +294,7 @@ public final class LightningKingBundle implements Listener {
                 if (away.lengthSquared() > 0.01) {
                     Vector push = away.normalize().multiply(0.35);
                     push.setY(0.12);
-                    target.setVelocity(target.getVelocity().multiply(0.45).add(push));
+                    ExclusiveMovementAuthorization.setVelocity(target, target.getVelocity().multiply(0.45).add(push), "Lightning King Thunder Rush");
                 }
             }
         }
