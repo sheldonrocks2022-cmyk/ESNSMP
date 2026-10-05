@@ -265,6 +265,10 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
     }
 
     private void travel(Player player, RealmType type, boolean adminBypass) {
+        if (plugin.getConfig().getBoolean("staff.emergency.realms", false) && !player.hasPermission("esnsmp.staff")) {
+            player.sendMessage(ChatColor.RED + "Realm travel is temporarily frozen by ESN staff.");
+            return;
+        }
         if (type == RealmType.REALM100 && !adminBypass && !realm100Unlocked() && !player.hasPermission("esnsmp.admin")) {
             player.sendMessage(ChatColor.RED + "Realm 100 is locked. Complete the Four Realms first.");
             return;
