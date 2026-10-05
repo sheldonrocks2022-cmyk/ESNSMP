@@ -1372,6 +1372,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
         saveStaffData();
         Player online = target.getPlayer();
         if (online != null) {
+            applyPermissions(online);
             applyVisualTag(online);
             online.sendMessage(ChatColor.AQUA + "Your ESN Studios role is now " + role.display + ".");
         }
@@ -1443,7 +1444,11 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
                 "esnsmp.staff.trainee", "esnsmp.staff.helper", "esnsmp.staff.trialmod",
                 "esnsmp.staff.moderator", "esnsmp.staff.seniormod", "esnsmp.staff.admin",
                 "esnsmp.staff.senioradmin", "esnsmp.staff.headadmin", "esnsmp.staff.manager",
-                "esnsmp.staff.coowner"
+                "esnsmp.staff.coowner",
+                "esnsmp.studio.developer", "esnsmp.studio.leaddeveloper", "esnsmp.studio.builder",
+                "esnsmp.studio.leadbuilder", "esnsmp.studio.realmdesigner", "esnsmp.studio.questdesigner",
+                "esnsmp.studio.eventteam", "esnsmp.studio.qatester", "esnsmp.studio.contentteam",
+                "esnsmp.studio.studiodirector"
         };
         for (String node : nodes) a.setPermission(node, false);
         if (r.level >= StaffRank.TRAINEE.level) a.setPermission("esnsmp.staff", true);
@@ -1463,6 +1468,8 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
         if (r.level >= StaffRank.HEAD_ADMIN.level) a.setPermission("esnsmp.staff.headadmin", true);
         if (r.level >= StaffRank.MANAGER.level) a.setPermission("esnsmp.staff.manager", true);
         if (r.level >= StaffRank.CO_OWNER.level) a.setPermission("esnsmp.staff.coowner", true);
+        StudioRole studio = studioRole(p.getUniqueId());
+        if (studio != StudioRole.NONE) a.setPermission("esnsmp.studio." + studio.key, true);
         p.recalculatePermissions();
     }
 
