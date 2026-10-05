@@ -118,11 +118,16 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                     if (target == null) sender.sendMessage(ChatColor.RED + "A player must be inside the realm.");
                     else spawnMiniBoss(realm, target);
                 }
+                case "secret" -> {
+                    Player target = world.getPlayers().stream().findAny().orElse(null);
+                    if (target == null) sender.sendMessage(ChatColor.RED + "A player must be inside the realm.");
+                    else spawnSecretBoss(realm, target);
+                }
                 case "clear" -> {
                     int removed = clearRealmMobs(world);
                     sender.sendMessage(ChatColor.GREEN + "Removed " + removed + " ESN realm mob(s).");
                 }
-                default -> sender.sendMessage(ChatColor.YELLOW + "/realmevent <invasion|miniboss|clear> <realm>");
+                default -> sender.sendMessage(ChatColor.YELLOW + "/realmevent <invasion|miniboss|secret|clear> <realm>");
             }
             return true;
         }
@@ -256,6 +261,10 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
         v.setItem(12, menuItem(Material.WITHER_SKELETON_SKULL, ChatColor.DARK_RED + "Spawn Miniboss",
                 ChatColor.GRAY + miniBossProfile(realm).name,
                 ChatColor.YELLOW + "Requires a player inside the realm"));
+        v.setItem(13, menuItem(Material.DRAGON_HEAD, ChatColor.DARK_PURPLE + "Awaken Secret Boss",
+                ChatColor.GRAY + secretBossProfile(realm).name,
+                ChatColor.GRAY + "Normally unlocked through completed realm lore",
+                ChatColor.YELLOW + "Admin summon"));
         v.setItem(14, menuItem(Material.BARRIER, ChatColor.YELLOW + "Clear Realm Mobs",
                 ChatColor.GRAY + "Remove ESN custom mobs from this realm"));
         v.setItem(16, menuItem(Material.COMPARATOR, ChatColor.GREEN + "Refresh Status"));
@@ -318,6 +327,10 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                 Player target = world.getPlayers().stream().findAny().orElse(null);
                 if (target == null) p.sendMessage(ChatColor.RED + "A player must be inside the realm.");
                 else spawnMiniBoss(realm, target);
+            } else if (slot == 13) {
+                Player target = world.getPlayers().stream().findAny().orElse(null);
+                if (target == null) p.sendMessage(ChatColor.RED + "A player must be inside the realm.");
+                else spawnSecretBoss(realm, target);
             } else if (slot == 14) {
                 p.sendMessage(ChatColor.GREEN + "Removed " + clearRealmMobs(world) + " ESN realm mob(s).");
             }
@@ -490,6 +503,28 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             }, i * 8L);
         }
         Bukkit.getScheduler().runTaskLater(plugin, () -> spawnMiniBoss(realm, target), wave * 8L + 30L);
+    }
+
+    private void spawnSecretBoss(String realm,Player anchor){
+        Location at=findSpawn(anchor,18,32);
+        if(at==null)at=anchor.getLocation().clone().add(7,0,7);
+        MobProfile base=secretBossProfile(realm);
+        LivingEntity boss=spawnMob(realm,base,at,true);
+        if(boss==null)return;
+        boss.addScoreboardTag("esnRealmMiniBoss");
+        boss.addScoreboardTag("esnRealmSecretBoss");
+        boss.setCustomName(ChatColor.DARK_PURPLE+"☠ "+base.name+" ☠");
+        boss.setCustomNameVisible(true);
+        boss.setGlowing(true);
+        double health=base.health*4.0*Math.max(1.0,0.75+anchor.getWorld().getPlayers().size()*0.30);
+        setAttribute(boss,Attribute.MAX_HEALTH,health);
+        boss.setHealth(Math.min(health,maxHealth(boss)));
+        setAttribute(boss,Attribute.ATTACK_DAMAGE,base.damage*2.0);
+        for(Player p:anchor.getWorld().getPlayers()){
+            p.sendTitle(ChatColor.DARK_PURPLE+"SECRET BOSS",base.color+base.name,10,80,20);
+            p.sendMessage(ChatColor.DARK_PURPLE+"[SECRET BOSS] "+base.color+base.name+
+                    ChatColor.LIGHT_PURPLE+" has awakened from the completed Chronicle!");
+        }
     }
 
     private void spawnMiniBoss(String realm, Player anchor) {
@@ -973,6 +1008,21 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
     private MobProfile chooseProfile(String realm) {
         List<MobProfile> list = profiles(realm);
         return list.get(ThreadLocalRandom.current().nextInt(list.size()));
+    }
+
+    private MobProfile secretBossProfile(String realm){
+        return switch(realm){
+            case "storm"->new MobProfile("tempest_god","Tempest God",EntityType.WARDEN,330,22,ChatColor.AQUA,"The storm given a physical form.");
+            case "abyss"->new MobProfile("nameless_below","The Nameless Below",EntityType.WARDEN,360,23,ChatColor.DARK_PURPLE,"The thing the Abyss Order refuses to name.");
+            case "frost"->new MobProfile("winters_end","Winter's End",EntityType.RAVAGER,340,22,ChatColor.WHITE,"A beast said to freeze entire kingdoms.");
+            case "infernal"->new MobProfile("ashen_emperor","Ashen Emperor",EntityType.WITHER,350,24,ChatColor.RED,"The emperor whose flame outlived his empire.");
+            case "verdant"->new MobProfile("rootfather","The Rootfather",EntityType.RAVAGER,365,22,ChatColor.DARK_GREEN,"The oldest living will beneath the Wilds.");
+            case "celestial"->new MobProfile("fallen_star","The Fallen Star",EntityType.EVOKER,330,24,ChatColor.AQUA,"A star that answered the Astral Council.");
+            case "bloodmoon"->new MobProfile("crimson_eclipse","Crimson Eclipse",EntityType.WITHER,380,25,ChatColor.DARK_RED,"The curse behind the Bloodmoon itself.");
+            case "shattered"->new MobProfile("null_king","The Null King",EntityType.WARDEN,500,28,ChatColor.DARK_PURPLE,"The final intelligence inside the fracture.");
+            case "100"->new MobProfile("realm_architect","The Realm Architect",EntityType.WITHER,450,27,ChatColor.GOLD,"A hidden maker behind Realm 100.");
+            default->miniBossProfile(realm);
+        };
     }
 
     private MobProfile miniBossProfile(String realm) {
