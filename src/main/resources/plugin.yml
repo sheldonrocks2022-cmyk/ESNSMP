@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.13.0'
+version: '2.14.0'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -517,7 +517,14 @@ commands:
   realms:
     aliases: [realmsmenu, realmnexus]
     description: 'Open ESN Realms and travel between generated realm worlds'
-    usage: '/realms [nexus|storm|abyss|frost|infernal|100]'
+    usage: '/realms [nexus|storm|abyss|frost|infernal|verdant|celestial|bloodmoon|100]'
+  realmguide:
+    aliases: [realmbestiary, creatures]
+    description: 'Show native creatures and dangers in your current ESN Realm'
+  realmevent:
+    description: 'Manage ESN Realm invasions, minibosses and custom mobs'
+    usage: '/realmevent <invasion|miniboss|clear> <realm>'
+    permission: esnsmp.admin
 
   realmadmin:
     description: 'Manage ESN Realms worlds and Realm 100 access'
