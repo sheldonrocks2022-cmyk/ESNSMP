@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.11.1'
+version: '2.12.0'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -513,6 +513,16 @@ commands:
     aliases: [voicechat, vc]
     description: 'Open ESN Java + Bedrock proximity voice chat'
     usage: '/voice [connect|code <code>|status|mod|help]'
+
+  realms:
+    aliases: [realmsmenu, realmnexus]
+    description: 'Open ESN Realms and travel between generated realm worlds'
+    usage: '/realms [nexus|storm|abyss|frost|infernal|100]'
+
+  realmadmin:
+    description: 'Manage ESN Realms worlds and Realm 100 access'
+    usage: '/realmadmin <status|tp|rebuild|unlock100|lock100> [realm]'
+    permission: esnsmp.admin
 
 permissions:
   esnsmp.owner:
