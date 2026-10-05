@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.14.0'
+version: '2.14.1'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -524,10 +524,10 @@ commands:
   realmforge:
     aliases: [sigilforge]
     description: 'Forge Realm Essence and Relic Fragments into permanent Realm Sigils'
-    usage: '/realmforge <realm>'
+    usage: '/realmforge [realm]'
   realmevent:
     description: 'Manage ESN Realm invasions, minibosses and custom mobs'
-    usage: '/realmevent <invasion|miniboss|clear> <realm>'
+    usage: '/realmevent [invasion|miniboss|clear] [realm]'
     permission: esnsmp.admin
 
   realmadmin:
