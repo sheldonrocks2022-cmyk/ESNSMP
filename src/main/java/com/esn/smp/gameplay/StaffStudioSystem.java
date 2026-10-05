@@ -651,7 +651,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
                 unlocked ? ChatColor.RED + "Lock Realm 100" : ChatColor.GREEN + "Unlock Realm 100",
                 ChatColor.GRAY + "Current: " + (unlocked ? "UNLOCKED" : "LOCKED"),
                 ChatColor.YELLOW + "Click to toggle"));
-        v.setItem(31, item(Material.RAID_OMEN_BOTTLE, ChatColor.RED + "Realm Event Menu",
+        v.setItem(31, item(Material.BELL, ChatColor.RED + "Realm Event Menu",
                 ChatColor.GRAY + "Invasions, minibosses and custom mob cleanup"));
         v.setItem(33, item(Material.COMPASS, ChatColor.AQUA + "Player Realms Hub",
                 ChatColor.GRAY + "Open the normal /realms menu"));
@@ -678,7 +678,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
 
         v.setItem(19, item(Material.WITHER_SKELETON_SKULL, ChatColor.RED + "Start Main Boss"));
         v.setItem(20, item(Material.BARRIER, ChatColor.YELLOW + "Stop Main Boss"));
-        v.setItem(21, item(Material.RAID_OMEN_BOTTLE, ChatColor.DARK_RED + "Start Invasion"));
+        v.setItem(21, item(Material.BELL, ChatColor.DARK_RED + "Start Invasion"));
         v.setItem(22, item(Material.SKELETON_SKULL, ChatColor.RED + "Spawn Miniboss"));
         v.setItem(23, item(Material.LAVA_BUCKET, ChatColor.YELLOW + "Reset Encounter"));
         v.setItem(24, item(Material.MILK_BUCKET, ChatColor.WHITE + "Clear Realm Mobs"));
