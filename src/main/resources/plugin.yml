@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.10.4'
+version: '2.11.0'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -439,6 +439,74 @@ commands:
   storestatus:
     description: 'View ESN Store Stripe bridge status'
     permission: esnsmp.store.admin
+
+
+  fun:
+    aliases: [activities, funhub]
+    description: 'Open the ESN Fun Hub'
+  dailycontracts:
+    aliases: [dcontracts]
+    description: 'Open daily ESN contracts'
+  ascension:
+    aliases: [asc]
+    description: 'View player Ascension progression'
+  reputation:
+    aliases: [rep]
+    description: 'View ESN reputation'
+  mount:
+    description: 'Summon or dismiss your ESN mount'
+  parkour:
+    description: 'Start the ESN Parkour Tower'
+  maze:
+    description: 'Start the procedural ESN Maze'
+  temple:
+    description: 'Start the ESN puzzle temple'
+  secretboss:
+    description: 'Awaken the hidden ESN boss with lore fragments'
+  duel:
+    description: 'Challenge another player to a duel'
+    usage: '/duel <player> [coins] | /duel accept | /duel deny'
+  tournament:
+    description: 'Join or manage ESN tournaments'
+    usage: '/tournament <join|leave|status|start>'
+  matchmaking:
+    description: 'Toggle duel matchmaking'
+  predict:
+    description: 'Predict the winner of the active tournament match'
+    usage: '/predict <player>'
+  killcam:
+    description: 'Show your last combat death recap'
+  damagemeter:
+    description: 'Toggle the boss damage meter'
+  market:
+    description: 'Open the dynamic ESN market'
+  arcade:
+    description: 'Open ESN Coin arcade games'
+  vote:
+    description: 'View your ESN voting streak'
+  votecredit:
+    description: 'Credit a verified server-list vote'
+    usage: '/votecredit <player>'
+    permission: esnsmp.admin
+  weekend:
+    description: 'View the current weekend modifier'
+  worldthreat:
+    aliases: [threat]
+    description: 'View the ESN world threat level'
+  seasonworld:
+    description: 'View the current world season theme'
+  seasonfinale:
+    description: 'Start or inspect the ESN season finale'
+    permission: esnsmp.staff
+  luckyblocks:
+    description: 'View ESN lucky-block event status'
+  relicauction:
+    description: 'View or bid in the rotating ESN Relic Auction'
+    usage: '/relicauction [bid <coins>]'
+  funadmin:
+    description: 'Manage ESN fun-expansion systems'
+    usage: '/funadmin <status|rebuild|auction>'
+    permission: esnsmp.admin
 
 permissions:
   esnsmp.owner:
