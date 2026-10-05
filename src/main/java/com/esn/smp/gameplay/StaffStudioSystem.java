@@ -578,7 +578,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
                 ChatColor.GRAY + formatLocation(target.getLocation()),
                 ChatColor.GRAY + "Mode: " + target.getGameMode()));
         v.setItem(11, item(Material.REDSTONE, ChatColor.RED + "Health",
-                ChatColor.GRAY + Math.round(target.getHealth()) + " HP",
+                ChatColor.GRAY + "Health: " + Math.round(target.getHealth()) + " HP",
                 ChatColor.GRAY + "Food: " + target.getFoodLevel()));
         v.setItem(12, item(Material.GOLD_INGOT, ChatColor.GOLD + "Economy",
                 ChatColor.GRAY + String.valueOf(balance) + " ESN Coins"));
