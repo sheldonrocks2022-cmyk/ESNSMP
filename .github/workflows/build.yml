@@ -59,7 +59,7 @@ jobs:
           BUILT_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           cat > release/ESNSMP-build.json <<EOF
           {
-            "version": "v2.13.0",
+            "version": "v2.14.0",
             "filename": "ESNSMP.jar",
             "sizeBytes": ${SIZE},
             "sha256": "${SHA256}",
@@ -85,4 +85,4 @@ jobs:
             gh release create latest-main release/ESNSMP.jar release/ESNSMP-build.json --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Latest ESNSMP Main Build" --notes "Automatically updated from the newest verified main-branch build. This rolling prerelease powers the ESN website's latest ESNSMP.jar download." --prerelease
           fi
 
-# v2.13.0 Staff and Studio build trigger
+# v2.14.0 Realms Expansion build trigger
