@@ -123,6 +123,11 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             return true;
         }
 
+        if (args.length == 0 && sender instanceof Player player) {
+            player.performCommand("realmstaff");
+            return true;
+        }
+
         if (args.length == 0 || args[0].equalsIgnoreCase("status")) {
             sender.sendMessage(ChatColor.DARK_PURPLE + "ESN REALMS STATUS");
             for (RealmType type : RealmType.values()) {
@@ -241,8 +246,22 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 unlocked ? ChatColor.GRAY + "The Four Realms endgame raid world" : ChatColor.GRAY + "Complete the Four Realms to unlock",
                 unlocked ? ChatColor.YELLOW + "Click to travel" : ChatColor.DARK_GRAY + "Not yet available"));
 
-        menu.setItem(40, menuItem(Material.COMPASS, ChatColor.GREEN + "Realm Status",
+        menu.setItem(36, menuItem(Material.BOOK, ChatColor.LIGHT_PURPLE + "Creature Guide",
+                ChatColor.GRAY + "Mobs, minibosses, drops and realm dangers",
+                ChatColor.YELLOW + "Click to open"));
+        menu.setItem(37, menuItem(Material.ANVIL, ChatColor.GOLD + "Realm Forge",
+                ChatColor.GRAY + "Forge Essence + Fragments into Realm Sigils",
+                ChatColor.YELLOW + "Click to open"));
+        menu.setItem(38, menuItem(Material.COMPASS, ChatColor.GREEN + "Realm Status",
                 ChatColor.GRAY + "Worlds are generated and managed by ESNSMP"));
+        if (player.hasPermission("esnsmp.admin")) {
+            menu.setItem(39, menuItem(Material.RAID_OMEN_BOTTLE, ChatColor.RED + "Realm Events",
+                    ChatColor.GRAY + "Invasions, minibosses and mob controls",
+                    ChatColor.YELLOW + "Admin menu"));
+            menu.setItem(40, menuItem(Material.SHIELD, ChatColor.DARK_RED + "Realm Staff Controls",
+                    ChatColor.GRAY + "Build, rebuild, decorate and realm operations",
+                    ChatColor.YELLOW + "Staff menu"));
+        }
         menu.setItem(44, menuItem(Material.BARRIER, ChatColor.RED + "Close"));
 
         player.openInventory(menu);
@@ -270,6 +289,10 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             case "Bloodmoon Wastes" -> travel(player, RealmType.BLOODMOON);
             case "Realm 100" -> travel(player, RealmType.REALM100);
             case "Realm 100 — LOCKED" -> player.sendMessage(ChatColor.RED + "Realm 100 is still locked.");
+            case "Creature Guide" -> player.performCommand("realmguide");
+            case "Realm Forge" -> player.performCommand("realmforge");
+            case "Realm Events" -> player.performCommand("realmevent");
+            case "Realm Staff Controls" -> player.performCommand("realmstaff");
             case "Close" -> player.closeInventory();
         }
     }
