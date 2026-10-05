@@ -574,12 +574,12 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
             int found = getInt(p, realm, "collectibles", 0);
             int total = collectibleTotal(realm);
             v.setItem(slots[i++], item(icon(realm), color(realm) + display(realm) + " Collection",
-                    ChatColor.GRAY + found + "/" + total + " discovered",
+                    ChatColor.GRAY + "Discovered: " + found + "/" + total,
                     ChatColor.GRAY + collectibleName(realm),
                     found >= total ? ChatColor.GREEN + "COMPLETE" : ChatColor.YELLOW + "Explore structures to discover more"));
         }
         v.setItem(31, item(Material.ENDER_EYE, ChatColor.LIGHT_PURPLE + "Portal Fragments",
-                ChatColor.GRAY + portalPieces(p) + "/7 recovered",
+                ChatColor.GRAY + "Recovered: " + portalPieces(p) + "/7,
                 portalPieces(p) >= 7 ? ChatColor.GREEN + "THE SHATTERED REALM IS REVEALED" :
                         ChatColor.GRAY + "Reach Mastery 10 in each main realm."));
         v.setItem(49, item(Material.ARROW, ChatColor.YELLOW + "Back"));
@@ -842,7 +842,7 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
                     ChatColor.GRAY + "Raids " + getInt(p, realm, "raids", 0)));
         }
         v.setItem(31, item(Material.ENDER_EYE, ChatColor.DARK_PURPLE + "Shattered Realm",
-                shatteredUnlocked(p) ? ChatColor.GREEN + "UNLOCKED" : ChatColor.GRAY + portalPieces(p) + "/7 portal fragments"));
+                shatteredUnlocked(p) ? ChatColor.GREEN + "UNLOCKED" : ChatColor.GRAY + "Portal fragments: " + portalPieces(p) + "/7"));
         v.setItem(49, item(Material.ARROW, ChatColor.YELLOW + "Back"));
         p.openInventory(v);
     }
