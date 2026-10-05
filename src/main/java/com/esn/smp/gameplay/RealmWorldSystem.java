@@ -224,6 +224,16 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 ChatColor.GRAY + "Volcanoes • lava • Inferno Emperor",
                 ChatColor.YELLOW + "Click to travel"));
 
+        menu.setItem(19, menuItem(RealmType.VERDANT.icon, ChatColor.GREEN + "Verdant Wilds",
+                ChatColor.GRAY + "Ancient jungle • living ruins • Wildheart",
+                ChatColor.YELLOW + "Click to travel"));
+        menu.setItem(21, menuItem(RealmType.CELESTIAL.icon, ChatColor.AQUA + "Celestial Isles",
+                ChatColor.GRAY + "Astral islands • star temples • Astral Regent",
+                ChatColor.YELLOW + "Click to travel"));
+        menu.setItem(23, menuItem(RealmType.BLOODMOON.icon, ChatColor.DARK_RED + "Bloodmoon Wastes",
+                ChatColor.GRAY + "Cursed badlands • crimson storms • Moon Tyrant",
+                ChatColor.YELLOW + "Click to travel"));
+
         boolean unlocked = realm100Unlocked() || player.hasPermission("esnsmp.admin");
         menu.setItem(31, menuItem(unlocked ? RealmType.REALM100.icon : Material.BARRIER,
                 unlocked ? ChatColor.GOLD + "Realm 100" : ChatColor.RED + "Realm 100 — LOCKED",
@@ -254,6 +264,9 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             case "The Abyss" -> travel(player, RealmType.ABYSS);
             case "Frostlands" -> travel(player, RealmType.FROST);
             case "Infernal Empire" -> travel(player, RealmType.INFERNAL);
+            case "Verdant Wilds" -> travel(player, RealmType.VERDANT);
+            case "Celestial Isles" -> travel(player, RealmType.CELESTIAL);
+            case "Bloodmoon Wastes" -> travel(player, RealmType.BLOODMOON);
             case "Realm 100" -> travel(player, RealmType.REALM100);
             case "Realm 100 — LOCKED" -> player.sendMessage(ChatColor.RED + "Realm 100 is still locked.");
             case "Close" -> player.closeInventory();
@@ -337,6 +350,16 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 world.setStorm(true);
             }
             case INFERNAL -> world.setTime(18000);
+            case VERDANT -> {
+                world.setTime(6000);
+                world.setStorm(true);
+            }
+            case CELESTIAL -> world.setTime(18000);
+            case BLOODMOON -> {
+                world.setTime(18000);
+                world.setStorm(true);
+                world.setThundering(true);
+            }
             case REALM100 -> world.setTime(13000);
             case NEXUS -> world.setTime(6000);
         }
@@ -384,6 +407,9 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             buildGate(world, 12, y + 1, 0, RealmType.INFERNAL.trim);
             buildGate(world, 0, y + 1, 12, RealmType.FROST.trim);
             buildGate(world, -12, y + 1, 0, RealmType.ABYSS.trim);
+            buildGate(world, 18, y + 1, 18, RealmType.VERDANT.trim);
+            buildGate(world, -18, y + 1, -18, RealmType.CELESTIAL.trim);
+            buildGate(world, -18, y + 1, 18, RealmType.BLOODMOON.trim);
             buildGate(world, 0, y + 1, -5, RealmType.REALM100.trim);
         } else {
             buildRealmLandmarks(world, type);
@@ -434,6 +460,18 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             case INFERNAL -> {
                 buildFortress(world, 92, y, 0, Material.NETHER_BRICKS, Material.BLACKSTONE, Material.MAGMA_BLOCK);
                 buildBossArena(world, -92, y, 0, Material.POLISHED_BLACKSTONE_BRICKS, Material.MAGMA_BLOCK);
+            }
+            case VERDANT -> {
+                buildFortress(world, 92, y, 0, Material.MUD_BRICKS, Material.MOSS_BLOCK, Material.MANGROVE_LOG);
+                buildBossArena(world, -92, y, 0, Material.MOSS_BLOCK, Material.MUD_BRICKS);
+            }
+            case CELESTIAL -> {
+                buildFortress(world, 92, y, 0, Material.QUARTZ_BRICKS, Material.AMETHYST_BLOCK, Material.END_ROD);
+                buildBossArena(world, -92, y, 0, Material.CALCITE, Material.AMETHYST_BLOCK);
+            }
+            case BLOODMOON -> {
+                buildFortress(world, 92, y, 0, Material.RED_NETHER_BRICKS, Material.RED_SANDSTONE, Material.REDSTONE_BLOCK);
+                buildBossArena(world, -92, y, 0, Material.RED_SANDSTONE, Material.CRIMSON_NYLIUM);
             }
             case REALM100 -> {
                 buildFortress(world, 92, y, 0, Material.END_STONE_BRICKS, Material.PURPUR_BLOCK, Material.END_PORTAL_FRAME);
@@ -563,6 +601,21 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 buildCrystalGarden(world, 24, y, 26, Material.BLACKSTONE, Material.MAGMA_BLOCK, Material.GLOWSTONE);
                 buildCrystalGarden(world, -24, y, -26, Material.NETHER_BRICKS, Material.MAGMA_BLOCK, Material.GLOWSTONE);
                 buildSkyArch(world, 0, y, 72, Material.POLISHED_BLACKSTONE_BRICKS, Material.MAGMA_BLOCK, Material.RED_STAINED_GLASS);
+            }
+            case VERDANT -> {
+                buildCrystalGarden(world, 24, y, 26, Material.MOSS_BLOCK, Material.MANGROVE_LOG, Material.LANTERN);
+                buildCrystalGarden(world, -24, y, -26, Material.MUD_BRICKS, Material.OAK_LEAVES, Material.GLOWSTONE);
+                buildSkyArch(world, 0, y, 72, Material.MUD_BRICKS, Material.MOSS_BLOCK, Material.GREEN_STAINED_GLASS);
+            }
+            case CELESTIAL -> {
+                buildCrystalGarden(world, 24, y, 26, Material.CALCITE, Material.AMETHYST_BLOCK, Material.END_ROD);
+                buildCrystalGarden(world, -24, y, -26, Material.QUARTZ_BLOCK, Material.PURPUR_PILLAR, Material.SEA_LANTERN);
+                buildSkyArch(world, 0, y, 72, Material.QUARTZ_BRICKS, Material.AMETHYST_BLOCK, Material.LIGHT_BLUE_STAINED_GLASS);
+            }
+            case BLOODMOON -> {
+                buildCrystalGarden(world, 24, y, 26, Material.RED_SANDSTONE, Material.REDSTONE_BLOCK, Material.SHROOMLIGHT);
+                buildCrystalGarden(world, -24, y, -26, Material.CRIMSON_NYLIUM, Material.NETHER_WART_BLOCK, Material.GLOWSTONE);
+                buildSkyArch(world, 0, y, 72, Material.RED_NETHER_BRICKS, Material.REDSTONE_BLOCK, Material.RED_STAINED_GLASS);
             }
             case REALM100 -> {
                 buildCrystalGarden(world, 24, y, 26, Material.PURPUR_BLOCK, Material.OBSIDIAN, Material.END_ROD);
@@ -732,7 +785,10 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 type == RealmType.FROST ? Material.LIGHT_BLUE_STAINED_GLASS :
                         type == RealmType.INFERNAL ? Material.RED_STAINED_GLASS :
                                 type == RealmType.ABYSS ? Material.PURPLE_STAINED_GLASS :
-                                        type == RealmType.STORM ? Material.CYAN_STAINED_GLASS : Material.MAGENTA_STAINED_GLASS);
+                                type == RealmType.STORM ? Material.CYAN_STAINED_GLASS :
+                                type == RealmType.VERDANT ? Material.GREEN_STAINED_GLASS :
+                                type == RealmType.CELESTIAL ? Material.LIGHT_BLUE_STAINED_GLASS :
+                                type == RealmType.BLOODMOON ? Material.RED_STAINED_GLASS : Material.MAGENTA_STAINED_GLASS);
     }
 
     private void decorateFortress(World world, RealmType type, int cx, int y, int cz) {
@@ -804,6 +860,12 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 Material.STONE, Material.PACKED_ICE, Material.BLUE_ICE, Material.SEA_LANTERN),
         INFERNAL("infernal", "esn_infernal", "Infernal Empire", Material.MAGMA_BLOCK, 90,
                 Material.BLACKSTONE, Material.POLISHED_BLACKSTONE, Material.MAGMA_BLOCK, Material.RESPAWN_ANCHOR),
+        VERDANT("verdant", "esn_verdant", "Verdant Wilds", Material.MOSS_BLOCK, 104,
+                Material.ROOTED_DIRT, Material.MOSS_BLOCK, Material.MUD_BRICKS, Material.MANGROVE_LOG),
+        CELESTIAL("celestial", "esn_celestial", "Celestial Isles", Material.AMETHYST_SHARD, 138,
+                Material.END_STONE, Material.CALCITE, Material.AMETHYST_BLOCK, Material.END_ROD),
+        BLOODMOON("bloodmoon", "esn_bloodmoon", "Bloodmoon Wastes", Material.REDSTONE_BLOCK, 96,
+                Material.NETHERRACK, Material.RED_SANDSTONE, Material.RED_NETHER_BRICKS, Material.REDSTONE_BLOCK),
         REALM100("100", "esn_realm100", "Realm 100", Material.NETHER_STAR, 100,
                 Material.OBSIDIAN, Material.END_STONE_BRICKS, Material.PURPUR_BLOCK, Material.END_PORTAL_FRAME);
 
@@ -838,6 +900,9 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 case "abyss", "theabyss", "void" -> ABYSS;
                 case "frost", "frostlands", "ice" -> FROST;
                 case "infernal", "infernalempire", "fire" -> INFERNAL;
+                case "verdant", "verdantwilds", "wilds", "jungle" -> VERDANT;
+                case "celestial", "celestialisles", "astral", "stars" -> CELESTIAL;
+                case "bloodmoon", "bloodmoonwastes", "moon", "crimson" -> BLOODMOON;
                 case "100", "realm100", "r100", "final" -> REALM100;
                 default -> null;
             };
@@ -868,6 +933,9 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                         case ABYSS -> abyssColumn(data, lx, lz, x, z);
                         case FROST -> frostColumn(data, lx, lz, x, z);
                         case INFERNAL -> infernalColumn(data, lx, lz, x, z);
+                        case VERDANT -> verdantColumn(data, lx, lz, x, z);
+                        case CELESTIAL -> celestialColumn(data, lx, lz, x, z);
+                        case BLOODMOON -> bloodmoonColumn(data, lx, lz, x, z);
                         case REALM100 -> realm100Column(data, lx, lz, x, z);
                     }
                 }
@@ -882,6 +950,9 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 case ABYSS -> 50;
                 case FROST -> frostTop(x, z);
                 case INFERNAL -> infernalTop(x, z);
+                case VERDANT -> verdantTop(x, z);
+                case CELESTIAL -> celestialTop(x, z);
+                case BLOODMOON -> bloodmoonTop(x, z);
                 case REALM100 -> realm100Top(x, z);
             };
         }
@@ -986,6 +1057,80 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             double central = Math.max(0, 1.0 - Math.sqrt((double) x * x + (double) z * z) / 90.0);
             return 55 + (int) Math.round(noise2(seed + 401, x / 65.0, z / 65.0) * 25.0
                     + Math.abs(noise2(seed + 402, x / 28.0, z / 28.0)) * 15.0 + central * 26.0);
+        }
+
+
+        private void verdantColumn(ChunkData data, int lx, int lz, int x, int z) {
+            int top = verdantTop(x, z);
+            int min = Math.max(data.getMinHeight(), top - 54);
+            double detail = noise2(seed + 601, x / 19.0, z / 19.0);
+            for (int y = min; y <= top; y++) {
+                Material material;
+                if (y == top) material = detail > 0.30 ? Material.MOSS_BLOCK : Material.GRASS_BLOCK;
+                else if (y > top - 5) material = detail < -0.35 ? Material.MUD : Material.ROOTED_DIRT;
+                else if (y > top - 18) material = Material.STONE;
+                else material = Material.DEEPSLATE;
+                set(data, lx, y, lz, material);
+            }
+            // Ancient root pillars appear naturally through the landscape.
+            if (noise2(seed + 602, x / 17.0, z / 17.0) > 0.78) {
+                for (int y = top + 1; y <= Math.min(data.getMaxHeight() - 1, top + 7); y++) {
+                    set(data, lx, y, lz, y == top + 7 ? Material.OAK_LEAVES : Material.MANGROVE_LOG);
+                }
+            }
+        }
+
+        private int verdantTop(int x, int z) {
+            double broad = noise2(seed + 603, x / 92.0, z / 92.0);
+            double ridges = Math.abs(noise2(seed + 604, x / 38.0, z / 38.0));
+            double center = Math.max(0, 1.0 - Math.sqrt((double)x * x + (double)z * z) / 115.0);
+            return 74 + (int)Math.round(broad * 20 + ridges * 18 + center * 20);
+        }
+
+        private void celestialColumn(ChunkData data, int lx, int lz, int x, int z) {
+            double dist = Math.sqrt((double)x * x + (double)z * z);
+            double central = Math.max(0.0, 1.0 - dist / 115.0);
+            double islands = noise2(seed + 701, x / 62.0, z / 62.0) * 0.85
+                    + noise2(seed + 702, x / 25.0, z / 25.0) * 0.30 + central * 0.90;
+            if (islands < 0.18) return;
+            int top = celestialTop(x, z);
+            int thickness = 6 + (int)Math.min(22, Math.max(0, islands * 16));
+            for (int y = top - thickness; y <= top; y++) {
+                Material material = y == top ? (islands > 0.75 ? Material.AMETHYST_BLOCK : Material.CALCITE)
+                        : y > top - 4 ? Material.QUARTZ_BLOCK : Material.END_STONE;
+                set(data, lx, y, lz, material);
+            }
+        }
+
+        private int celestialTop(int x, int z) {
+            double center = Math.max(0.0, 1.0 - Math.sqrt((double)x * x + (double)z * z) / 110.0);
+            return 118 + (int)Math.round(noise2(seed + 703, x / 80.0, z / 80.0) * 18 + center * 22);
+        }
+
+        private void bloodmoonColumn(ChunkData data, int lx, int lz, int x, int z) {
+            int top = bloodmoonTop(x, z);
+            int min = Math.max(data.getMinHeight(), top - 62);
+            double scar = noise2(seed + 801, x / 21.0, z / 21.0);
+            for (int y = min; y <= top; y++) {
+                Material material;
+                if (y == top) material = scar > 0.35 ? Material.CRIMSON_NYLIUM : Material.RED_SAND;
+                else if (y > top - 6) material = Material.RED_SANDSTONE;
+                else if (y > top - 20) material = Material.NETHERRACK;
+                else material = Material.BLACKSTONE;
+                set(data, lx, y, lz, material);
+            }
+            if (scar > 0.70) {
+                for (int y = top + 1; y <= Math.min(data.getMaxHeight() - 1, top + 5); y++) {
+                    set(data, lx, y, lz, y % 2 == 0 ? Material.RED_NETHER_BRICKS : Material.NETHER_WART_BLOCK);
+                }
+            }
+        }
+
+        private int bloodmoonTop(int x, int z) {
+            double dunes = noise2(seed + 802, x / 75.0, z / 75.0);
+            double broken = Math.abs(noise2(seed + 803, x / 30.0, z / 30.0));
+            double center = Math.max(0, 1.0 - Math.sqrt((double)x * x + (double)z * z) / 105.0);
+            return 66 + (int)Math.round(dunes * 22 + broken * 18 + center * 18);
         }
 
         private void realm100Column(ChunkData data, int lx, int lz, int x, int z) {
