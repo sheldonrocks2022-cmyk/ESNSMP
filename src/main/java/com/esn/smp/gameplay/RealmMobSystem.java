@@ -139,6 +139,12 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                     ChatColor.YELLOW + "Click to view creatures"));
         }
         String current = realmFromWorld(p.getWorld());
+        if (shatteredUnlocked(p)) {
+            v.setItem(31, menuItem(Material.REINFORCED_DEEPSLATE, ChatColor.DARK_PURPLE + "Shattered Realm",
+                    ChatColor.GRAY + profiles("shattered").size() + " secret creature types",
+                    ChatColor.GRAY + "Miniboss: " + miniBossProfile("shattered").name,
+                    ChatColor.YELLOW + "Click to view creatures"));
+        }
         v.setItem(40, menuItem(Material.COMPASS, ChatColor.GREEN + "Current Realm",
                 ChatColor.GRAY + (current == null ? "Not inside an ESN Realm" : display(current))));
         v.setItem(49, menuItem(Material.ARROW, ChatColor.YELLOW + "Back to Realms"));
@@ -189,6 +195,17 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                     ChatColor.GRAY + "Fragments: " + (fragments >= 2 ? ChatColor.GREEN : ChatColor.RED) + fragments + "/2",
                     ready ? ChatColor.YELLOW + "Click to forge" : ChatColor.DARK_GRAY + "Collect more realm materials"));
         }
+        if (shatteredUnlocked(p)) {
+            int essence = countTagged(p, "shattered");
+            int fragments = countTagged(p, "fragment:shattered");
+            boolean ready = essence >= 12 && fragments >= 2;
+            v.setItem(31, menuItem(Material.REINFORCED_DEEPSLATE,
+                    (ready ? ChatColor.GREEN : ChatColor.DARK_PURPLE) + "Shattered Realm Sigil",
+                    ChatColor.GRAY + sigilDescription("shattered"),
+                    ChatColor.GRAY + "Essence: " + essence + "/12",
+                    ChatColor.GRAY + "Fragments: " + fragments + "/2",
+                    ready ? ChatColor.YELLOW + "Click to forge" : ChatColor.DARK_GRAY + "Collect more secret realm materials"));
+        }
         v.setItem(40, menuItem(Material.NETHER_STAR, ChatColor.LIGHT_PURPLE + "How Realm Forge Works",
                 ChatColor.GRAY + "Kill realm mobs for Essence",
                 ChatColor.GRAY + "Elites/minibosses can drop Fragments",
@@ -214,6 +231,9 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                     ChatColor.GRAY + "Custom mobs: " + (world == null ? 0 : countRealmMobs(world)),
                     ChatColor.YELLOW + "Click for event actions"));
         }
+        v.setItem(31, menuItem(Material.REINFORCED_DEEPSLATE, ChatColor.DARK_PURPLE + "Shattered Realm",
+                ChatColor.GRAY + "Secret realm event controls",
+                ChatColor.YELLOW + "Click for event actions"));
         v.setItem(40, menuItem(Material.SHIELD, ChatColor.RED + "Admin Realm Events",
                 ChatColor.GRAY + "Start invasions, summon minibosses",
                 ChatColor.GRAY + "or clear custom realm mobs"));
@@ -313,6 +333,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case 15 -> "celestial";
             case 16 -> "bloodmoon";
             case 22 -> "100";
+            case 31 -> "shattered";
             default -> null;
         };
     }
@@ -336,6 +357,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case "celestial" -> Material.AMETHYST_SHARD;
             case "bloodmoon" -> Material.REDSTONE_BLOCK;
             case "100" -> Material.NETHER_STAR;
+            case "shattered" -> Material.REINFORCED_DEEPSLATE;
             default -> Material.COMPASS;
         };
     }
@@ -573,6 +595,15 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                     attacker.setHealth(Math.min(maxHealth(attacker), attacker.getHealth() + Math.max(1.0, event.getFinalDamage() * 0.35)));
                 }
             }
+            case "shattered" -> {
+                int roll=random.nextInt(6);
+                if(roll==0) player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS,70,0));
+                else if(roll==1) player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER,50,0));
+                else if(roll==2) player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,22,0));
+                else if(roll==3) player.setFireTicks(80);
+                else if(roll==4) player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,60,2));
+                else knockAway(attacker,player,1.0);
+            }
             case "100" -> {
                 int roll = random.nextInt(4);
                 if (roll == 0) player.setFireTicks(70);
@@ -680,6 +711,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case "celestial" -> Material.NETHER_STAR;
             case "bloodmoon" -> Material.REDSTONE_BLOCK;
             case "100" -> Material.DRAGON_EGG;
+            case "shattered" -> Material.REINFORCED_DEEPSLATE;
             default -> Material.AMETHYST_SHARD;
         };
         ItemStack item = new ItemStack(material);
@@ -705,6 +737,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case "celestial" -> "Gain speed, slow falling and jump power.";
             case "bloodmoon" -> "Gain strength and regeneration.";
             case "100" -> "Channel a fragment of every Realm at once.";
+            case "shattered" -> "Bend fractured realm energy around yourself.";
             default -> "Channel realm energy.";
         };
     }
@@ -765,6 +798,13 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                 p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, normal, 1));
                 p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 8, 0));
             }
+            case "shattered" -> {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, normal, 2));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, normal, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, normal, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 20*6, 0));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, normal, 0));
+            }
             case "100" -> {
                 p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, normal, 1));
                 p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, normal, 1));
@@ -789,6 +829,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case "celestial" -> Material.AMETHYST_SHARD;
             case "bloodmoon" -> Material.REDSTONE;
             case "100" -> Material.NETHER_STAR;
+            case "shattered" -> Material.CRYING_OBSIDIAN;
             default -> Material.PRISMARINE_SHARD;
         };
         ItemStack item = new ItemStack(material, Math.max(1, Math.min(64, amount)));
@@ -887,6 +928,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case "verdant" -> new MobProfile("wildheart_behemoth", "Wildheart Behemoth", EntityType.RAVAGER, 250, 18, ChatColor.GREEN, "The jungle itself given rage.");
             case "celestial" -> new MobProfile("astral_regent", "Astral Regent", EntityType.ENDERMAN, 235, 18, ChatColor.AQUA, "A fallen ruler of the stars.");
             case "bloodmoon" -> new MobProfile("moon_tyrant", "Moon Tyrant", EntityType.WITHER_SKELETON, 260, 20, ChatColor.DARK_RED, "A cursed monarch empowered by the red moon.");
+            case "shattered" -> new MobProfile("fracture_monarch", "Fracture Monarch", EntityType.WARDEN, 420, 26, ChatColor.DARK_PURPLE, "The hidden sovereign of the broken realm.");
             case "100" -> new MobProfile("rift_sovereign", "Rift Sovereign", EntityType.RAVAGER, 320, 22, ChatColor.LIGHT_PURPLE, "A creature forged from every realm.");
             default -> profiles(realm).get(0);
         };
@@ -922,6 +964,11 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                     new MobProfile("blood_revenant", "Blood Revenant", EntityType.HUSK, 58, 11, ChatColor.DARK_RED, "Feeds on wounded travelers."),
                     new MobProfile("moonfang", "Moonfang", EntityType.WOLF, 46, 11, ChatColor.RED, "Cursed predator empowered by moonlight."),
                     new MobProfile("crimson_reaper", "Crimson Reaper", EntityType.WITHER_SKELETON, 64, 13, ChatColor.DARK_RED, "Elite executioner of the Bloodmoon."));
+            case "shattered" -> List.of(
+                    new MobProfile("fractured_stalker", "Fractured Stalker", EntityType.ENDERMAN, 92, 16, ChatColor.DARK_PURPLE, "Teleports between unstable fractures."),
+                    new MobProfile("rift_devourer", "Rift Devourer", EntityType.RAVAGER, 130, 19, ChatColor.LIGHT_PURPLE, "A massive predator feeding on realm energy."),
+                    new MobProfile("broken_oracle", "Broken Oracle", EntityType.EVOKER, 88, 17, ChatColor.AQUA, "Casts remnants of forgotten realm magic."),
+                    new MobProfile("void_knight", "Void Knight", EntityType.WITHER_SKELETON, 105, 18, ChatColor.DARK_RED, "Ancient armor animated by the fracture."));
             case "100" -> List.of(
                     new MobProfile("rift_guardian", "Rift Guardian", EntityType.ENDERMAN, 72, 13, ChatColor.LIGHT_PURPLE, "Uses powers stolen from every realm."),
                     new MobProfile("fractured_knight", "Fractured Knight", EntityType.WITHER_SKELETON, 76, 14, ChatColor.GOLD, "An endgame warrior fractured by realm energy."),
@@ -939,13 +986,14 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case "verdant" -> "WILD GROWTH";
             case "celestial" -> "STARFALL INCURSION";
             case "bloodmoon" -> "BLOODMOON HUNT";
+            case "shattered" -> "SHATTERED CONVERGENCE";
             case "100" -> "REALM FRACTURE";
             default -> "REALM INVASION";
         };
     }
 
     private Set<String> realms() {
-        return Set.of("storm", "abyss", "frost", "infernal", "verdant", "celestial", "bloodmoon", "100");
+        return Set.of("storm", "abyss", "frost", "infernal", "verdant", "celestial", "bloodmoon", "100", "shattered");
     }
 
     private String realmFromWorld(World world) {
@@ -960,6 +1008,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case "esn_celestial" -> "celestial";
             case "esn_bloodmoon" -> "bloodmoon";
             case "esn_realm100" -> "100";
+            case "esn_shattered" -> "shattered";
             default -> null;
         };
     }
@@ -976,12 +1025,15 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case "celestial", "celestialisles", "astral" -> "celestial";
             case "bloodmoon", "bloodmoonwastes", "crimson" -> "bloodmoon";
             case "100", "realm100", "r100" -> "100";
+            case "shattered", "shatteredrealm", "fracture" -> "shattered";
             default -> null;
         };
     }
 
     private String worldName(String realm) {
-        return realm.equals("100") ? "esn_realm100" : "esn_" + realm;
+        if (realm.equals("100")) return "esn_realm100";
+        if (realm.equals("shattered")) return "esn_shattered";
+        return "esn_" + realm;
     }
 
     private String display(String realm) {
@@ -994,6 +1046,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             case "celestial" -> "Celestial Isles";
             case "bloodmoon" -> "Bloodmoon Wastes";
             case "100" -> "Realm 100";
+            case "shattered" -> "Shattered Realm";
             default -> realm;
         };
     }
@@ -1001,13 +1054,18 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
     private ChatColor realmColor(String realm) {
         return switch (realm) {
             case "storm", "celestial" -> ChatColor.AQUA;
-            case "abyss", "100" -> ChatColor.LIGHT_PURPLE;
+            case "abyss", "100", "shattered" -> ChatColor.LIGHT_PURPLE;
             case "frost" -> ChatColor.WHITE;
             case "infernal" -> ChatColor.RED;
             case "verdant" -> ChatColor.GREEN;
             case "bloodmoon" -> ChatColor.DARK_RED;
             default -> ChatColor.GRAY;
         };
+    }
+
+    private boolean shatteredUnlocked(Player p) {
+        return p.hasPermission("esnsmp.admin") ||
+                plugin.getConfig().getBoolean("realms.shattered-unlocked." + p.getUniqueId(), false);
     }
 
     private record MobProfile(String id, String name, EntityType type, double health, double damage,
