@@ -117,6 +117,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             int cap = Math.min(45, 10 + world.getPlayers().size() * 7);
             if (current >= cap) continue;
 
+            applyAmbience(realm, world);
             int attempts = Math.min(4, cap - current);
             for (int i = 0; i < attempts; i++) {
                 Player anchor = world.getPlayers().get(ThreadLocalRandom.current().nextInt(world.getPlayers().size()));
@@ -124,6 +125,51 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                 if (at == null) continue;
                 MobProfile profile = chooseProfile(realm);
                 spawnMob(realm, profile, at, ThreadLocalRandom.current().nextDouble() < 0.08);
+            }
+        }
+    }
+
+
+    private void applyAmbience(String realm, World world) {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        for (Player p : world.getPlayers()) {
+            if (p.getLocation().distanceSquared(world.getSpawnLocation()) < 22 * 22) continue;
+            if (random.nextDouble() > 0.32) continue;
+
+            switch (realm) {
+                case "storm" -> {
+                    Location strike = p.getLocation().clone().add(random.nextInt(-9, 10), 0, random.nextInt(-9, 10));
+                    world.strikeLightningEffect(strike);
+                    world.playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.35f, 1.25f);
+                }
+                case "abyss" -> {
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 45, 0));
+                    world.spawnParticle(Particle.SCULK_SOUL, p.getLocation().add(0, 1, 0), 8, 1.2, 0.8, 1.2, 0.01);
+                }
+                case "frost" -> {
+                    p.setFreezeTicks(Math.min(p.getMaxFreezeTicks(), p.getFreezeTicks() + 18));
+                    world.spawnParticle(Particle.SNOWFLAKE, p.getLocation().add(0, 1, 0), 18, 1.8, 1.0, 1.8, 0.02);
+                }
+                case "infernal" -> {
+                    world.spawnParticle(Particle.FLAME, p.getLocation().add(0, 0.5, 0), 12, 1.5, 0.4, 1.5, 0.03);
+                    if (random.nextDouble() < 0.18) p.setFireTicks(Math.max(p.getFireTicks(), 25));
+                }
+                case "verdant" -> {
+                    world.spawnParticle(Particle.SPORE_BLOSSOM_AIR, p.getLocation().add(0, 1, 0), 20, 2.0, 1.0, 2.0, 0.01);
+                    if (random.nextDouble() < 0.18) p.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 30, 0));
+                }
+                case "celestial" -> {
+                    world.spawnParticle(Particle.END_ROD, p.getLocation().add(0, 1, 0), 12, 1.4, 1.4, 1.4, 0.015);
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 80, 0));
+                }
+                case "bloodmoon" -> {
+                    world.spawnParticle(Particle.CRIMSON_SPORE, p.getLocation().add(0, 1, 0), 18, 1.8, 1.0, 1.8, 0.02);
+                    if (random.nextDouble() < 0.22) p.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 45, 0));
+                }
+                case "100" -> {
+                    world.spawnParticle(Particle.PORTAL, p.getLocation().add(0, 1, 0), 24, 2.0, 1.5, 2.0, 0.08);
+                    if (random.nextDouble() < 0.16) p.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 60, 0));
+                }
             }
         }
     }
@@ -193,7 +239,12 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             mob.setCustomName(profile.color + (elite ? "★ " : "") + profile.name);
             mob.setCustomNameVisible(elite);
             mob.setGlowing(elite);
-            if (mob instanceof Mob m) m.setRemoveWhenFarAway(true);
+            if (mob instanceof Mob m) {
+                m.setRemoveWhenFarAway(true);
+                Player nearest = location.getWorld().getPlayers().stream()
+                        .min(Comparator.comparingDouble(p -> p.getLocation().distanceSquared(location))).orElse(null);
+                if (nearest != null) m.setTarget(nearest);
+            }
 
             double health = profile.health * (elite ? 1.75 : 1.0);
             double damage = profile.damage * (elite ? 1.35 : 1.0);
