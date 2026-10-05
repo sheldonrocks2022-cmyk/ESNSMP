@@ -42,29 +42,39 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             return;
         }
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            int created = 0;
-            for (RealmType type : RealmType.values()) {
-                try {
-                    boolean existed = worldFolder(type).exists();
-                    World world = ensureWorld(type);
-                    if (world != null) {
-                        if (!plugin.getConfig().getBoolean("realms.worlds." + type.key + ".initialized", false)) {
-                            buildSpawnStructure(world, type);
-                            plugin.getConfig().set("realms.worlds." + type.key + ".initialized", true);
-                        }
-                        if (!existed) created++;
-                    }
-                } catch (Exception ex) {
-                    plugin.getLogger().severe("[ESN Realms] Failed to initialize " + type.display + ": " + ex.getMessage());
-                }
-            }
-            plugin.saveConfig();
-            plugin.getLogger().info("[ESN Realms] Ready. " + created + " realm world(s) created; existing worlds loaded safely.");
-        });
+        Bukkit.getScheduler().runTask(plugin, () -> initializeNext(0, 0));
 
         long interval = 20L * 60L * 5L;
         Bukkit.getScheduler().runTaskTimer(plugin, this::unloadIdleWorlds, interval, interval);
+    }
+
+    private void initializeNext(int index, int created) {
+        RealmType[] realms = RealmType.values();
+        if (index >= realms.length) {
+            plugin.saveConfig();
+            plugin.getLogger().info("[ESN Realms] Ready. " + created + " realm world(s) created; existing worlds loaded safely.");
+            return;
+        }
+
+        RealmType type = realms[index];
+        int newCreated = created;
+        try {
+            boolean existed = worldFolder(type).exists();
+            World world = ensureWorld(type);
+            if (world != null) {
+                if (!plugin.getConfig().getBoolean("realms.worlds." + type.key + ".initialized", false)) {
+                    buildSpawnStructure(world, type);
+                    plugin.getConfig().set("realms.worlds." + type.key + ".initialized", true);
+                    plugin.saveConfig();
+                }
+                if (!existed) newCreated++;
+            }
+        } catch (Exception ex) {
+            plugin.getLogger().severe("[ESN Realms] Failed to initialize " + type.display + ": " + ex.getMessage());
+        }
+
+        int nextCreated = newCreated;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> initializeNext(index + 1, nextCreated), 20L);
     }
 
     public void shutdown() {
