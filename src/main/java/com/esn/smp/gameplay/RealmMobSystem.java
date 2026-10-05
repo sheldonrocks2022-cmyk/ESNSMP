@@ -8,6 +8,8 @@ import org.bukkit.event.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -20,6 +22,10 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class RealmMobSystem implements Listener, CommandExecutor {
+    private static final String GUIDE_MENU = ChatColor.DARK_PURPLE + "Realm Creature Guide";
+    private static final String FORGE_MENU = ChatColor.GOLD + "Realm Forge";
+    private static final String EVENT_MENU = ChatColor.DARK_RED + "Realm Event Control";
+    private static final String EVENT_ACTION_MENU = ChatColor.RED + "Realm Event • ";
     private final JavaPlugin plugin;
     private final NamespacedKey mobIdKey;
     private final NamespacedKey realmKey;
@@ -27,6 +33,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
     private final NamespacedKey sigilKey;
     private final Map<UUID, Long> sigilCooldown = new HashMap<>();
     private final Map<String, Long> nextInvasion = new HashMap<>();
+    private final Map<UUID, String> selectedEventRealm = new HashMap<>();
 
     public RealmMobSystem(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -50,7 +57,13 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                 sender.sendMessage("Players only.");
                 return true;
             }
-            showGuide(p);
+            if (args.length > 0) {
+                String realm = normalize(args[0]);
+                if (realm == null) p.sendMessage(ChatColor.RED + "Unknown realm.");
+                else openGuideDetail(p, realm);
+            } else {
+                openGuideMenu(p);
+            }
             return true;
         }
 
@@ -60,8 +73,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                 return true;
             }
             if (args.length < 1) {
-                p.sendMessage(ChatColor.GOLD + "Realm Forge: " + ChatColor.GRAY + "/realmforge <realm>");
-                p.sendMessage(ChatColor.GRAY + "Cost: 12 matching Realm Essence + 2 matching Relic Fragments.");
+                openForgeMenu(p);
                 return true;
             }
             String realm = normalize(args[0]);
@@ -79,7 +91,8 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                 return true;
             }
             if (args.length < 2) {
-                sender.sendMessage(ChatColor.YELLOW + "/realmevent <invasion|miniboss|clear> <realm>");
+                if (sender instanceof Player p) openEventMenu(p);
+                else sender.sendMessage(ChatColor.YELLOW + "/realmevent <invasion|miniboss|clear> <realm>");
                 return true;
             }
             String realm = normalize(args[1]);
@@ -114,21 +127,246 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
         return true;
     }
 
-    private void showGuide(Player p) {
-        String realm = realmFromWorld(p.getWorld());
-        p.sendMessage(ChatColor.DARK_PURPLE + "=== ESN REALM CREATURE GUIDE ===");
-        if (realm == null || realm.equals("nexus")) {
-            p.sendMessage(ChatColor.GRAY + "Enter a realm to see its local creatures.");
-            p.sendMessage(ChatColor.GRAY + "New realms: " + ChatColor.GREEN + "Verdant Wilds" + ChatColor.GRAY + ", " +
-                    ChatColor.AQUA + "Celestial Isles" + ChatColor.GRAY + ", " + ChatColor.DARK_RED + "Bloodmoon Wastes");
+    private void openGuideMenu(Player p) {
+        Inventory v = Bukkit.createInventory(null, 54, GUIDE_MENU);
+        int[] slots = {10,11,12,13,14,15,16,22};
+        String[] realms = {"storm","abyss","frost","infernal","verdant","celestial","bloodmoon","100"};
+        for (int i = 0; i < realms.length; i++) {
+            String realm = realms[i];
+            v.setItem(slots[i], menuItem(icon(realm), realmColor(realm) + display(realm),
+                    ChatColor.GRAY + profiles(realm).size() + " native creature types",
+                    ChatColor.GRAY + "Miniboss: " + miniBossProfile(realm).name,
+                    ChatColor.YELLOW + "Click to view creatures"));
+        }
+        String current = realmFromWorld(p.getWorld());
+        v.setItem(40, menuItem(Material.COMPASS, ChatColor.GREEN + "Current Realm",
+                ChatColor.GRAY + (current == null ? "Not inside an ESN Realm" : display(current))));
+        v.setItem(49, menuItem(Material.ARROW, ChatColor.YELLOW + "Back to Realms"));
+        p.openInventory(v);
+    }
+
+    private void openGuideDetail(Player p, String realm) {
+        Inventory v = Bukkit.createInventory(null, 45, ChatColor.DARK_PURPLE + "Guide • " + display(realm));
+        List<MobProfile> list = profiles(realm);
+        int slot = 10;
+        for (MobProfile profile : list) {
+            v.setItem(slot++, menuItem(mobIcon(profile.type), profile.color + profile.name,
+                    ChatColor.GRAY + profile.description,
+                    ChatColor.RED + "Health: " + Math.round(profile.health),
+                    ChatColor.GOLD + "Damage: " + String.format(Locale.US, "%.1f", profile.damage)));
+        }
+        MobProfile mini = miniBossProfile(realm);
+        v.setItem(22, menuItem(Material.WITHER_SKELETON_SKULL, ChatColor.DARK_RED + "✦ " + mini.name + " ✦",
+                ChatColor.GRAY + mini.description,
+                ChatColor.RED + "Miniboss encounter",
+                ChatColor.GOLD + "Drops bonus Essence + Relic Fragments"));
+        v.setItem(30, menuItem(Material.PRISMARINE_CRYSTALS, realmColor(realm) + "Realm Essence",
+                ChatColor.GRAY + "Dropped by native mobs",
+                ChatColor.GRAY + "12 Essence + 2 Fragments = Sigil"));
+        v.setItem(31, menuItem(Material.PRISMARINE_SHARD, realmColor(realm) + "Relic Fragment",
+                ChatColor.GRAY + "Rare elite/miniboss drop",
+                ChatColor.GRAY + "Used in the Realm Forge"));
+        v.setItem(32, menuItem(icon(realm), realmColor(realm) + display(realm) + " Sigil",
+                ChatColor.GRAY + sigilDescription(realm),
+                ChatColor.YELLOW + "Use /realmforge or the Forge menu"));
+        v.setItem(36, menuItem(Material.ARROW, ChatColor.YELLOW + "Back"));
+        p.openInventory(v);
+    }
+
+    private void openForgeMenu(Player p) {
+        Inventory v = Bukkit.createInventory(null, 54, FORGE_MENU);
+        int[] slots = {10,11,12,13,14,15,16,22};
+        String[] realms = {"storm","abyss","frost","infernal","verdant","celestial","bloodmoon","100"};
+        for (int i = 0; i < realms.length; i++) {
+            String realm = realms[i];
+            int essence = countTagged(p, realm);
+            int fragments = countTagged(p, "fragment:" + realm);
+            boolean ready = essence >= 12 && fragments >= 2;
+            v.setItem(slots[i], menuItem(icon(realm),
+                    (ready ? ChatColor.GREEN : realmColor(realm)) + display(realm) + " Sigil",
+                    ChatColor.GRAY + sigilDescription(realm),
+                    ChatColor.GRAY + "Essence: " + (essence >= 12 ? ChatColor.GREEN : ChatColor.RED) + essence + "/12",
+                    ChatColor.GRAY + "Fragments: " + (fragments >= 2 ? ChatColor.GREEN : ChatColor.RED) + fragments + "/2",
+                    ready ? ChatColor.YELLOW + "Click to forge" : ChatColor.DARK_GRAY + "Collect more realm materials"));
+        }
+        v.setItem(40, menuItem(Material.NETHER_STAR, ChatColor.LIGHT_PURPLE + "How Realm Forge Works",
+                ChatColor.GRAY + "Kill realm mobs for Essence",
+                ChatColor.GRAY + "Elites/minibosses can drop Fragments",
+                ChatColor.GRAY + "Forge permanent reusable Sigils"));
+        v.setItem(49, menuItem(Material.ARROW, ChatColor.YELLOW + "Back to Realms"));
+        p.openInventory(v);
+    }
+
+    private void openEventMenu(Player p) {
+        if (!p.hasPermission("esnsmp.admin")) {
+            p.sendMessage(ChatColor.RED + "ESN admin only.");
             return;
         }
-        p.sendMessage(ChatColor.GRAY + "Realm: " + ChatColor.WHITE + display(realm));
-        for (MobProfile profile : profiles(realm)) {
-            p.sendMessage(profile.color + "• " + profile.name + ChatColor.GRAY + " — " + profile.description);
+        Inventory v = Bukkit.createInventory(null, 54, EVENT_MENU);
+        int[] slots = {10,11,12,13,14,15,16,22};
+        String[] realms = {"storm","abyss","frost","infernal","verdant","celestial","bloodmoon","100"};
+        for (int i = 0; i < realms.length; i++) {
+            String realm = realms[i];
+            World world = Bukkit.getWorld(worldName(realm));
+            v.setItem(slots[i], menuItem(icon(realm), realmColor(realm) + display(realm),
+                    ChatColor.GRAY + "World: " + (world == null ? ChatColor.RED + "UNLOADED" : ChatColor.GREEN + "LOADED"),
+                    ChatColor.GRAY + "Players: " + (world == null ? 0 : world.getPlayers().size()),
+                    ChatColor.GRAY + "Custom mobs: " + (world == null ? 0 : countRealmMobs(world)),
+                    ChatColor.YELLOW + "Click for event actions"));
         }
-        p.sendMessage(ChatColor.GOLD + "Elite mobs" + ChatColor.GRAY + " have boosted stats and better essence drops.");
-        p.sendMessage(ChatColor.RED + "Realm invasions" + ChatColor.GRAY + " can erupt while players are exploring.");
+        v.setItem(40, menuItem(Material.SHIELD, ChatColor.RED + "Admin Realm Events",
+                ChatColor.GRAY + "Start invasions, summon minibosses",
+                ChatColor.GRAY + "or clear custom realm mobs"));
+        v.setItem(49, menuItem(Material.ARROW, ChatColor.YELLOW + "Back to Realms"));
+        p.openInventory(v);
+    }
+
+    private void openEventActions(Player p, String realm) {
+        selectedEventRealm.put(p.getUniqueId(), realm);
+        Inventory v = Bukkit.createInventory(null, 27, EVENT_ACTION_MENU + display(realm));
+        World world = Bukkit.getWorld(worldName(realm));
+        v.setItem(4, menuItem(icon(realm), realmColor(realm) + display(realm),
+                ChatColor.GRAY + "Players: " + (world == null ? 0 : world.getPlayers().size()),
+                ChatColor.GRAY + "Realm mobs: " + (world == null ? 0 : countRealmMobs(world))));
+        v.setItem(10, menuItem(Material.RAID_OMEN_BOTTLE, ChatColor.RED + "Start Invasion",
+                ChatColor.GRAY + invasionName(realm),
+                ChatColor.YELLOW + "Requires a player inside the realm"));
+        v.setItem(12, menuItem(Material.WITHER_SKELETON_SKULL, ChatColor.DARK_RED + "Spawn Miniboss",
+                ChatColor.GRAY + miniBossProfile(realm).name,
+                ChatColor.YELLOW + "Requires a player inside the realm"));
+        v.setItem(14, menuItem(Material.BARRIER, ChatColor.YELLOW + "Clear Realm Mobs",
+                ChatColor.GRAY + "Remove ESN custom mobs from this realm"));
+        v.setItem(16, menuItem(Material.COMPARATOR, ChatColor.GREEN + "Refresh Status"));
+        v.setItem(22, menuItem(Material.ARROW, ChatColor.YELLOW + "Back"));
+        p.openInventory(v);
+    }
+
+    @EventHandler
+    public void menuClick(InventoryClickEvent event) {
+        String title = event.getView().getTitle();
+        boolean relevant = title.equals(GUIDE_MENU) || title.equals(FORGE_MENU) || title.equals(EVENT_MENU)
+                || title.startsWith(ChatColor.DARK_PURPLE + "Guide • ") || title.startsWith(EVENT_ACTION_MENU);
+        if (!relevant) return;
+        event.setCancelled(true);
+        if (!(event.getWhoClicked() instanceof Player p)) return;
+        int slot = event.getRawSlot();
+
+        if (title.equals(GUIDE_MENU)) {
+            String realm = realmBySlot(slot);
+            if (realm != null) openGuideDetail(p, realm);
+            else if (slot == 49) p.performCommand("realms");
+            return;
+        }
+        if (title.startsWith(ChatColor.DARK_PURPLE + "Guide • ")) {
+            if (slot == 36) openGuideMenu(p);
+            return;
+        }
+        if (title.equals(FORGE_MENU)) {
+            String realm = realmBySlot(slot);
+            if (realm != null) {
+                forgeSigil(p, realm);
+                Bukkit.getScheduler().runTaskLater(plugin, () -> openForgeMenu(p), 1L);
+            } else if (slot == 49) p.performCommand("realms");
+            return;
+        }
+        if (title.equals(EVENT_MENU)) {
+            if (!p.hasPermission("esnsmp.admin")) { p.closeInventory(); return; }
+            String realm = realmBySlot(slot);
+            if (realm != null) openEventActions(p, realm);
+            else if (slot == 49) p.performCommand("realms");
+            return;
+        }
+        if (title.startsWith(EVENT_ACTION_MENU)) {
+            if (!p.hasPermission("esnsmp.admin")) { p.closeInventory(); return; }
+            String realm = selectedEventRealm.get(p.getUniqueId());
+            if (realm == null) { openEventMenu(p); return; }
+            World world = Bukkit.getWorld(worldName(realm));
+            if (slot == 22) { openEventMenu(p); return; }
+            if (slot == 16) { openEventActions(p, realm); return; }
+            if (world == null) {
+                p.sendMessage(ChatColor.RED + "That realm is currently unloaded. Teleport there first.");
+                openEventActions(p, realm);
+                return;
+            }
+            if (slot == 10) {
+                Player target = world.getPlayers().stream().findAny().orElse(null);
+                if (target == null) p.sendMessage(ChatColor.RED + "A player must be inside the realm.");
+                else startInvasion(realm, world, target);
+            } else if (slot == 12) {
+                Player target = world.getPlayers().stream().findAny().orElse(null);
+                if (target == null) p.sendMessage(ChatColor.RED + "A player must be inside the realm.");
+                else spawnMiniBoss(realm, target);
+            } else if (slot == 14) {
+                p.sendMessage(ChatColor.GREEN + "Removed " + clearRealmMobs(world) + " ESN realm mob(s).");
+            }
+            openEventActions(p, realm);
+        }
+    }
+
+    private String realmBySlot(int slot) {
+        return switch (slot) {
+            case 10 -> "storm";
+            case 11 -> "abyss";
+            case 12 -> "frost";
+            case 13 -> "infernal";
+            case 14 -> "verdant";
+            case 15 -> "celestial";
+            case 16 -> "bloodmoon";
+            case 22 -> "100";
+            default -> null;
+        };
+    }
+
+    private ItemStack menuItem(Material material, String name, String... lore) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(name);
+        meta.setLore(Arrays.asList(lore));
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private Material icon(String realm) {
+        return switch (realm) {
+            case "storm" -> Material.LIGHTNING_ROD;
+            case "abyss" -> Material.ECHO_SHARD;
+            case "frost" -> Material.BLUE_ICE;
+            case "infernal" -> Material.MAGMA_BLOCK;
+            case "verdant" -> Material.MOSS_BLOCK;
+            case "celestial" -> Material.AMETHYST_SHARD;
+            case "bloodmoon" -> Material.REDSTONE_BLOCK;
+            case "100" -> Material.NETHER_STAR;
+            default -> Material.COMPASS;
+        };
+    }
+
+    private Material mobIcon(EntityType type) {
+        return switch (type) {
+            case ENDERMAN -> Material.ENDER_EYE;
+            case PHANTOM -> Material.PHANTOM_MEMBRANE;
+            case SKELETON, STRAY -> Material.BONE;
+            case DROWNED -> Material.TRIDENT;
+            case HUSK, ZOMBIE -> Material.ROTTEN_FLESH;
+            case VEX -> Material.IRON_SWORD;
+            case POLAR_BEAR -> Material.SNOWBALL;
+            case WITHER_SKELETON -> Material.WITHER_SKELETON_SKULL;
+            case BLAZE -> Material.BLAZE_ROD;
+            case MAGMA_CUBE -> Material.MAGMA_CREAM;
+            case CAVE_SPIDER -> Material.SPIDER_EYE;
+            case WOLF -> Material.BONE;
+            case RAVAGER -> Material.SADDLE;
+            default -> Material.SPAWNER;
+        };
+    }
+
+    private int countTagged(Player p, String value) {
+        int found = 0;
+        for (ItemStack item : p.getInventory().getContents()) {
+            if (item == null || !item.hasItemMeta()) continue;
+            String tag = item.getItemMeta().getPersistentDataContainer().get(essenceKey, PersistentDataType.STRING);
+            if (value.equals(tag)) found += item.getAmount();
+        }
+        return found;
     }
 
     private void spawnTick() {
