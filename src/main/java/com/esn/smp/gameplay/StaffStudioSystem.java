@@ -644,6 +644,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
         setRealmItem(v, 14, "verdant", Material.MOSS_BLOCK, ChatColor.GREEN + "Verdant Wilds");
         setRealmItem(v, 15, "celestial", Material.AMETHYST_SHARD, ChatColor.AQUA + "Celestial Isles");
         setRealmItem(v, 16, "bloodmoon", Material.REDSTONE_BLOCK, ChatColor.DARK_RED + "Bloodmoon Wastes");
+        setRealmItem(v, 21, "shattered", Material.REINFORCED_DEEPSLATE, ChatColor.DARK_PURPLE + "Shattered Realm");
         setRealmItem(v, 22, "100", Material.NETHER_STAR, ChatColor.GOLD + "Realm 100");
 
         boolean unlocked = plugin.getConfig().getBoolean("realms.realm100-unlocked", false);
@@ -704,6 +705,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "verdant" -> Material.MOSS_BLOCK;
             case "celestial" -> Material.AMETHYST_SHARD;
             case "bloodmoon" -> Material.REDSTONE_BLOCK;
+            case "shattered" -> Material.REINFORCED_DEEPSLATE;
             case "100" -> Material.NETHER_STAR;
             default -> Material.COMPASS;
         };
@@ -830,7 +832,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             String realm = switch (slot) {
                 case 10 -> "storm"; case 11 -> "abyss"; case 12 -> "frost";
                 case 13 -> "infernal"; case 14 -> "verdant"; case 15 -> "celestial";
-                case 16 -> "bloodmoon"; case 22 -> "100"; default -> null;
+                case 16 -> "bloodmoon"; case 21 -> "shattered"; case 22 -> "100"; default -> null;
             };
             if (realm != null) { openRealmAction(p, realm); return; }
             if (slot == 29) {
@@ -1651,6 +1653,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "verdant" -> EntityType.RAVAGER;
             case "celestial" -> EntityType.ENDERMAN;
             case "bloodmoon" -> EntityType.WITHER_SKELETON;
+            case "shattered" -> EntityType.WARDEN;
             case "100" -> EntityType.WITHER;
             default -> EntityType.RAVAGER;
         };
@@ -1662,6 +1665,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "verdant" -> "Wildheart";
             case "celestial" -> "Astral Regent";
             case "bloodmoon" -> "Moon Tyrant";
+            case "shattered" -> "Fracture Monarch";
             case "100" -> "Realm 100 Sovereign";
             default -> "Realm Boss";
         };
@@ -1671,6 +1675,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
         boss.setGlowing(true);
         if (boss instanceof Mob mob) mob.setRemoveWhenFarAway(false);
         double health = realm.equals("100") ? 800 :
+                realm.equals("shattered") ? 950 :
                 realm.equals("bloodmoon") ? 650 :
                 realm.equals("celestial") ? 575 :
                 realm.equals("verdant") ? 625 :
@@ -1834,7 +1839,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
     private boolean isRealmWorld(World world) {
         return world != null && world.getName().startsWith("esn_") &&
                 Set.of("esn_nexus", "esn_storm", "esn_abyss", "esn_frost", "esn_infernal",
-                        "esn_verdant", "esn_celestial", "esn_bloodmoon", "esn_realm100").contains(world.getName());
+                        "esn_verdant", "esn_celestial", "esn_bloodmoon", "esn_shattered", "esn_realm100").contains(world.getName());
     }
 
     private String realmKey(World world) {
@@ -1847,6 +1852,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "esn_verdant" -> "verdant";
             case "esn_celestial" -> "celestial";
             case "esn_bloodmoon" -> "bloodmoon";
+            case "esn_shattered" -> "shattered";
             case "esn_realm100" -> "100";
             default -> "unknown";
         };
@@ -1863,6 +1869,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "verdant", "verdantwilds", "wilds" -> "verdant";
             case "celestial", "celestialisles", "astral" -> "celestial";
             case "bloodmoon", "bloodmoonwastes", "crimson" -> "bloodmoon";
+            case "shattered", "shatteredrealm", "fracture" -> "shattered";
             case "100", "realm100", "r100" -> "100";
             default -> null;
         };
@@ -1881,6 +1888,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "verdant" -> 104;
             case "celestial" -> 138;
             case "bloodmoon" -> 96;
+            case "shattered" -> 112;
             case "100" -> 100;
             case "nexus" -> 80;
             default -> 90;
@@ -1896,6 +1904,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "verdant" -> "Verdant Wilds";
             case "celestial" -> "Celestial Isles";
             case "bloodmoon" -> "Bloodmoon Wastes";
+            case "shattered" -> "Shattered Realm";
             case "100" -> "Realm 100";
             case "nexus" -> "Realm Nexus";
             default -> realm;
