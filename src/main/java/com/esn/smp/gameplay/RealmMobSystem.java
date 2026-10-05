@@ -148,7 +148,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
         String current = realmFromWorld(p.getWorld());
         if (shatteredUnlocked(p)) {
             v.setItem(31, menuItem(Material.REINFORCED_DEEPSLATE, ChatColor.DARK_PURPLE + "Shattered Realm",
-                    ChatColor.GRAY + profiles("shattered").size() + " secret creature types",
+                    ChatColor.GRAY + "Creatures: " + profiles("shattered").size(),
                     ChatColor.GRAY + "Miniboss: " + miniBossProfile("shattered").name,
                     ChatColor.YELLOW + "Click to view creatures"));
         }
