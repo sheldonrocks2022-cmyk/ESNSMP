@@ -360,6 +360,8 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             buildGate(world, 0, y + 1, 12, RealmType.FROST.trim);
             buildGate(world, -12, y + 1, 0, RealmType.ABYSS.trim);
             buildGate(world, 0, y + 1, -5, RealmType.REALM100.trim);
+        } else {
+            buildRealmLandmarks(world, type);
         }
 
         world.setSpawnLocation(0, y + 2, 0);
@@ -386,6 +388,102 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
         for (int w = -2; w <= 2; w++) {
             if (northSouth) world.getBlockAt(x + w, y + 5, z).setType(material, false);
             else world.getBlockAt(x, y + 5, z + w).setType(material, false);
+        }
+    }
+
+    private void buildRealmLandmarks(World world, RealmType type) {
+        int y = type.spawnY - 2;
+        switch (type) {
+            case STORM -> {
+                buildFortress(world, 92, y, 0, Material.STONE_BRICKS, Material.CUT_COPPER, Material.LIGHTNING_ROD);
+                buildBossArena(world, -92, y, 0, Material.STONE_BRICKS, Material.COPPER_BLOCK);
+            }
+            case ABYSS -> {
+                buildFortress(world, 92, y, 0, Material.DEEPSLATE_TILES, Material.SCULK, Material.CRYING_OBSIDIAN);
+                buildBossArena(world, -92, y, 0, Material.DEEPSLATE_BRICKS, Material.SCULK);
+            }
+            case FROST -> {
+                buildFortress(world, 92, y, 0, Material.PACKED_ICE, Material.BLUE_ICE, Material.SEA_LANTERN);
+                buildBossArena(world, -92, y, 0, Material.SNOW_BLOCK, Material.BLUE_ICE);
+            }
+            case INFERNAL -> {
+                buildFortress(world, 92, y, 0, Material.NETHER_BRICKS, Material.BLACKSTONE, Material.MAGMA_BLOCK);
+                buildBossArena(world, -92, y, 0, Material.POLISHED_BLACKSTONE_BRICKS, Material.MAGMA_BLOCK);
+            }
+            case REALM100 -> {
+                buildFortress(world, 92, y, 0, Material.END_STONE_BRICKS, Material.PURPUR_BLOCK, Material.END_PORTAL_FRAME);
+                buildBossArena(world, -92, y, 0, Material.OBSIDIAN, Material.PURPUR_BLOCK);
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void buildFortress(World world, int cx, int y, int cz, Material wall, Material accent, Material crown) {
+        int half = 14;
+        for (int x = -half; x <= half; x++) {
+            for (int z = -half; z <= half; z++) {
+                world.getBlockAt(cx + x, y - 1, cz + z).setType(Material.DEEPSLATE, false);
+                world.getBlockAt(cx + x, y, cz + z).setType(Math.abs(x) == half || Math.abs(z) == half ? accent : wall, false);
+                for (int yy = 1; yy <= 10; yy++) world.getBlockAt(cx + x, y + yy, cz + z).setType(Material.AIR, false);
+            }
+        }
+
+        for (int x = -half; x <= half; x++) {
+            for (int h = 1; h <= 7; h++) {
+                world.getBlockAt(cx + x, y + h, cz - half).setType(wall, false);
+                world.getBlockAt(cx + x, y + h, cz + half).setType(wall, false);
+            }
+        }
+        for (int z = -half; z <= half; z++) {
+            for (int h = 1; h <= 7; h++) {
+                world.getBlockAt(cx - half, y + h, cz + z).setType(wall, false);
+                world.getBlockAt(cx + half, y + h, cz + z).setType(wall, false);
+            }
+        }
+
+        for (int x = -2; x <= 2; x++) {
+            for (int h = 1; h <= 5; h++) world.getBlockAt(cx + x, y + h, cz - half).setType(Material.AIR, false);
+        }
+
+        int[] corners = {-half, half};
+        for (int ox : corners) {
+            for (int oz : corners) {
+                for (int x = -2; x <= 2; x++) {
+                    for (int z = -2; z <= 2; z++) {
+                        for (int h = 1; h <= 11; h++) {
+                            boolean shell = Math.abs(x) == 2 || Math.abs(z) == 2 || h == 11;
+                            if (shell) world.getBlockAt(cx + ox + x, y + h, cz + oz + z).setType(h == 11 ? accent : wall, false);
+                        }
+                    }
+                }
+                world.getBlockAt(cx + ox, y + 12, cz + oz).setType(crown, false);
+            }
+        }
+
+        for (int h = 1; h <= 9; h++) world.getBlockAt(cx, y + h, cz).setType(accent, false);
+        world.getBlockAt(cx, y + 10, cz).setType(crown, false);
+    }
+
+    private void buildBossArena(World world, int cx, int y, int cz, Material floor, Material accent) {
+        int radius = 17;
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                double d = Math.sqrt((double) x * x + (double) z * z);
+                if (d <= radius) {
+                    world.getBlockAt(cx + x, y - 1, cz + z).setType(Material.DEEPSLATE, false);
+                    world.getBlockAt(cx + x, y, cz + z).setType(d >= radius - 2 ? accent : floor, false);
+                    for (int h = 1; h <= 8; h++) world.getBlockAt(cx + x, y + h, cz + z).setType(Material.AIR, false);
+                }
+            }
+        }
+
+        for (int i = 0; i < 8; i++) {
+            double angle = Math.PI * 2.0 * i / 8.0;
+            int x = cx + (int) Math.round(Math.cos(angle) * 14);
+            int z = cz + (int) Math.round(Math.sin(angle) * 14);
+            for (int h = 1; h <= 6; h++) world.getBlockAt(x, y + h, z).setType(accent, false);
+            world.getBlockAt(x, y + 7, z).setType(Material.SEA_LANTERN, false);
         }
     }
 
