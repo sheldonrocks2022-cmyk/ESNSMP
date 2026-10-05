@@ -432,7 +432,7 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
         INFERNAL("infernal", "esn_infernal", "Infernal Empire", Material.MAGMA_BLOCK, 90,
                 Material.BLACKSTONE, Material.POLISHED_BLACKSTONE, Material.MAGMA_BLOCK, Material.RESPAWN_ANCHOR),
         REALM100("100", "esn_realm100", "Realm 100", Material.NETHER_STAR, 100,
-                Material.OBSIDIAN, Material.END_STONE_BRICKS, Material.PURPUR_BLOCK, Material.END_CRYSTAL);
+                Material.OBSIDIAN, Material.END_STONE_BRICKS, Material.PURPUR_BLOCK, Material.END_PORTAL_FRAME);
 
         private final String key;
         private final String worldName;
