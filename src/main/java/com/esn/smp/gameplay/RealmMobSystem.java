@@ -7,6 +7,7 @@ import org.bukkit.entity.*;
 import org.bukkit.event.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -23,6 +24,8 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
     private final NamespacedKey mobIdKey;
     private final NamespacedKey realmKey;
     private final NamespacedKey essenceKey;
+    private final NamespacedKey sigilKey;
+    private final Map<UUID, Long> sigilCooldown = new HashMap<>();
     private final Map<String, Long> nextInvasion = new HashMap<>();
 
     public RealmMobSystem(JavaPlugin plugin) {
@@ -30,6 +33,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
         this.mobIdKey = new NamespacedKey(plugin, "realm_mob_id");
         this.realmKey = new NamespacedKey(plugin, "realm_id");
         this.essenceKey = new NamespacedKey(plugin, "realm_essence");
+        this.sigilKey = new NamespacedKey(plugin, "realm_sigil");
     }
 
     public void start() {
@@ -47,6 +51,25 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                 return true;
             }
             showGuide(p);
+            return true;
+        }
+
+        if (name.equals("realmforge")) {
+            if (!(sender instanceof Player p)) {
+                sender.sendMessage("Players only.");
+                return true;
+            }
+            if (args.length < 1) {
+                p.sendMessage(ChatColor.GOLD + "Realm Forge: " + ChatColor.GRAY + "/realmforge <realm>");
+                p.sendMessage(ChatColor.GRAY + "Cost: 12 matching Realm Essence + 2 matching Relic Fragments.");
+                return true;
+            }
+            String realm = normalize(args[0]);
+            if (realm == null) {
+                p.sendMessage(ChatColor.RED + "Unknown realm.");
+                return true;
+            }
+            forgeSigil(p, realm);
             return true;
         }
 
@@ -367,6 +390,157 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
         }, 20L);
     }
 
+
+    private void forgeSigil(Player p, String realm) {
+        if (!hasTagged(p, realm, 12) || !hasTagged(p, "fragment:" + realm, 2)) {
+            p.sendMessage(ChatColor.RED + "You need 12 " + display(realm) + " Essence and 2 Relic Fragments.");
+            return;
+        }
+        consumeTagged(p, realm, 12);
+        consumeTagged(p, "fragment:" + realm, 2);
+        ItemStack sigil = sigil(realm);
+        Map<Integer, ItemStack> overflow = p.getInventory().addItem(sigil);
+        overflow.values().forEach(item -> p.getWorld().dropItemNaturally(p.getLocation(), item));
+        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.35f);
+        p.getWorld().spawnParticle(Particle.END_ROD, p.getLocation().add(0, 1, 0), 32, 1.0, 1.0, 1.0, 0.08);
+        p.sendMessage(ChatColor.GOLD + "FORGED: " + realmColor(realm) + display(realm) + " Sigil");
+    }
+
+    private boolean hasTagged(Player p, String value, int amount) {
+        int found = 0;
+        for (ItemStack item : p.getInventory().getContents()) {
+            if (item == null || !item.hasItemMeta()) continue;
+            String tag = item.getItemMeta().getPersistentDataContainer().get(essenceKey, PersistentDataType.STRING);
+            if (value.equals(tag)) found += item.getAmount();
+        }
+        return found >= amount;
+    }
+
+    private void consumeTagged(Player p, String value, int amount) {
+        int remaining = amount;
+        ItemStack[] contents = p.getInventory().getContents();
+        for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
+            ItemStack item = contents[slot];
+            if (item == null || !item.hasItemMeta()) continue;
+            String tag = item.getItemMeta().getPersistentDataContainer().get(essenceKey, PersistentDataType.STRING);
+            if (!value.equals(tag)) continue;
+            int take = Math.min(remaining, item.getAmount());
+            remaining -= take;
+            int left = item.getAmount() - take;
+            if (left <= 0) p.getInventory().setItem(slot, null);
+            else item.setAmount(left);
+        }
+    }
+
+    private ItemStack sigil(String realm) {
+        Material material = switch (realm) {
+            case "storm" -> Material.HEART_OF_THE_SEA;
+            case "abyss" -> Material.ECHO_SHARD;
+            case "frost" -> Material.BLUE_ICE;
+            case "infernal" -> Material.FIRE_CHARGE;
+            case "verdant" -> Material.SPORE_BLOSSOM;
+            case "celestial" -> Material.NETHER_STAR;
+            case "bloodmoon" -> Material.REDSTONE_BLOCK;
+            case "100" -> Material.DRAGON_EGG;
+            default -> Material.AMETHYST_SHARD;
+        };
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(realmColor(realm) + "✦ " + display(realm) + " Sigil ✦");
+        meta.setLore(List.of(
+                ChatColor.LIGHT_PURPLE + "Permanent Realm Artifact",
+                ChatColor.GRAY + sigilDescription(realm),
+                ChatColor.YELLOW + "Right click to activate",
+                ChatColor.DARK_GRAY + "Cooldown: " + (realm.equals("100") ? "45s" : "60s")));
+        meta.getPersistentDataContainer().set(sigilKey, PersistentDataType.STRING, realm);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private String sigilDescription(String realm) {
+        return switch (realm) {
+            case "storm" -> "Become charged with speed and resistance.";
+            case "abyss" -> "Disappear into darkness and gain night sight.";
+            case "frost" -> "Gain resistance and extinguish flames.";
+            case "infernal" -> "Gain fire resistance and combat strength.";
+            case "verdant" -> "Regenerate and absorb incoming damage.";
+            case "celestial" -> "Gain speed, slow falling and jump power.";
+            case "bloodmoon" -> "Gain strength and regeneration.";
+            case "100" -> "Channel a fragment of every Realm at once.";
+            default -> "Channel realm energy.";
+        };
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void useSigil(PlayerInteractEvent event) {
+        if (!event.getAction().isRightClick()) return;
+        ItemStack item = event.getItem();
+        if (item == null || !item.hasItemMeta()) return;
+        String realm = item.getItemMeta().getPersistentDataContainer().get(sigilKey, PersistentDataType.STRING);
+        if (realm == null) return;
+        event.setCancelled(true);
+
+        Player p = event.getPlayer();
+        long now = System.currentTimeMillis();
+        long ready = sigilCooldown.getOrDefault(p.getUniqueId(), 0L);
+        if (ready > now) {
+            p.sendActionBar(ChatColor.RED + "Sigil cooldown: " + Math.max(1, (ready - now) / 1000) + "s");
+            return;
+        }
+        sigilCooldown.put(p.getUniqueId(), now + (realm.equals("100") ? 45_000L : 60_000L));
+        activateSigil(p, realm);
+    }
+
+    private void activateSigil(Player p, String realm) {
+        int normal = 20 * 12;
+        switch (realm) {
+            case "storm" -> {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, normal, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, normal, 0));
+                p.getWorld().strikeLightningEffect(p.getLocation());
+            }
+            case "abyss" -> {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, normal, 0));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, normal, 0));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, normal, 0));
+            }
+            case "frost" -> {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, normal, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, normal, 0));
+                p.setFireTicks(0);
+                p.setFreezeTicks(0);
+            }
+            case "infernal" -> {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, normal, 0));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, normal, 0));
+            }
+            case "verdant" -> {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 8, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, normal, 1));
+            }
+            case "celestial" -> {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, normal, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, normal, 0));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, normal, 1));
+            }
+            case "bloodmoon" -> {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, normal, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 8, 0));
+            }
+            case "100" -> {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, normal, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, normal, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, normal, 1));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, normal, 0));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, normal, 0));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, normal, 1));
+            }
+        }
+        p.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, p.getLocation().add(0, 1, 0), 28, 0.8, 1.0, 0.8, 0.08);
+        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.9f, 1.25f);
+        p.sendActionBar(realmColor(realm) + display(realm) + " Sigil activated!");
+    }
+
     private ItemStack essence(String realm, int amount) {
         Material material = switch (realm) {
             case "storm" -> Material.COPPER_INGOT;
@@ -383,7 +557,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(realmColor(realm) + display(realm) + " Essence");
         meta.setLore(List.of(ChatColor.GRAY + "Condensed energy dropped by ESN realm creatures.",
-                ChatColor.DARK_GRAY + "Keep these — realm crafting is coming."));
+                ChatColor.DARK_GRAY + "Use /realmforge to create a permanent Realm Sigil."));
         meta.getPersistentDataContainer().set(essenceKey, PersistentDataType.STRING, realm);
         item.setItemMeta(meta);
         return item;
