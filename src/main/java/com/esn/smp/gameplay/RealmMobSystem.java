@@ -134,7 +134,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
         for (int i = 0; i < realms.length; i++) {
             String realm = realms[i];
             v.setItem(slots[i], menuItem(icon(realm), realmColor(realm) + display(realm),
-                    ChatColor.GRAY + profiles(realm).size() + " native creature types",
+                    ChatColor.GRAY + "Creatures: " + profiles(realm).size(),
                     ChatColor.GRAY + "Miniboss: " + miniBossProfile(realm).name,
                     ChatColor.YELLOW + "Click to view creatures"));
         }
@@ -228,7 +228,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
         v.setItem(4, menuItem(icon(realm), realmColor(realm) + display(realm),
                 ChatColor.GRAY + "Players: " + (world == null ? 0 : world.getPlayers().size()),
                 ChatColor.GRAY + "Realm mobs: " + (world == null ? 0 : countRealmMobs(world))));
-        v.setItem(10, menuItem(Material.RAID_OMEN_BOTTLE, ChatColor.RED + "Start Invasion",
+        v.setItem(10, menuItem(Material.BELL, ChatColor.RED + "Start Invasion",
                 ChatColor.GRAY + invasionName(realm),
                 ChatColor.YELLOW + "Requires a player inside the realm"));
         v.setItem(12, menuItem(Material.WITHER_SKELETON_SKULL, ChatColor.DARK_RED + "Spawn Miniboss",
