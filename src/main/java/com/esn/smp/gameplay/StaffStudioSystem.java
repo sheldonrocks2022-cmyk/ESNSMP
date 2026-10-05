@@ -639,19 +639,22 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
         setRealmItem(v, 12, "abyss", Material.ECHO_SHARD, ChatColor.DARK_PURPLE + "The Abyss");
         setRealmItem(v, 14, "frost", Material.BLUE_ICE, ChatColor.WHITE + "Frostlands");
         setRealmItem(v, 16, "infernal", Material.MAGMA_BLOCK, ChatColor.RED + "Infernal Empire");
-        setRealmItem(v, 22, "100", Material.NETHER_STAR, ChatColor.GOLD + "Realm 100");
-        v.setItem(29, item(Material.WITHER_SKELETON_SKULL, ChatColor.RED + "Boss Controls",
+        setRealmItem(v, 19, "verdant", Material.MOSS_BLOCK, ChatColor.GREEN + "Verdant Wilds");
+        setRealmItem(v, 21, "celestial", Material.AMETHYST_SHARD, ChatColor.AQUA + "Celestial Isles");
+        setRealmItem(v, 23, "bloodmoon", Material.REDSTONE_BLOCK, ChatColor.DARK_RED + "Bloodmoon Wastes");
+        setRealmItem(v, 31, "100", Material.NETHER_STAR, ChatColor.GOLD + "Realm 100");
+        v.setItem(36, item(Material.WITHER_SKELETON_SKULL, ChatColor.RED + "Boss Controls",
                 ChatColor.GRAY + "/realmstaff boss start <realm>",
                 ChatColor.GRAY + "/realmstaff boss stop <realm>"));
-        v.setItem(30, item(Material.TNT, ChatColor.YELLOW + "Reset Encounter",
+        v.setItem(37, item(Material.TNT, ChatColor.YELLOW + "Reset Encounter",
                 ChatColor.GRAY + "/realmstaff reset <realm>"));
-        v.setItem(31, item(Material.OAK_DOOR, ChatColor.AQUA + "Evacuate Realm",
+        v.setItem(38, item(Material.OAK_DOOR, ChatColor.AQUA + "Evacuate Realm",
                 ChatColor.GRAY + "/realmstaff evacuate <realm>"));
-        v.setItem(32, item(Material.IRON_BARS, ChatColor.GOLD + "Build Lock",
+        v.setItem(39, item(Material.IRON_BARS, ChatColor.GOLD + "Build Lock",
                 ChatColor.GRAY + "/realmstaff buildlock <realm> on|off"));
-        v.setItem(33, item(Material.COMPARATOR, ChatColor.GREEN + "Realm Performance",
+        v.setItem(40, item(Material.COMPARATOR, ChatColor.GREEN + "Realm Performance",
                 ChatColor.GRAY + "/realmstaff perf <realm>"));
-        v.setItem(40, item(Material.ARROW, ChatColor.YELLOW + "Back"));
+        v.setItem(44, item(Material.ARROW, ChatColor.YELLOW + "Back"));
         p.openInventory(v);
     }
 
@@ -772,10 +775,11 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
         }
 
         if (title.equals(REALM_STAFF)) {
-            if (slot == 40) { openHub(p); return; }
+            if (slot == 44) { openHub(p); return; }
             String realm = switch (slot) {
                 case 10 -> "storm"; case 12 -> "abyss"; case 14 -> "frost";
-                case 16 -> "infernal"; case 22 -> "100"; default -> null;
+                case 16 -> "infernal"; case 19 -> "verdant"; case 21 -> "celestial";
+                case 23 -> "bloodmoon"; case 31 -> "100"; default -> null;
             };
             if (realm != null) {
                 p.closeInventory();
@@ -1562,6 +1566,9 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "abyss" -> EntityType.WARDEN;
             case "frost" -> EntityType.POLAR_BEAR;
             case "infernal" -> EntityType.WITHER_SKELETON;
+            case "verdant" -> EntityType.RAVAGER;
+            case "celestial" -> EntityType.ENDERMAN;
+            case "bloodmoon" -> EntityType.WITHER_SKELETON;
             case "100" -> EntityType.WITHER;
             default -> EntityType.RAVAGER;
         };
@@ -1570,6 +1577,9 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "abyss" -> "Abyss Reaper";
             case "frost" -> "Frost King";
             case "infernal" -> "Inferno Emperor";
+            case "verdant" -> "Wildheart";
+            case "celestial" -> "Astral Regent";
+            case "bloodmoon" -> "Moon Tyrant";
             case "100" -> "Realm 100 Sovereign";
             default -> "Realm Boss";
         };
@@ -1578,7 +1588,11 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
         boss.setCustomNameVisible(true);
         boss.setGlowing(true);
         if (boss instanceof Mob mob) mob.setRemoveWhenFarAway(false);
-        double health = realm.equals("100") ? 800 : realm.equals("abyss") ? 600 : 450;
+        double health = realm.equals("100") ? 800 :
+                realm.equals("bloodmoon") ? 650 :
+                realm.equals("celestial") ? 575 :
+                realm.equals("verdant") ? 625 :
+                realm.equals("abyss") ? 600 : 450;
         if (boss.getAttribute(Attribute.MAX_HEALTH) != null) boss.getAttribute(Attribute.MAX_HEALTH).setBaseValue(health);
         boss.setHealth(Math.min(health, boss.getAttribute(Attribute.MAX_HEALTH) == null ? boss.getHealth() :
                 boss.getAttribute(Attribute.MAX_HEALTH).getValue()));
@@ -1737,7 +1751,8 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
 
     private boolean isRealmWorld(World world) {
         return world != null && world.getName().startsWith("esn_") &&
-                Set.of("esn_nexus", "esn_storm", "esn_abyss", "esn_frost", "esn_infernal", "esn_realm100").contains(world.getName());
+                Set.of("esn_nexus", "esn_storm", "esn_abyss", "esn_frost", "esn_infernal",
+                        "esn_verdant", "esn_celestial", "esn_bloodmoon", "esn_realm100").contains(world.getName());
     }
 
     private String realmKey(World world) {
@@ -1747,6 +1762,9 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "esn_abyss" -> "abyss";
             case "esn_frost" -> "frost";
             case "esn_infernal" -> "infernal";
+            case "esn_verdant" -> "verdant";
+            case "esn_celestial" -> "celestial";
+            case "esn_bloodmoon" -> "bloodmoon";
             case "esn_realm100" -> "100";
             default -> "unknown";
         };
@@ -1760,6 +1778,9 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "abyss", "theabyss" -> "abyss";
             case "frost", "frostlands" -> "frost";
             case "infernal", "infernalempire" -> "infernal";
+            case "verdant", "verdantwilds", "wilds" -> "verdant";
+            case "celestial", "celestialisles", "astral" -> "celestial";
+            case "bloodmoon", "bloodmoonwastes", "crimson" -> "bloodmoon";
             case "100", "realm100", "r100" -> "100";
             default -> null;
         };
@@ -1775,6 +1796,9 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "abyss" -> 70;
             case "frost" -> 115;
             case "infernal" -> 90;
+            case "verdant" -> 104;
+            case "celestial" -> 138;
+            case "bloodmoon" -> 96;
             case "100" -> 100;
             case "nexus" -> 80;
             default -> 90;
@@ -1787,6 +1811,9 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
             case "abyss" -> "The Abyss";
             case "frost" -> "Frostlands";
             case "infernal" -> "Infernal Empire";
+            case "verdant" -> "Verdant Wilds";
+            case "celestial" -> "Celestial Isles";
+            case "bloodmoon" -> "Bloodmoon Wastes";
             case "100" -> "Realm 100";
             case "nexus" -> "Realm Nexus";
             default -> realm;
