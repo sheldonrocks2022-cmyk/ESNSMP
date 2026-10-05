@@ -9,6 +9,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
+import org.bukkit.block.Container;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -626,11 +627,77 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             }
         }
 
+        buildExplorationSites(world, type, y);
         decorateBossArena(world, type, -92, y - 2, 0);
         decorateFortress(world, type, 92, y - 2, 0);
 
         world.save();
         plugin.getLogger().info("[ESN Realms] Applied decoration package to " + type.display + ".");
+    }
+
+
+    private void buildExplorationSites(World world, RealmType type, int y) {
+        buildOutpost(world, type, 0, y, 118);
+        buildOutpost(world, type, 0, y, -118);
+        buildObelisk(world, type, 118, y, 58);
+        buildObelisk(world, type, -118, y, -58);
+        buildTreasureVault(world, type, 132, y, -92);
+        buildTreasureVault(world, type, -132, y, 92);
+    }
+
+    private void buildOutpost(World world, RealmType type, int cx, int y, int cz) {
+        int half=7;
+        for(int x=-half;x<=half;x++)for(int z=-half;z<=half;z++){
+            world.getBlockAt(cx+x,y-1,cz+z).setType(type.foundation,false);
+            world.getBlockAt(cx+x,y,cz+z).setType((Math.abs(x)==half||Math.abs(z)==half)?type.trim:type.floor,false);
+            for(int h=1;h<=6;h++) world.getBlockAt(cx+x,y+h,cz+z).setType(Material.AIR,false);
+        }
+        for(int[] p:new int[][]{{-6,-6},{6,-6},{-6,6},{6,6}}){
+            for(int h=1;h<=8;h++) world.getBlockAt(cx+p[0],y+h,cz+p[1]).setType(type.trim,false);
+            world.getBlockAt(cx+p[0],y+9,cz+p[1]).setType(Material.SEA_LANTERN,false);
+        }
+        for(int x=-5;x<=5;x++)world.getBlockAt(cx+x,y+6,cz).setType(type.floor,false);
+        world.getBlockAt(cx,y+7,cz).setType(type.centerpiece,false);
+    }
+
+    private void buildObelisk(World world, RealmType type, int cx, int y, int cz) {
+        for(int r=7;r>=0;r--){
+            int layer=7-r;
+            for(int x=-r;x<=r;x++)for(int z=-r;z<=r;z++){
+                if(Math.max(Math.abs(x),Math.abs(z))==r) world.getBlockAt(cx+x,y+layer-1,cz+z).setType(layer%2==0?type.floor:type.trim,false);
+            }
+        }
+        for(int h=1;h<=18;h++){
+            int radius=h<13?2:h<17?1:0;
+            for(int x=-radius;x<=radius;x++)for(int z=-radius;z<=radius;z++){
+                world.getBlockAt(cx+x,y+h,cz+z).setType(h%5==0?type.centerpiece:type.trim,false);
+            }
+        }
+        world.getBlockAt(cx,y+19,cz).setType(Material.BEACON,false);
+    }
+
+    private void buildTreasureVault(World world, RealmType type, int cx, int y, int cz) {
+        int half=6;
+        for(int x=-half;x<=half;x++)for(int z=-half;z<=half;z++)for(int h=0;h<=6;h++){
+            boolean shell=h==0||h==6||Math.abs(x)==half||Math.abs(z)==half;
+            world.getBlockAt(cx+x,y+h,cz+z).setType(shell?(h%2==0?type.foundation:type.trim):Material.AIR,false);
+        }
+        for(int h=1;h<=3;h++)world.getBlockAt(cx,y+h,cz-half).setType(Material.AIR,false);
+        world.getBlockAt(cx,y+1,cz).setType(Material.BARREL,false);
+        if(world.getBlockAt(cx,y+1,cz).getState() instanceof Container container){
+            container.getInventory().clear();
+            container.getInventory().setItem(4,new ItemStack(type.icon,1));
+            container.getInventory().setItem(10,new ItemStack(Material.EXPERIENCE_BOTTLE,8));
+            container.getInventory().setItem(12,new ItemStack(Material.GOLDEN_APPLE,1));
+            container.getInventory().setItem(14,LootDrops.key());
+            container.getInventory().setItem(16,new ItemStack(type.trim,12));
+            if(type==RealmType.REALM100) container.getInventory().setItem(22,MegaCrates.key(MegaCrates.COUNT-1));
+            container.update(true);
+        }
+        buildPillar(world,cx-4,y,cz-4,type.trim);
+        buildPillar(world,cx+4,y,cz-4,type.trim);
+        buildPillar(world,cx-4,y,cz+4,type.trim);
+        buildPillar(world,cx+4,y,cz+4,type.trim);
     }
 
     private void buildNexusDecorations(World world, int y) {
