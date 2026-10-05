@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.12.0'
+version: '2.12.1'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -521,7 +521,7 @@ commands:
 
   realmadmin:
     description: 'Manage ESN Realms worlds and Realm 100 access'
-    usage: '/realmadmin <status|tp|rebuild|unlock100|lock100> [realm]'
+    usage: '/realmadmin <status|tp|rebuild|decorate|unlock100|lock100> [realm]'
     permission: esnsmp.admin
 
 permissions:
