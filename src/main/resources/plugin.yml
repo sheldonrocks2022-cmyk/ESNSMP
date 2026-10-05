@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.12.1'
+version: '2.13.0'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -524,9 +524,68 @@ commands:
     usage: '/realmadmin <status|tp|rebuild|decorate|unlock100|lock100> [realm]'
     permission: esnsmp.admin
 
+  staffhub:
+    aliases: [staffcenter, staffmenu2]
+    description: 'Open the ESN Staff & Studio Control Center'
+    permission: esnsmp.staff
+  staffmode:
+    description: 'Toggle ESN staff mode and moderation toolbar'
+    permission: esnsmp.staff
+  buildmode:
+    description: 'Toggle ESN Studios builder mode'
+  vanish:
+    aliases: [v]
+    description: 'Toggle staff vanish'
+    permission: esnsmp.staff
+  inspect:
+    description: 'Open the ESN player investigation panel'
+    usage: '/inspect <player>'
+    permission: esnsmp.staff
+  punish:
+    description: 'Open rank-aware ESN punishment menu'
+    usage: '/punish <player> [reason]'
+    permission: esnsmp.staff
+  case:
+    description: 'View and manage ESN moderation cases'
+    usage: '/case <id|create|note|close>'
+    permission: esnsmp.staff
+  cases:
+    description: 'View recent ESN moderation cases'
+    usage: '/cases [player]'
+    permission: esnsmp.staff
+  evidence:
+    description: 'Capture investigation evidence'
+    usage: '/evidence <start player|stop|discard|status>'
+    permission: esnsmp.staff
+  duty:
+    description: 'Toggle staff duty tracking'
+    usage: '/duty [assist|report]'
+    permission: esnsmp.staff
+  staffstats:
+    description: 'View ESN staff activity statistics'
+    usage: '/staffstats [player]'
+    permission: esnsmp.staff
+  realmstaff:
+    description: 'Open ESN Realms staff operations'
+    usage: '/realmstaff [boss|reset|evacuate|buildlock|perf|decorate]'
+  staffrank:
+    description: 'View or manage ESN staff ranks'
+    usage: '/staffrank [set <player> <rank>]'
+  studio:
+    description: 'View and manage ESN Studios roles and realm assignments'
+    usage: '/studio [list|role|realm]'
+  emergency:
+    description: 'ESN emergency server controls'
+    usage: '/emergency <chat|realms|pvp|trades|economy|events|maintenance|spawnall>'
+  stafflist:
+    aliases: [teamlist]
+    description: 'Show online ESN staff and Studios team members'
+
 permissions:
   esnsmp.owner:
     default: op
+  esnsmp.staff.trainee:
+    default: false
   esnsmp.staff.helper:
     default: false
   esnsmp.staff.trialmod:
@@ -536,6 +595,14 @@ permissions:
   esnsmp.staff.seniormod:
     default: false
   esnsmp.staff.admin:
+    default: false
+  esnsmp.staff.senioradmin:
+    default: false
+  esnsmp.staff.headadmin:
+    default: false
+  esnsmp.staff.manager:
+    default: false
+  esnsmp.staff.coowner:
     default: false
   esnsmp.spawn:
     default: true
