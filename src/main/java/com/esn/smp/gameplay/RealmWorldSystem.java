@@ -794,6 +794,7 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
     }
 
     private void buildDungeonComplex(World world,RealmType type,int cx,int y,int cz){
+        Random local=new Random(world.getSeed()^((long)cx<<32)^cz^type.key.hashCode());
         for(int room=0;room<6;room++){
             int rx=cx+room*18;
             int half=7;
@@ -805,7 +806,29 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 world.getBlockAt(rx-half,y+h,cz).setType(Material.AIR,false);
                 world.getBlockAt(rx+half,y+h,cz).setType(Material.AIR,false);
             }
-            world.getBlockAt(rx,y+1,cz).setType(room==5?Material.VAULT:room%2==0?Material.SPAWNER:Material.CHISELED_BOOKSHELF,false);
+            if(room==5){
+                world.getBlockAt(rx,y+1,cz).setType(Material.VAULT,false);
+                world.getBlockAt(rx,y+1,cz+2).setType(Material.CHEST,false);
+            }else{
+                int roomType=local.nextInt(4);
+                if(roomType==0){
+                    world.getBlockAt(rx,y+1,cz).setType(Material.SPAWNER,false);
+                    world.getBlockAt(rx-3,y+1,cz+3).setType(Material.COBWEB,false);
+                    world.getBlockAt(rx+3,y+1,cz-3).setType(Material.COBWEB,false);
+                }else if(roomType==1){
+                    world.getBlockAt(rx,y+1,cz).setType(Material.CHISELED_BOOKSHELF,false);
+                    world.getBlockAt(rx-2,y+1,cz).setType(Material.LECTERN,false);
+                    world.getBlockAt(rx+2,y+1,cz).setType(Material.HEAVY_WEIGHTED_PRESSURE_PLATE,false);
+                }else if(roomType==2){
+                    world.getBlockAt(rx,y+1,cz).setType(Material.CHEST,false);
+                    world.getBlockAt(rx-3,y+1,cz-3).setType(Material.TRIPWIRE_HOOK,false);
+                    world.getBlockAt(rx+3,y+1,cz+3).setType(Material.DISPENSER,false);
+                }else{
+                    world.getBlockAt(rx,y+1,cz).setType(type.centerpiece,false);
+                    world.getBlockAt(rx-2,y+1,cz-2).setType(Material.PISTON,false);
+                    world.getBlockAt(rx+2,y+1,cz+2).setType(Material.PISTON,false);
+                }
+            }
         }
         buildSkyArch(world,cx-10,y,cz,type.floor,type.trim,Material.PURPLE_STAINED_GLASS);
     }
