@@ -255,7 +255,7 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
         menu.setItem(38, menuItem(Material.COMPASS, ChatColor.GREEN + "Realm Status",
                 ChatColor.GRAY + "Worlds are generated and managed by ESNSMP"));
         if (player.hasPermission("esnsmp.admin")) {
-            menu.setItem(39, menuItem(Material.RAID_OMEN_BOTTLE, ChatColor.RED + "Realm Events",
+            menu.setItem(39, menuItem(Material.BELL, ChatColor.RED + "Realm Events",
                     ChatColor.GRAY + "Invasions, minibosses and mob controls",
                     ChatColor.YELLOW + "Admin menu"));
             menu.setItem(40, menuItem(Material.SHIELD, ChatColor.DARK_RED + "Realm Staff Controls",
