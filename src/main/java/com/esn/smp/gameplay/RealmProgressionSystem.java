@@ -11,6 +11,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
@@ -54,6 +55,7 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
     private final NamespacedKey realmGearKey;
     private final NamespacedKey treasureMapKey;
     private final NamespacedKey difficultyKey;
+    private final NamespacedKey essenceKey;
     private final Map<UUID, UUID> activePets = new HashMap<>();
     private final Map<UUID, UUID> activeMounts = new HashMap<>();
     private final Map<String, Integer> threat = new HashMap<>();
@@ -69,6 +71,7 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         this.realmGearKey = new NamespacedKey(plugin, "realm_gear");
         this.treasureMapKey = new NamespacedKey(plugin, "realm_treasure_map");
         this.difficultyKey = new NamespacedKey(plugin, "realm_difficulty");
+        this.essenceKey = new NamespacedKey(plugin, "realm_essence");
         for (String realm : realms()) threat.put(realm, data.getInt("threat." + realm, 0));
     }
 
@@ -605,7 +608,12 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         String realm = byDisplay(name.replace(" Chronicle", ""));
         if (realm != null && getInt(p, realm, "lore", 0) >= 12) {
             addAchievement(p, "Lorekeeper of " + display(realm));
-            p.sendMessage(ChatColor.LIGHT_PURPLE + "Secret boss clue unlocked for " + display(realm) + ".");
+            if(!realm.equals(realmFromWorld(p.getWorld()))){
+                p.sendMessage(ChatColor.LIGHT_PURPLE+"Travel to "+display(realm)+" and open this completed Chronicle again to awaken its secret boss.");
+            }else{
+                p.sendMessage(ChatColor.DARK_PURPLE+"The completed Chronicle tears open a hidden boss seal...");
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent secret "+realm);
+            }
         }
     }
 
@@ -900,6 +908,8 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
             addCollectibleChance(killer, realm, 0.40 + treasureSkill*0.025);
             addLoreChance(killer, realm, 0.35 + treasureSkill*0.02);
             dropBossCore(killer, realm);
+            if(ThreadLocalRandom.current().nextDouble()<0.35)giveCraftMaterial(killer,realm,"crystal");
+            if(ThreadLocalRandom.current().nextDouble()<0.12)giveCraftMaterial(killer,realm,"ancient");
             if(ThreadLocalRandom.current().nextDouble()<0.22+treasureSkill*0.03) giveTreasureMap(killer,realm);
             double x=killer.getLocation().getX(),z=killer.getLocation().getZ();
             if(Math.abs(x-250)<120&&Math.abs(z)<100){
@@ -968,6 +978,29 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         event.setCancelled(true);
         selectedRealm.put(event.getPlayer().getUniqueId(), realm);
         openTown(event.getPlayer(), realm);
+    }
+
+    @EventHandler
+    public void realmPvpDeath(PlayerDeathEvent event){
+        Player victim=event.getEntity();
+        Player killer=victim.getKiller();
+        if(killer==null)return;
+        String realm=realmFromWorld(victim.getWorld());
+        if(realm==null||!realm.equals(realmFromWorld(killer.getWorld())))return;
+        Location l=victim.getLocation();
+        if(Math.abs(l.getX())>45||Math.abs(l.getZ()-250)>45)return;
+        String mode=getString(killer,"pvp-mode","");
+        increment(killer,realm,"pvp-wins",1);
+        increment(victim,realm,"pvp-losses",1);
+        if(mode.equals("Ranked")){
+            int kr=getInt(killer,realm,"pvp-rating",1000);
+            int vr=getInt(victim,realm,"pvp-rating",1000);
+            int swing=Math.max(10,Math.min(35,20+(vr-kr)/50));
+            setInt(killer,realm,"pvp-rating",kr+swing);
+            setInt(victim,realm,"pvp-rating",Math.max(0,vr-swing));
+            killer.sendMessage(ChatColor.GOLD+"Ranked Realm PvP: +"+swing+" rating");
+            victim.sendMessage(ChatColor.RED+"Ranked Realm PvP: -"+swing+" rating");
+        }
     }
 
     @EventHandler
@@ -1183,7 +1216,83 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         int found = getInt(p, realm, "lore", 0);
         if (found >= 12) return;
         setInt(p, realm, "lore", found + 1);
+        ItemStack book=new ItemStack(Material.WRITTEN_BOOK);
+        if(book.getItemMeta() instanceof BookMeta meta){
+            meta.setTitle(display(realm)+" Chronicle "+(found+1));
+            meta.setAuthor("ESN Studios");
+            meta.setPages(List.of(ChatColor.DARK_PURPLE+display(realm)+" — Chronicle "+(found+1),
+                    ChatColor.BLACK+lorePage(realm,found+1)));
+            book.setItemMeta(meta);
+            p.getInventory().addItem(book);
+        }
         p.sendMessage(ChatColor.LIGHT_PURPLE + "LORE DISCOVERED: " + display(realm) + " page " + (found + 1) + "/12");
+    }
+
+    private int countTaggedMaterial(Player p,String realm){
+        int found=0;
+        for(ItemStack item:p.getInventory().getContents()){
+            if(item==null||!item.hasItemMeta())continue;
+            String tag=item.getItemMeta().getPersistentDataContainer().get(essenceKey,PersistentDataType.STRING);
+            if(realm.equals(tag))found+=item.getAmount();
+        }
+        return found;
+    }
+
+    private void consumeTaggedMaterial(Player p,String realm,int amount){
+        int left=amount;
+        for(int slot=0;slot<p.getInventory().getSize()&&left>0;slot++){
+            ItemStack item=p.getInventory().getItem(slot);
+            if(item==null||!item.hasItemMeta())continue;
+            String tag=item.getItemMeta().getPersistentDataContainer().get(essenceKey,PersistentDataType.STRING);
+            if(!realm.equals(tag))continue;
+            int take=Math.min(left,item.getAmount());left-=take;
+            if(item.getAmount()==take)p.getInventory().setItem(slot,null);else item.setAmount(item.getAmount()-take);
+        }
+    }
+
+    private int countGearMaterial(Player p,String tagValue){
+        int found=0;
+        for(ItemStack item:p.getInventory().getContents()){
+            if(item==null||!item.hasItemMeta())continue;
+            String tag=item.getItemMeta().getPersistentDataContainer().get(realmGearKey,PersistentDataType.STRING);
+            if(tagValue.equals(tag))found+=item.getAmount();
+        }
+        return found;
+    }
+
+    private void consumeGearMaterial(Player p,String tagValue,int amount){
+        int left=amount;
+        for(int slot=0;slot<p.getInventory().getSize()&&left>0;slot++){
+            ItemStack item=p.getInventory().getItem(slot);
+            if(item==null||!item.hasItemMeta())continue;
+            String tag=item.getItemMeta().getPersistentDataContainer().get(realmGearKey,PersistentDataType.STRING);
+            if(!tagValue.equals(tag))continue;
+            int take=Math.min(left,item.getAmount());left-=take;
+            if(item.getAmount()==take)p.getInventory().setItem(slot,null);else item.setAmount(item.getAmount()-take);
+        }
+    }
+
+    private void giveCraftMaterial(Player p,String realm,String type){
+        Material material=type.equals("ancient")?Material.ECHO_SHARD:Material.AMETHYST_SHARD;
+        ItemStack item=new ItemStack(material);
+        ItemMeta meta=item.getItemMeta();
+        meta.setDisplayName(type.equals("ancient")?ChatColor.DARK_PURPLE+"Ancient "+display(realm)+" Material":color(realm)+display(realm)+" Realm Crystal");
+        meta.setLore(List.of(ChatColor.GOLD+"High-tier Realm Crafting Material"));
+        meta.getPersistentDataContainer().set(realmGearKey,PersistentDataType.STRING,type+":"+realm);
+        item.setItemMeta(meta);p.getInventory().addItem(item);
+    }
+
+    private String lorePage(String realm,int page){
+        return switch(realm){
+            case "storm"->"A fragment of the sky archives tells of a kingdom that chained lightning until the storm itself rebelled. Page "+page+".";
+            case "abyss"->"The tablets warn that the Abyss was not discovered. It was opened from the inside. Page "+page+".";
+            case "frost"->"The first Frost King swore that the crown would never thaw, even if the world beneath it did. Page "+page+".";
+            case "infernal"->"The empire learned to bind living flame into armor, then discovered the flame remembered every wearer. Page "+page+".";
+            case "verdant"->"Roots grew through the old city overnight, but the people who vanished left their doors unlocked. Page "+page+".";
+            case "celestial"->"The Astral Council mapped stars that should not exist. One of them eventually answered. Page "+page+".";
+            case "bloodmoon"->"The crimson moon was once white. The records refuse to say what stained it. Page "+page+".";
+            default->"The realms fracture where forgotten histories overlap. Page "+page+".";
+        };
     }
 
     private void dropBossCore(Player p, String realm) {
@@ -1203,6 +1312,11 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
             p.sendMessage(ChatColor.RED + "Realm Mastery 5 required.");
             return;
         }
+        if(countTaggedMaterial(p,realm)<8){
+            p.sendMessage(ChatColor.RED+"You need 8 "+display(realm)+" Essence to forge Realm gear.");
+            return;
+        }
+        consumeTaggedMaterial(p,realm,8);
         int rarity = rollRarity(p, mastery);
         ItemStack gear = rolledGear(realm, piece, rarity);
         p.getInventory().addItem(gear);
@@ -1223,6 +1337,12 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         Integer current=held.getItemMeta().getPersistentDataContainer().get(rarityKey,PersistentDataType.INTEGER);
         int rarity=current==null?1:current;
         if(rarity>=7){p.sendMessage(ChatColor.GOLD+"That item is already Ancient rarity.");return;}
+        String needed=rarity>=6?"ancient:"+realm:rarity>=4?"crystal:"+realm:"core:"+realm;
+        if(countGearMaterial(p,needed)<1){
+            p.sendMessage(ChatColor.RED+"Upgrade requires 1 "+(rarity>=6?"Ancient Material":rarity>=4?"Realm Crystal":"Boss Core")+".");
+            return;
+        }
+        consumeGearMaterial(p,needed,1);
         String piece=tag.substring((realm+":").length());
         p.getInventory().setItemInMainHand(rolledGear(realm,piece,rarity+1));
         p.sendMessage(ChatColor.GREEN+"Realm gear upgraded to "+rarityName(rarity+1)+"!");
@@ -1575,7 +1695,8 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         else if(name.equals("Upgrade Held Realm Gear")) upgradeHeldGear(p,realm);
         else if(name.equals("Enter Dungeon")){
             teleportSite(p,realm,250,realmY(realm)+2,0);
-            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),40L);
+            for(int wave=0;wave<3;wave++){int delay=40+wave*120;Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),delay);}
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent miniboss "+realm),430L);
         }
         else if(name.equals("Elite Dungeon")&&masteryLevel(p,realm)>=15){
             teleportSite(p,realm,250,realmY(realm)+2,0);
@@ -1584,14 +1705,13 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         }
         else if(name.equals("Enter Raid")){
             teleportSite(p,realm,-250,realmY(realm)+2,0);
-            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),30L);
-            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent miniboss "+realm),200L);
+            for(int stage=0;stage<4;stage++){int delay=30+stage*130;Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),delay);}
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent miniboss "+realm),570L);
         }
         else if(name.equals("Mythic Raid")&&masteryLevel(p,realm)>=35&&getString(p,"difficulty","NORMAL").equals("MYTHIC")){
             teleportSite(p,realm,-250,realmY(realm)+2,0);
-            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),20L);
-            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),140L);
-            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent miniboss "+realm),260L);
+            for(int stage=0;stage<5;stage++){int delay=20+stage*120;Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),delay);}
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent secret "+realm),660L);
         }
         else if(name.equals("Enter Arena")||name.equals("1v1")||name.equals("2v2")||name.equals("Free For All")||name.equals("Ranked")||name.equals("Realm vs Realm")){
             setString(p,"pvp-mode",name);
