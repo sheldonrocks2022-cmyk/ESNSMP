@@ -77,6 +77,7 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
 
     public void start() {
         Bukkit.getScheduler().runTaskTimer(plugin, this::tickThreatAndCaravans, 20L * 60L, 20L * 60L);
+        Bukkit.getScheduler().runTaskTimer(plugin, this::tickPets, 40L, 40L);
         Bukkit.getScheduler().runTaskTimer(plugin, this::ensureTownNPCs, 20L * 30L, 20L * 60L);
         Bukkit.getScheduler().runTaskLater(plugin, this::ensureTownNPCs, 20L * 45L);
         plugin.getLogger().info("[ESN Realms] Realm Ascension progression online.");
@@ -203,7 +204,7 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
                 case "Titles" -> openTitles(p);
                 case "Realm Profile" -> openProfile(p);
                 case "Leaderboards" -> openLeaderboards(p);
-                case "The Shattered Realm" -> p.performCommand("realms shattered");
+                case "The Shattered Realm" -> openSecret(p);
                 case "Travel" -> p.performCommand("realms");
             }
             return;
@@ -1046,9 +1047,27 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         String event = eventName(realm);
         Bukkit.broadcastMessage(ChatColor.DARK_RED + "[REALM EVENT] " + color(realm) + event +
                 ChatColor.YELLOW + " has begun in " + display(realm) + "!");
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "realmevent invasion " + realm);
         for (Player p : world.getPlayers()) {
             p.sendTitle(color(realm) + event, ChatColor.GOLD + "Threat Level 100%", 10, 80, 20);
+            if(event.equals("Meteor Shower")||event.equals("Lightning Storm")){
+                for(int i=0;i<4;i++)world.strikeLightningEffect(p.getLocation().clone().add(ThreadLocalRandom.current().nextInt(-12,13),0,ThreadLocalRandom.current().nextInt(-12,13)));
+            }else if(event.equals("Frozen Eclipse")){
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,20*30,1));
+                world.spawnParticle(Particle.SNOWFLAKE,p.getLocation().add(0,1,0),60,4,2,4,0.03);
+            }else if(event.equals("Void Breach")){
+                p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS,20*20,0));
+                world.spawnParticle(Particle.PORTAL,p.getLocation().add(0,1,0),80,4,2,4,0.10);
+            }else if(event.equals("Treasure Storm")){
+                for(int i=0;i<4;i++)world.dropItemNaturally(p.getLocation(),rolledGear(realm,"Relic",rollRarity(p,masteryLevel(p,realm))));
+            }
+        }
+        if(event.equals("Double Boss")){
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent miniboss "+realm);
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent miniboss "+realm),80L);
+        }else if(event.equals("Ancient Awakening")){
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent secret "+realm);
+        }else{
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "realmevent invasion " + realm);
         }
     }
 
@@ -1071,6 +1090,17 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         trader.setHealth(Math.min(80,trader.getAttribute(Attribute.MAX_HEALTH)==null?20:trader.getAttribute(Attribute.MAX_HEALTH).getValue()));
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "realmevent invasion " + realm);
         target.sendMessage(ChatColor.GOLD + "Defend the caravan near the faction town for rewards.");
+    }
+
+    private void tickPets(){
+        for(Map.Entry<UUID,UUID> entry:new ArrayList<>(activePets.entrySet())){
+            Player owner=Bukkit.getPlayer(entry.getKey());
+            Entity pet=Bukkit.getEntity(entry.getValue());
+            if(owner==null||!owner.isOnline()||pet==null||pet.isDead()){if(pet!=null)pet.remove();activePets.remove(entry.getKey());continue;}
+            if(!pet.getWorld().equals(owner.getWorld())||pet.getLocation().distanceSquared(owner.getLocation())>225){
+                pet.teleport(owner.getLocation().add(1,0,1));
+            }
+        }
     }
 
     private void ensureTownNPCs() {
