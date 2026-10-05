@@ -1,9 +1,10 @@
 name: ESNSMP
-version: '2.11.0'
+version: '2.11.1'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
 description: ESN SMP core, massive spawn, economy and auction house
+softdepend: [OpenAudioMc]
 
 commands:
   championship:
@@ -507,6 +508,11 @@ commands:
     description: 'Manage ESN fun-expansion systems'
     usage: '/funadmin <status|rebuild|auction>'
     permission: esnsmp.admin
+
+  voice:
+    aliases: [voicechat, vc]
+    description: 'Open ESN Java + Bedrock proximity voice chat'
+    usage: '/voice [connect|code <code>|status|mod|help]'
 
 permissions:
   esnsmp.owner:
