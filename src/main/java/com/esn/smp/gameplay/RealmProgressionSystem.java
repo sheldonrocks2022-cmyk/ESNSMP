@@ -1476,7 +1476,12 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
     private void applyTitle(Player p, String title) {
         if (Bukkit.getScoreboardManager() == null) return;
         Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(p.getName());
-        if (team != null) team.setSuffix(title == null || title.isBlank() ? "" : ChatColor.GRAY + " [" + ChatColor.LIGHT_PURPLE + title + ChatColor.GRAY + "]");
+        if (team != null) {
+            team.setSuffix(title == null || title.isBlank() ? "" : ChatColor.GRAY + " [" + ChatColor.LIGHT_PURPLE + title + ChatColor.GRAY + "]");
+        } else {
+            p.setPlayerListName(title == null || title.isBlank() ? p.getName() :
+                    p.getName() + ChatColor.GRAY + " [" + ChatColor.LIGHT_PURPLE + title + ChatColor.GRAY + "]");
+        }
     }
 
     private void teleportSite(Player p, String realm, int x, int y, int z) {
