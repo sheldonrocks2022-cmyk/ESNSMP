@@ -632,3 +632,24 @@ permissions:
     default: true
   esnsmp.store.admin:
     default: op
+
+  esnsmp.studio.developer:
+    default: false
+  esnsmp.studio.leaddeveloper:
+    default: false
+  esnsmp.studio.builder:
+    default: false
+  esnsmp.studio.leadbuilder:
+    default: false
+  esnsmp.studio.realmdesigner:
+    default: false
+  esnsmp.studio.questdesigner:
+    default: false
+  esnsmp.studio.eventteam:
+    default: false
+  esnsmp.studio.qatester:
+    default: false
+  esnsmp.studio.contentteam:
+    default: false
+  esnsmp.studio.studiodirector:
+    default: false
