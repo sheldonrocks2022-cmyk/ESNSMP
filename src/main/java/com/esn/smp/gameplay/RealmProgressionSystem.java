@@ -579,7 +579,7 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
                     found >= total ? ChatColor.GREEN + "COMPLETE" : ChatColor.YELLOW + "Explore structures to discover more"));
         }
         v.setItem(31, item(Material.ENDER_EYE, ChatColor.LIGHT_PURPLE + "Portal Fragments",
-                ChatColor.GRAY + "Recovered: " + portalPieces(p) + "/7,
+                ChatColor.GRAY + "Recovered: " + portalPieces(p) + "/7",
                 portalPieces(p) >= 7 ? ChatColor.GREEN + "THE SHATTERED REALM IS REVEALED" :
                         ChatColor.GRAY + "Reach Mastery 10 in each main realm."));
         v.setItem(49, item(Material.ARROW, ChatColor.YELLOW + "Back"));
