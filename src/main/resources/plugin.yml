@@ -530,7 +530,7 @@ commands:
     usage: '/realmforge [realm]'
   realmevent:
     description: 'Manage ESN Realm invasions, minibosses and custom mobs'
-    usage: '/realmevent [invasion|miniboss|clear] [realm]'
+    usage: '/realmevent [invasion|miniboss|secret|clear] [realm]'
     permission: esnsmp.admin
 
   realmadmin:
