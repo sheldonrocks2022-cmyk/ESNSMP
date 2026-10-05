@@ -33,6 +33,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
     private static final String INSPECT = ChatColor.DARK_AQUA + "Inspect • ";
     private static final String PUNISH = ChatColor.DARK_RED + "Punish • ";
     private static final String REALM_STAFF = ChatColor.DARK_PURPLE + "Realm Staff Controls";
+    private static final String REALM_ACTION = ChatColor.DARK_PURPLE + "Realm Control • ";
     private static final String EMERGENCY = ChatColor.DARK_RED + "ESN Emergency Controls";
     private static final String STUDIO = ChatColor.DARK_AQUA + "ESN Studios Team";
 
@@ -55,6 +56,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
     private final Set<UUID> auditSuppressed = new HashSet<>();
     private final Map<String, Deque<Long>> reports = new HashMap<>();
     private final Map<String, UUID> realmBosses = new HashMap<>();
+    private final Map<UUID, String> selectedStaffRealm = new HashMap<>();
     private final Map<UUID, PendingConfirmation> pending = new HashMap<>();
 
     public StaffStudioSystem(JavaPlugin plugin, ESNDataStore economy) throws Exception {
@@ -636,26 +638,75 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
     private void openRealmStaff(Player p) {
         Inventory v = Bukkit.createInventory(null, 45, REALM_STAFF);
         setRealmItem(v, 10, "storm", Material.LIGHTNING_ROD, ChatColor.AQUA + "Storm Kingdom");
-        setRealmItem(v, 12, "abyss", Material.ECHO_SHARD, ChatColor.DARK_PURPLE + "The Abyss");
-        setRealmItem(v, 14, "frost", Material.BLUE_ICE, ChatColor.WHITE + "Frostlands");
-        setRealmItem(v, 16, "infernal", Material.MAGMA_BLOCK, ChatColor.RED + "Infernal Empire");
-        setRealmItem(v, 19, "verdant", Material.MOSS_BLOCK, ChatColor.GREEN + "Verdant Wilds");
-        setRealmItem(v, 21, "celestial", Material.AMETHYST_SHARD, ChatColor.AQUA + "Celestial Isles");
-        setRealmItem(v, 23, "bloodmoon", Material.REDSTONE_BLOCK, ChatColor.DARK_RED + "Bloodmoon Wastes");
-        setRealmItem(v, 31, "100", Material.NETHER_STAR, ChatColor.GOLD + "Realm 100");
-        v.setItem(36, item(Material.WITHER_SKELETON_SKULL, ChatColor.RED + "Boss Controls",
-                ChatColor.GRAY + "/realmstaff boss start <realm>",
-                ChatColor.GRAY + "/realmstaff boss stop <realm>"));
-        v.setItem(37, item(Material.TNT, ChatColor.YELLOW + "Reset Encounter",
-                ChatColor.GRAY + "/realmstaff reset <realm>"));
-        v.setItem(38, item(Material.OAK_DOOR, ChatColor.AQUA + "Evacuate Realm",
-                ChatColor.GRAY + "/realmstaff evacuate <realm>"));
-        v.setItem(39, item(Material.IRON_BARS, ChatColor.GOLD + "Build Lock",
-                ChatColor.GRAY + "/realmstaff buildlock <realm> on|off"));
-        v.setItem(40, item(Material.COMPARATOR, ChatColor.GREEN + "Realm Performance",
-                ChatColor.GRAY + "/realmstaff perf <realm>"));
-        v.setItem(44, item(Material.ARROW, ChatColor.YELLOW + "Back"));
+        setRealmItem(v, 11, "abyss", Material.ECHO_SHARD, ChatColor.DARK_PURPLE + "The Abyss");
+        setRealmItem(v, 12, "frost", Material.BLUE_ICE, ChatColor.WHITE + "Frostlands");
+        setRealmItem(v, 13, "infernal", Material.MAGMA_BLOCK, ChatColor.RED + "Infernal Empire");
+        setRealmItem(v, 14, "verdant", Material.MOSS_BLOCK, ChatColor.GREEN + "Verdant Wilds");
+        setRealmItem(v, 15, "celestial", Material.AMETHYST_SHARD, ChatColor.AQUA + "Celestial Isles");
+        setRealmItem(v, 16, "bloodmoon", Material.REDSTONE_BLOCK, ChatColor.DARK_RED + "Bloodmoon Wastes");
+        setRealmItem(v, 22, "100", Material.NETHER_STAR, ChatColor.GOLD + "Realm 100");
+
+        boolean unlocked = plugin.getConfig().getBoolean("realms.realm100-unlocked", false);
+        v.setItem(29, item(unlocked ? Material.REDSTONE_TORCH : Material.LEVER,
+                unlocked ? ChatColor.RED + "Lock Realm 100" : ChatColor.GREEN + "Unlock Realm 100",
+                ChatColor.GRAY + "Current: " + (unlocked ? "UNLOCKED" : "LOCKED"),
+                ChatColor.YELLOW + "Click to toggle"));
+        v.setItem(31, item(Material.RAID_OMEN_BOTTLE, ChatColor.RED + "Realm Event Menu",
+                ChatColor.GRAY + "Invasions, minibosses and custom mob cleanup"));
+        v.setItem(33, item(Material.COMPASS, ChatColor.AQUA + "Player Realms Hub",
+                ChatColor.GRAY + "Open the normal /realms menu"));
+        v.setItem(40, item(Material.ARROW, ChatColor.YELLOW + "Back"));
         p.openInventory(v);
+    }
+
+    private void openRealmAction(Player p, String realm) {
+        selectedStaffRealm.put(p.getUniqueId(), realm);
+        Inventory v = Bukkit.createInventory(null, 54, REALM_ACTION + realmDisplay(realm));
+        World world = Bukkit.getWorld(worldName(realm));
+        v.setItem(4, item(realmIcon(realm), ChatColor.GOLD + realmDisplay(realm),
+                ChatColor.GRAY + "World: " + (world == null ? ChatColor.RED + "UNLOADED" : ChatColor.GREEN + "LOADED"),
+                ChatColor.GRAY + "Players: " + (world == null ? 0 : world.getPlayers().size()),
+                ChatColor.GRAY + "Build lock: " + (realmBuildLocked(realm) ? ChatColor.RED + "ON" : ChatColor.GREEN + "OFF")));
+
+        v.setItem(10, item(Material.ENDER_PEARL, ChatColor.AQUA + "Teleport", ChatColor.GRAY + "Teleport into this realm"));
+        v.setItem(11, item(Material.BRICKS, ChatColor.YELLOW + "Rebuild Realm",
+                ChatColor.GRAY + "Rebuild official spawn structures and decoration"));
+        v.setItem(12, item(Material.FLOWER_POT, ChatColor.GREEN + "Redecorate Realm",
+                ChatColor.GRAY + "Reapply the ESN decoration package"));
+        v.setItem(13, item(Material.COMPARATOR, ChatColor.GREEN + "Performance",
+                ChatColor.GRAY + "Players, chunks, entities and build-lock status"));
+
+        v.setItem(19, item(Material.WITHER_SKELETON_SKULL, ChatColor.RED + "Start Main Boss"));
+        v.setItem(20, item(Material.BARRIER, ChatColor.YELLOW + "Stop Main Boss"));
+        v.setItem(21, item(Material.RAID_OMEN_BOTTLE, ChatColor.DARK_RED + "Start Invasion"));
+        v.setItem(22, item(Material.SKELETON_SKULL, ChatColor.RED + "Spawn Miniboss"));
+        v.setItem(23, item(Material.LAVA_BUCKET, ChatColor.YELLOW + "Reset Encounter"));
+        v.setItem(24, item(Material.MILK_BUCKET, ChatColor.WHITE + "Clear Realm Mobs"));
+
+        v.setItem(28, item(Material.OAK_DOOR, ChatColor.AQUA + "Evacuate Players"));
+        v.setItem(29, item(Material.IRON_BARS,
+                realmBuildLocked(realm) ? ChatColor.GREEN + "Unlock Building" : ChatColor.RED + "Lock Building",
+                ChatColor.GRAY + "Toggle protected realm build editing"));
+        v.setItem(31, item(Material.BOOK, ChatColor.LIGHT_PURPLE + "Creature Guide",
+                ChatColor.GRAY + "Open this realm's creature menu"));
+        v.setItem(32, item(Material.ANVIL, ChatColor.GOLD + "Realm Forge",
+                ChatColor.GRAY + "Open Sigil forging menu"));
+        v.setItem(49, item(Material.ARROW, ChatColor.YELLOW + "Back"));
+        p.openInventory(v);
+    }
+
+    private Material realmIcon(String realm) {
+        return switch (realm) {
+            case "storm" -> Material.LIGHTNING_ROD;
+            case "abyss" -> Material.ECHO_SHARD;
+            case "frost" -> Material.BLUE_ICE;
+            case "infernal" -> Material.MAGMA_BLOCK;
+            case "verdant" -> Material.MOSS_BLOCK;
+            case "celestial" -> Material.AMETHYST_SHARD;
+            case "bloodmoon" -> Material.REDSTONE_BLOCK;
+            case "100" -> Material.NETHER_STAR;
+            default -> Material.COMPASS;
+        };
     }
 
     private void openEmergency(Player p) {
@@ -700,7 +751,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
     public void inventoryClick(InventoryClickEvent event) {
         String title = event.getView().getTitle();
         boolean relevant = title.equals(HUB) || title.startsWith(INSPECT) || title.startsWith(PUNISH)
-                || title.equals(REALM_STAFF) || title.equals(EMERGENCY) || title.equals(STUDIO);
+                || title.equals(REALM_STAFF) || title.startsWith(REALM_ACTION) || title.equals(EMERGENCY) || title.equals(STUDIO);
         if (!relevant) return;
         event.setCancelled(true);
         if (!(event.getWhoClicked() instanceof Player p)) return;
@@ -775,17 +826,48 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
         }
 
         if (title.equals(REALM_STAFF)) {
-            if (slot == 44) { openHub(p); return; }
+            if (slot == 40) { openHub(p); return; }
             String realm = switch (slot) {
-                case 10 -> "storm"; case 12 -> "abyss"; case 14 -> "frost";
-                case 16 -> "infernal"; case 19 -> "verdant"; case 21 -> "celestial";
-                case 23 -> "bloodmoon"; case 31 -> "100"; default -> null;
+                case 10 -> "storm"; case 11 -> "abyss"; case 12 -> "frost";
+                case 13 -> "infernal"; case 14 -> "verdant"; case 15 -> "celestial";
+                case 16 -> "bloodmoon"; case 22 -> "100"; default -> null;
             };
-            if (realm != null) {
-                p.closeInventory();
-                if (event.isShiftClick()) p.performCommand("realmadmin decorate " + realm);
-                else if (event.isRightClick()) p.performCommand("realmstaff perf " + realm);
-                else p.performCommand("realmadmin tp " + realm);
+            if (realm != null) { openRealmAction(p, realm); return; }
+            if (slot == 29) {
+                boolean unlocked = plugin.getConfig().getBoolean("realms.realm100-unlocked", false);
+                p.performCommand("realmadmin " + (unlocked ? "lock100" : "unlock100"));
+                openRealmStaff(p);
+                return;
+            }
+            if (slot == 31) { p.performCommand("realmevent"); return; }
+            if (slot == 33) { p.performCommand("realms"); return; }
+            return;
+        }
+
+        if (title.startsWith(REALM_ACTION)) {
+            String realm = selectedStaffRealm.get(p.getUniqueId());
+            if (realm == null) { openRealmStaff(p); return; }
+            if (slot == 49) { openRealmStaff(p); return; }
+            switch (slot) {
+                case 10 -> p.performCommand("realmadmin tp " + realm);
+                case 11 -> p.performCommand("realmadmin rebuild " + realm);
+                case 12 -> p.performCommand("realmadmin decorate " + realm);
+                case 13 -> p.performCommand("realmstaff perf " + realm);
+                case 19 -> p.performCommand("realmstaff boss start " + realm);
+                case 20 -> p.performCommand("realmstaff boss stop " + realm);
+                case 21 -> p.performCommand("realmevent invasion " + realm);
+                case 22 -> p.performCommand("realmevent miniboss " + realm);
+                case 23 -> p.performCommand("realmstaff reset " + realm);
+                case 24 -> p.performCommand("realmevent clear " + realm);
+                case 28 -> p.performCommand("realmstaff evacuate " + realm);
+                case 29 -> p.performCommand("realmstaff buildlock " + realm + " " + (realmBuildLocked(realm) ? "off" : "on"));
+                case 31 -> p.performCommand("realmguide " + realm);
+                case 32 -> p.performCommand("realmforge");
+            }
+            if (slot != 10 && slot != 13 && slot != 31 && slot != 32) {
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    if (p.isOnline()) openRealmAction(p, realm);
+                }, 1L);
             }
             return;
         }
@@ -1822,10 +1904,10 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
 
     private void setRealmItem(Inventory v, int slot, String key, Material material, String name) {
         v.setItem(slot, item(material, name,
-                ChatColor.GRAY + "Left click: teleport",
-                ChatColor.GRAY + "Shift click: redecorate",
-                ChatColor.GRAY + "Right click: performance",
-                ChatColor.DARK_GRAY + "Build lock: " + (realmBuildLocked(key) ? "ON" : "OFF")));
+                ChatColor.GRAY + "Open full controls for this realm",
+                ChatColor.GRAY + "Teleport • rebuild • decorate • bosses",
+                ChatColor.GRAY + "events • mobs • evacuation • build lock",
+                ChatColor.YELLOW + "Click to manage"));
     }
 
     private ItemStack emergencyItem(Material material, String key, String label) {
