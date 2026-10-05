@@ -6,7 +6,7 @@ import org.bukkit.command.*;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.event.*;
-import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.*;
@@ -52,6 +52,8 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
     private final YamlConfiguration data;
     private final NamespacedKey rarityKey;
     private final NamespacedKey realmGearKey;
+    private final NamespacedKey treasureMapKey;
+    private final NamespacedKey difficultyKey;
     private final Map<UUID, UUID> activePets = new HashMap<>();
     private final Map<UUID, UUID> activeMounts = new HashMap<>();
     private final Map<String, Integer> threat = new HashMap<>();
@@ -65,6 +67,8 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         this.data = YamlConfiguration.loadConfiguration(file);
         this.rarityKey = new NamespacedKey(plugin, "realm_rarity");
         this.realmGearKey = new NamespacedKey(plugin, "realm_gear");
+        this.treasureMapKey = new NamespacedKey(plugin, "realm_treasure_map");
+        this.difficultyKey = new NamespacedKey(plugin, "realm_difficulty");
         for (String realm : realms()) threat.put(realm, data.getInt("threat." + realm, 0));
     }
 
@@ -526,9 +530,9 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
     }
 
     private void handleDifficulty(Player p, String name) {
-        if (name.equals("Normal")) setString(p, "difficulty", "NORMAL");
-        else if (name.equals("Heroic")) setString(p, "difficulty", "HEROIC");
-        else if (name.equals("Mythic") && totalMastery(p) >= 80) setString(p, "difficulty", "MYTHIC");
+        if (name.equals("Normal")) setDifficulty(p, "NORMAL");
+        else if (name.equals("Heroic")) setDifficulty(p, "HEROIC");
+        else if (name.equals("Mythic") && totalMastery(p) >= 80) setDifficulty(p, "MYTHIC");
         else if (name.equals("Back")) { openHub(p); return; }
         openDifficulty(p);
     }
@@ -889,15 +893,34 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         increment(killer, realm, "kills", 1);
         incrementQuest(killer, realm, mob.getScoreboardTags().contains("esnRealmMiniBoss") ? 3 : 1);
 
+        int treasureSkill=getInt(killer,realm,"skill.3",0);
         if (mob.getScoreboardTags().contains("esnRealmMiniBoss")) {
             increment(killer, realm, "bosses", 1);
             increment(killer, realm, "events", 1);
-            addCollectibleChance(killer, realm, 0.40);
-            addLoreChance(killer, realm, 0.35);
+            addCollectibleChance(killer, realm, 0.40 + treasureSkill*0.025);
+            addLoreChance(killer, realm, 0.35 + treasureSkill*0.02);
             dropBossCore(killer, realm);
+            if(ThreadLocalRandom.current().nextDouble()<0.22+treasureSkill*0.03) giveTreasureMap(killer,realm);
+            double x=killer.getLocation().getX(),z=killer.getLocation().getZ();
+            if(Math.abs(x-250)<120&&Math.abs(z)<100){
+                increment(killer,realm,"dungeons",1);
+                addMasteryXp(killer,realm,160);
+                killer.sendMessage(ChatColor.DARK_AQUA+"DUNGEON COMPLETE: "+display(realm));
+            }
+            if(Math.abs(x+250)<130&&Math.abs(z)<120){
+                increment(killer,realm,"raids",1);
+                addMasteryXp(killer,realm,300);
+                killer.sendMessage(ChatColor.DARK_RED+"RAID COMPLETE: "+display(realm));
+            }
         } else {
-            addCollectibleChance(killer, realm, 0.025);
-            addLoreChance(killer, realm, 0.012);
+            addCollectibleChance(killer, realm, 0.025 + treasureSkill*0.006);
+            addLoreChance(killer, realm, 0.012 + treasureSkill*0.004);
+            if(ThreadLocalRandom.current().nextDouble()<0.004+treasureSkill*0.002)giveTreasureMap(killer,realm);
+        }
+        int recovery=getInt(killer,realm,"skill.4",0);
+        if(recovery>0){
+            double max=killer.getAttribute(Attribute.MAX_HEALTH)==null?20:killer.getAttribute(Attribute.MAX_HEALTH).getValue();
+            killer.setHealth(Math.min(max,killer.getHealth()+recovery*0.45));
         }
         checkPortalPiece(killer, realm);
         checkAchievements(killer);
@@ -951,6 +974,8 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
     public void join(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         applyTitle(p, getString(p, "title", ""));
+        p.getPersistentDataContainer().set(difficultyKey,PersistentDataType.STRING,getString(p,"difficulty","NORMAL"));
+        applyRealmPassives(p,realmFromWorld(p.getWorld()));
         data.set(playerPath(p) + ".name", p.getName());
         save();
     }
@@ -976,7 +1001,7 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
                 startCaravan(realm);
             } else if (data.getBoolean("caravan." + realm + ".active", false) &&
                     now > data.getLong("caravan." + realm + ".ends", 0L)) {
-                data.set("caravan." + realm + ".active", false);
+                completeCaravan(realm);
             }
         }
         save();
@@ -1002,6 +1027,15 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         Bukkit.broadcastMessage(ChatColor.GOLD + "[REALM CARAVAN] " + color(realm) +
                 faction(realm) + ChatColor.YELLOW + " caravan is traveling through " + display(realm) + "!");
         Player target = world.getPlayers().get(0);
+        Location town=new Location(world,180.5,realmY(realm)+2,0.5);
+        WanderingTrader trader=(WanderingTrader)world.spawnEntity(town,EntityType.WANDERING_TRADER);
+        trader.setCustomName(color(realm)+faction(realm)+" Caravan Merchant");
+        trader.setCustomNameVisible(true);
+        trader.setPersistent(true);
+        trader.addScoreboardTag("esnRealmCaravan");
+        trader.addScoreboardTag("esnRealmCaravan_"+realm);
+        if(trader.getAttribute(Attribute.MAX_HEALTH)!=null)trader.getAttribute(Attribute.MAX_HEALTH).setBaseValue(80);
+        trader.setHealth(Math.min(80,trader.getAttribute(Attribute.MAX_HEALTH)==null?20:trader.getAttribute(Attribute.MAX_HEALTH).getValue()));
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "realmevent invasion " + realm);
         target.sendMessage(ChatColor.GOLD + "Defend the caravan near the faction town for rewards.");
     }
@@ -1306,6 +1340,157 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         } else p.teleport(new Location(w, x + .5, y, z + .5));
     }
 
+
+    @EventHandler(priority=EventPriority.HIGH,ignoreCancelled=true)
+    public void realmCombat(EntityDamageByEntityEvent event){
+        Player attacker=event.getDamager() instanceof Player p?p:
+                event.getDamager() instanceof Projectile projectile&&projectile.getShooter() instanceof Player p?p:null;
+        LivingEntity target=event.getEntity() instanceof LivingEntity living?living:null;
+        if(attacker!=null&&target!=null&&target.getScoreboardTags().contains("esnRealmMob")){
+            String realm=realmFromWorld(attacker.getWorld());
+            if(realm!=null){
+                int power=getInt(attacker,realm,"skill.2",0);
+                double factor=1.0+power*0.05;
+                String diff=getString(attacker,"difficulty","NORMAL");
+                if(diff.equals("HEROIC"))factor*=0.90;
+                if(diff.equals("MYTHIC"))factor*=0.78;
+                event.setDamage(event.getDamage()*factor);
+                applyFullSetBonus(attacker,realm);
+            }
+        }
+        if(event.getEntity() instanceof Player victim){
+            LivingEntity source=event.getDamager() instanceof LivingEntity l?l:
+                    event.getDamager() instanceof Projectile projectile&&projectile.getShooter() instanceof LivingEntity l?l:null;
+            if(source!=null&&source.getScoreboardTags().contains("esnRealmMob")){
+                String realm=realmFromWorld(victim.getWorld());
+                if(realm!=null){
+                    int defense=getInt(victim,realm,"skill.1",0);
+                    double factor=Math.max(0.55,1.0-defense*0.04);
+                    String diff=getString(victim,"difficulty","NORMAL");
+                    if(diff.equals("HEROIC"))factor*=1.5;
+                    if(diff.equals("MYTHIC"))factor*=2.0;
+                    event.setDamage(event.getDamage()*factor);
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void changedWorld(PlayerChangedWorldEvent event){
+        applyRealmPassives(event.getPlayer(),realmFromWorld(event.getPlayer().getWorld()));
+    }
+
+    @EventHandler(ignoreCancelled=true)
+    public void treasureMap(PlayerInteractEvent event){
+        if(!event.getAction().isRightClick())return;
+        ItemStack item=event.getItem();
+        if(item==null||!item.hasItemMeta())return;
+        String tag=item.getItemMeta().getPersistentDataContainer().get(treasureMapKey,PersistentDataType.STRING);
+        if(tag==null)return;
+        event.setCancelled(true);
+        String[] parts=tag.split(":");
+        if(parts.length<3)return;
+        String realm=parts[0];int x=Integer.parseInt(parts[1]),z=Integer.parseInt(parts[2]);
+        World world=Bukkit.getWorld(worldName(realm));
+        if(world==null){event.getPlayer().sendMessage(ChatColor.RED+"That realm is not loaded.");return;}
+        event.getPlayer().setCompassTarget(new Location(world,x,realmY(realm),z));
+        event.getPlayer().sendMessage(ChatColor.GOLD+"Treasure Map points toward "+color(realm)+display(realm)+
+                ChatColor.GOLD+" at X "+x+" Z "+z+".");
+    }
+
+    @EventHandler
+    public void caravanKilled(EntityDeathEvent event){
+        Entity entity=event.getEntity();
+        if(!entity.getScoreboardTags().contains("esnRealmCaravan"))return;
+        for(String realm:realms()){
+            if(entity.getScoreboardTags().contains("esnRealmCaravan_"+realm)){
+                data.set("caravan."+realm+".active",false);
+                save();
+                Bukkit.broadcastMessage(ChatColor.RED+"[REALM CARAVAN] The "+faction(realm)+" caravan was destroyed!");
+                return;
+            }
+        }
+    }
+
+    private void setDifficulty(Player p,String difficulty){
+        setString(p,"difficulty",difficulty);
+        p.getPersistentDataContainer().set(difficultyKey,PersistentDataType.STRING,difficulty);
+        p.sendMessage(ChatColor.GOLD+"Realm difficulty set to "+difficulty+".");
+    }
+
+    private void applyRealmPassives(Player p,String realm){
+        if(realm==null||realm.equals("shattered"))return;
+        int mobility=getInt(p,realm,"skill.0",0);
+        if(mobility>0)p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,20*600,Math.min(1,mobility/3),false,false,false));
+        int signature=getInt(p,realm,"skill.5",0);
+        if(signature>=3){
+            switch(realm){
+                case "storm"->p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST,20*600,0,false,false,false));
+                case "abyss"->p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION,20*600,0,false,false,false));
+                case "frost"->p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,20*600,0,false,false,false));
+                case "infernal"->p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE,20*600,0,false,false,false));
+                case "verdant"->p.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION,20*300,0,false,false,false));
+                case "celestial"->p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING,20*600,0,false,false,false));
+                case "bloodmoon"->p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,20*300,0,false,false,false));
+            }
+        }
+        applyFullSetBonus(p,realm);
+    }
+
+    private void applyFullSetBonus(Player p,String realm){
+        int count=0;
+        for(ItemStack armor:p.getInventory().getArmorContents()){
+            if(armor==null||!armor.hasItemMeta())continue;
+            String tag=armor.getItemMeta().getPersistentDataContainer().get(realmGearKey,PersistentDataType.STRING);
+            if(tag!=null&&tag.startsWith(realm+":"))count++;
+        }
+        if(count<4)return;
+        switch(realm){
+            case "storm"->p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,80,1,false,false,false));
+            case "abyss"->p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY,60,0,false,false,false));
+            case "frost"->p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,80,1,false,false,false));
+            case "infernal"->p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE,100,0,false,false,false));
+            case "verdant"->p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,60,0,false,false,false));
+            case "celestial"->p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING,100,0,false,false,false));
+            case "bloodmoon"->p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,80,0,false,false,false));
+        }
+    }
+
+    private void giveTreasureMap(Player p,String realm){
+        int[][] vaults={{132,-92},{-132,92},{250,0},{-250,0}};
+        int[] pick=vaults[ThreadLocalRandom.current().nextInt(vaults.length)];
+        ItemStack map=new ItemStack(Material.MAP);
+        ItemMeta meta=map.getItemMeta();
+        meta.setDisplayName(color(realm)+display(realm)+" Treasure Map");
+        meta.setLore(List.of(ChatColor.GOLD+"Rare Realm Treasure",
+                ChatColor.GRAY+"Right click to reveal the marked location."));
+        meta.getPersistentDataContainer().set(treasureMapKey,PersistentDataType.STRING,realm+":"+pick[0]+":"+pick[1]);
+        map.setItemMeta(meta);
+        p.getInventory().addItem(map);
+        p.sendMessage(ChatColor.GOLD+"TREASURE MAP FOUND!");
+    }
+
+    private void completeCaravan(String realm){
+        data.set("caravan."+realm+".active",false);
+        World world=Bukkit.getWorld(worldName(realm));
+        if(world!=null){
+            Location town=new Location(world,180.5,realmY(realm)+2,0.5);
+            for(Entity entity:new ArrayList<>(world.getNearbyEntities(town,70,30,70))){
+                if(entity.getScoreboardTags().contains("esnRealmCaravan"))entity.remove();
+            }
+            for(Player p:world.getPlayers()){
+                if(p.getLocation().distanceSquared(town)<=80*80){
+                    increment(p,realm,"caravans",1);
+                    addMasteryXp(p,realm,100);
+                    addRep(p,realm,100);
+                    p.getInventory().addItem(rolledGear(realm,"Relic",Math.min(5,2+masteryLevel(p,realm)/10)));
+                    p.sendMessage(ChatColor.GOLD+"CARAVAN DEFENDED! +100 Mastery XP • +100 Reputation • Realm Relic");
+                }
+            }
+        }
+        Bukkit.broadcastMessage(ChatColor.GREEN+"[REALM CARAVAN] "+faction(realm)+" caravan reached safety!");
+    }
+
     private double difficultyMultiplier(Player p) {
         return switch (getString(p, "difficulty", "NORMAL")) {
             case "MYTHIC" -> 2.0;
@@ -1388,10 +1573,26 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
     private void checkProgressionActions(Player p,String realm,String name){
         if(name.startsWith("Forge "))forgeGear(p,realm,name.substring("Forge ".length()));
         else if(name.equals("Upgrade Held Realm Gear")) upgradeHeldGear(p,realm);
-        else if(name.equals("Enter Dungeon")){teleportSite(p,realm,250,realmY(realm)+2,0);increment(p,realm,"dungeons",1);addMasteryXp(p,realm,100);}
-        else if(name.equals("Elite Dungeon")&&masteryLevel(p,realm)>=15){teleportSite(p,realm,250,realmY(realm)+2,0);increment(p,realm,"dungeons",1);addMasteryXp(p,realm,180);}
-        else if(name.equals("Enter Raid")){teleportSite(p,realm,-250,realmY(realm)+2,0);increment(p,realm,"raids",1);addMasteryXp(p,realm,220);}
-        else if(name.equals("Mythic Raid")&&masteryLevel(p,realm)>=35&&getString(p,"difficulty","NORMAL").equals("MYTHIC")){teleportSite(p,realm,-250,realmY(realm)+2,0);increment(p,realm,"raids",1);addMasteryXp(p,realm,400);}
+        else if(name.equals("Enter Dungeon")){
+            teleportSite(p,realm,250,realmY(realm)+2,0);
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),40L);
+        }
+        else if(name.equals("Elite Dungeon")&&masteryLevel(p,realm)>=15){
+            teleportSite(p,realm,250,realmY(realm)+2,0);
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),30L);
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent miniboss "+realm),160L);
+        }
+        else if(name.equals("Enter Raid")){
+            teleportSite(p,realm,-250,realmY(realm)+2,0);
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),30L);
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent miniboss "+realm),200L);
+        }
+        else if(name.equals("Mythic Raid")&&masteryLevel(p,realm)>=35&&getString(p,"difficulty","NORMAL").equals("MYTHIC")){
+            teleportSite(p,realm,-250,realmY(realm)+2,0);
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),20L);
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent invasion "+realm),140L);
+            Bukkit.getScheduler().runTaskLater(plugin,()->Bukkit.dispatchCommand(Bukkit.getConsoleSender(),"realmevent miniboss "+realm),260L);
+        }
         else if(name.equals("Enter Arena")||name.equals("1v1")||name.equals("2v2")||name.equals("Free For All")||name.equals("Ranked")||name.equals("Realm vs Realm")){
             setString(p,"pvp-mode",name);
             teleportSite(p,realm,0,realmY(realm)+2,250);
