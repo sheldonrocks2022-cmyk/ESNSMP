@@ -581,7 +581,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
                 ChatColor.GRAY + Math.round(target.getHealth()) + " HP",
                 ChatColor.GRAY + "Food: " + target.getFoodLevel()));
         v.setItem(12, item(Material.GOLD_INGOT, ChatColor.GOLD + "Economy",
-                ChatColor.GRAY + balance + " ESN Coins"));
+                ChatColor.GRAY + String.valueOf(balance) + " ESN Coins"));
         v.setItem(13, item(Material.ENDER_EYE, ChatColor.LIGHT_PURPLE + "Realm",
                 ChatColor.GRAY + target.getWorld().getName()));
         v.setItem(19, item(Material.CHEST, ChatColor.GOLD + "Inventory",
@@ -885,8 +885,8 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
     }
 
     @EventHandler
-    public void food(PlayerFoodLevelChangeEvent event) {
-        if (buildMode.contains(event.getEntity().getUniqueId())) event.setCancelled(true);
+    public void food(FoodLevelChangeEvent event) {
+        if (event.getEntity() instanceof Player p && buildMode.contains(p.getUniqueId())) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -1112,7 +1112,7 @@ public final class StaffStudioSystem implements Listener, CommandExecutor, AutoC
     private void tempBan(Player staff, Player target, long duration) throws Exception {
         if (rank(staff).level < StaffRank.SENIOR_MODERATOR.level) { noPermission(staff); return; }
         long id = createCase(staff, target, "TEMPBAN " + duration(duration), punishReason(staff), true);
-        Date expires = new Date(System.currentTimeMillis() + duration);
+        java.util.Date expires = new java.util.Date(System.currentTimeMillis() + duration);
         Bukkit.getBanList(BanList.Type.NAME).addBan(target.getName(), punishReason(staff), expires, staff.getName());
         target.kickPlayer("Temporarily banned from ESN.\nReason: " + punishReason(staff));
         staff.sendMessage(ChatColor.GREEN + "Temp-banned " + target.getName() + " • Case #" + id);
