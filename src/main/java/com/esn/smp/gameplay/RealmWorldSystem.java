@@ -68,9 +68,9 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                     plugin.saveConfig();
                 }
                 int decorVersion = plugin.getConfig().getInt("realms.worlds." + type.key + ".decor-version", 0);
-                if (decorVersion < 2) {
+                if (decorVersion < 3) {
                     buildRealmDecorations(world, type);
-                    plugin.getConfig().set("realms.worlds." + type.key + ".decor-version", 2);
+                    plugin.getConfig().set("realms.worlds." + type.key + ".decor-version", 3);
                     plugin.saveConfig();
                 }
                 if (!existed) newCreated++;
@@ -178,7 +178,7 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             buildSpawnStructure(world, type);
             buildRealmDecorations(world, type);
             plugin.getConfig().set("realms.worlds." + type.key + ".initialized", true);
-            plugin.getConfig().set("realms.worlds." + type.key + ".decor-version", 2);
+            plugin.getConfig().set("realms.worlds." + type.key + ".decor-version", 3);
             plugin.saveConfig();
             sender.sendMessage(ChatColor.GREEN + "Rebuilt and decorated " + type.display + ".");
             return true;
@@ -191,7 +191,7 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 return true;
             }
             buildRealmDecorations(world, type);
-            plugin.getConfig().set("realms.worlds." + type.key + ".decor-version", 2);
+            plugin.getConfig().set("realms.worlds." + type.key + ".decor-version", 3);
             plugin.saveConfig();
             sender.sendMessage(ChatColor.GREEN + "Re-applied the full ESN Studios decoration package to " + type.display + ".");
             return true;
@@ -666,6 +666,14 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
         buildCrystalGarden(world, -18, y, 18, Material.AMETHYST_BLOCK, Material.CRYING_OBSIDIAN, Material.END_ROD);
         buildCrystalGarden(world, 18, y, -18, Material.AMETHYST_BLOCK, Material.CRYING_OBSIDIAN, Material.END_ROD);
         buildCrystalGarden(world, -18, y, -18, Material.AMETHYST_BLOCK, Material.CRYING_OBSIDIAN, Material.END_ROD);
+
+        // Expansion portal courts for the three bonus realms.
+        buildGate(world, 22, y + 1, 22, Material.MUD_BRICKS);
+        buildGate(world, -22, y + 1, -22, Material.AMETHYST_BLOCK);
+        buildGate(world, -22, y + 1, 22, Material.RED_NETHER_BRICKS);
+        buildRealmShrine(world, RealmType.VERDANT, 30, y, 18);
+        buildRealmShrine(world, RealmType.CELESTIAL, -30, y, -18);
+        buildRealmShrine(world, RealmType.BLOODMOON, -30, y, 18);
 
         // Grand arch announcing the path into Realm 100.
         buildSkyArch(world, 0, y, -34, Material.POLISHED_BLACKSTONE_BRICKS, Material.PURPUR_BLOCK, Material.MAGENTA_STAINED_GLASS);
