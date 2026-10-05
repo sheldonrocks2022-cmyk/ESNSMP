@@ -67,6 +67,12 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                     plugin.getConfig().set("realms.worlds." + type.key + ".initialized", true);
                     plugin.saveConfig();
                 }
+                int decorVersion = plugin.getConfig().getInt("realms.worlds." + type.key + ".decor-version", 0);
+                if (decorVersion < 2) {
+                    buildRealmDecorations(world, type);
+                    plugin.getConfig().set("realms.worlds." + type.key + ".decor-version", 2);
+                    plugin.saveConfig();
+                }
                 if (!existed) newCreated++;
             }
         } catch (Exception ex) {
@@ -144,7 +150,7 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.YELLOW + "/realmadmin <status|tp|rebuild|unlock100|lock100> [realm]");
+            sender.sendMessage(ChatColor.YELLOW + "/realmadmin <status|tp|rebuild|decorate|unlock100|lock100> [realm]");
             return true;
         }
 
@@ -170,13 +176,28 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
                 return true;
             }
             buildSpawnStructure(world, type);
+            buildRealmDecorations(world, type);
             plugin.getConfig().set("realms.worlds." + type.key + ".initialized", true);
+            plugin.getConfig().set("realms.worlds." + type.key + ".decor-version", 2);
             plugin.saveConfig();
-            sender.sendMessage(ChatColor.GREEN + "Rebuilt the official spawn structure for " + type.display + ".");
+            sender.sendMessage(ChatColor.GREEN + "Rebuilt and decorated " + type.display + ".");
             return true;
         }
 
-        sender.sendMessage(ChatColor.YELLOW + "/realmadmin <status|tp|rebuild|unlock100|lock100> [realm]");
+        if (args[0].equalsIgnoreCase("decorate")) {
+            World world = ensureWorld(type);
+            if (world == null) {
+                sender.sendMessage(ChatColor.RED + "Could not load " + type.display + ".");
+                return true;
+            }
+            buildRealmDecorations(world, type);
+            plugin.getConfig().set("realms.worlds." + type.key + ".decor-version", 2);
+            plugin.saveConfig();
+            sender.sendMessage(ChatColor.GREEN + "Re-applied the full ESN Studios decoration package to " + type.display + ".");
+            return true;
+        }
+
+        sender.sendMessage(ChatColor.YELLOW + "/realmadmin <status|tp|rebuild|decorate|unlock100|lock100> [realm]");
         return true;
     }
 
@@ -484,6 +505,246 @@ public final class RealmWorldSystem implements Listener, CommandExecutor {
             int z = cz + (int) Math.round(Math.sin(angle) * 14);
             for (int h = 1; h <= 6; h++) world.getBlockAt(x, y + h, z).setType(accent, false);
             world.getBlockAt(x, y + 7, z).setType(Material.SEA_LANTERN, false);
+        }
+    }
+
+
+    private void buildRealmDecorations(World world, RealmType type) {
+        int y = type.spawnY;
+
+        if (type == RealmType.NEXUS) {
+            buildNexusDecorations(world, y);
+            world.save();
+            plugin.getLogger().info("[ESN Realms] Decorated the Realm Nexus.");
+            return;
+        }
+
+        // A ceremonial causeway makes the fortress, spawn, and boss arena feel like one designed kingdom.
+        buildCauseway(world, y, type.floor, type.trim);
+
+        // Four watchtowers create a skyline around the realm hub.
+        buildWatchtower(world, 44, y, 32, type.floor, type.trim, type.centerpiece);
+        buildWatchtower(world, 44, y, -32, type.floor, type.trim, type.centerpiece);
+        buildWatchtower(world, -44, y, 32, type.floor, type.trim, type.centerpiece);
+        buildWatchtower(world, -44, y, -32, type.floor, type.trim, type.centerpiece);
+
+        // North and south shrines give builders obvious expansion points for quests/NPCs.
+        buildRealmShrine(world, type, 0, y, 48);
+        buildRealmShrine(world, type, 0, y, -48);
+
+        // Small ruins make the area feel lived in without loading hundreds of chunks.
+        buildRuins(world, type, 58, y, 55);
+        buildRuins(world, type, -58, y, 55);
+        buildRuins(world, type, 58, y, -55);
+        buildRuins(world, type, -58, y, -55);
+
+        // Realm-specific set dressing.
+        switch (type) {
+            case STORM -> {
+                buildCrystalGarden(world, 24, y, 26, Material.CUT_COPPER, Material.LIGHTNING_ROD, Material.SEA_LANTERN);
+                buildCrystalGarden(world, -24, y, -26, Material.OXIDIZED_COPPER, Material.LIGHTNING_ROD, Material.SEA_LANTERN);
+                buildSkyArch(world, 0, y, 72, Material.STONE_BRICKS, Material.CUT_COPPER, Material.CYAN_STAINED_GLASS);
+            }
+            case ABYSS -> {
+                buildCrystalGarden(world, 24, y, 26, Material.SCULK, Material.CRYING_OBSIDIAN, Material.SOUL_LANTERN);
+                buildCrystalGarden(world, -24, y, -26, Material.DEEPSLATE_TILES, Material.SCULK_CATALYST, Material.SOUL_LANTERN);
+                buildSkyArch(world, 0, y, 72, Material.DEEPSLATE_BRICKS, Material.CRYING_OBSIDIAN, Material.PURPLE_STAINED_GLASS);
+            }
+            case FROST -> {
+                buildCrystalGarden(world, 24, y, 26, Material.PACKED_ICE, Material.BLUE_ICE, Material.SEA_LANTERN);
+                buildCrystalGarden(world, -24, y, -26, Material.SNOW_BLOCK, Material.BLUE_ICE, Material.SEA_LANTERN);
+                buildSkyArch(world, 0, y, 72, Material.PACKED_ICE, Material.BLUE_ICE, Material.LIGHT_BLUE_STAINED_GLASS);
+            }
+            case INFERNAL -> {
+                buildCrystalGarden(world, 24, y, 26, Material.BLACKSTONE, Material.MAGMA_BLOCK, Material.GLOWSTONE);
+                buildCrystalGarden(world, -24, y, -26, Material.NETHER_BRICKS, Material.MAGMA_BLOCK, Material.GLOWSTONE);
+                buildSkyArch(world, 0, y, 72, Material.POLISHED_BLACKSTONE_BRICKS, Material.MAGMA_BLOCK, Material.RED_STAINED_GLASS);
+            }
+            case REALM100 -> {
+                buildCrystalGarden(world, 24, y, 26, Material.PURPUR_BLOCK, Material.OBSIDIAN, Material.END_ROD);
+                buildCrystalGarden(world, -24, y, -26, Material.END_STONE_BRICKS, Material.PURPUR_PILLAR, Material.END_ROD);
+                buildSkyArch(world, 0, y, 72, Material.OBSIDIAN, Material.PURPUR_BLOCK, Material.MAGENTA_STAINED_GLASS);
+            }
+            default -> {
+            }
+        }
+
+        decorateBossArena(world, type, -92, y - 2, 0);
+        decorateFortress(world, type, 92, y - 2, 0);
+
+        world.save();
+        plugin.getLogger().info("[ESN Realms] Applied decoration package to " + type.display + ".");
+    }
+
+    private void buildNexusDecorations(World world, int y) {
+        // Two concentric rings around the portal hub.
+        for (int deg = 0; deg < 360; deg += 6) {
+            double radians = Math.toRadians(deg);
+            int x1 = (int) Math.round(Math.cos(radians) * 24);
+            int z1 = (int) Math.round(Math.sin(radians) * 24);
+            int x2 = (int) Math.round(Math.cos(radians) * 31);
+            int z2 = (int) Math.round(Math.sin(radians) * 31);
+            world.getBlockAt(x1, y, z1).setType(deg % 24 == 0 ? Material.AMETHYST_BLOCK : Material.POLISHED_BLACKSTONE_BRICKS, false);
+            world.getBlockAt(x2, y, z2).setType(deg % 18 == 0 ? Material.SEA_LANTERN : Material.POLISHED_DEEPSLATE, false);
+        }
+
+        // Four tall corner towers make the Nexus visible immediately after teleporting in.
+        buildWatchtower(world, 30, y, 30, Material.POLISHED_BLACKSTONE_BRICKS, Material.AMETHYST_BLOCK, Material.BEACON);
+        buildWatchtower(world, -30, y, 30, Material.POLISHED_BLACKSTONE_BRICKS, Material.AMETHYST_BLOCK, Material.BEACON);
+        buildWatchtower(world, 30, y, -30, Material.POLISHED_BLACKSTONE_BRICKS, Material.AMETHYST_BLOCK, Material.BEACON);
+        buildWatchtower(world, -30, y, -30, Material.POLISHED_BLACKSTONE_BRICKS, Material.AMETHYST_BLOCK, Material.BEACON);
+
+        // Walkways from the center to each major portal.
+        for (int d = 4; d <= 20; d++) {
+            for (int w = -2; w <= 2; w++) {
+                world.getBlockAt(w, y, d).setType(Math.abs(w) == 2 ? Material.AMETHYST_BLOCK : Material.POLISHED_DEEPSLATE, false);
+                world.getBlockAt(w, y, -d).setType(Math.abs(w) == 2 ? Material.AMETHYST_BLOCK : Material.POLISHED_DEEPSLATE, false);
+                world.getBlockAt(d, y, w).setType(Math.abs(w) == 2 ? Material.AMETHYST_BLOCK : Material.POLISHED_DEEPSLATE, false);
+                world.getBlockAt(-d, y, w).setType(Math.abs(w) == 2 ? Material.AMETHYST_BLOCK : Material.POLISHED_DEEPSLATE, false);
+            }
+        }
+
+        // Floating-looking crystal monuments around the plaza.
+        buildCrystalGarden(world, 18, y, 18, Material.AMETHYST_BLOCK, Material.CRYING_OBSIDIAN, Material.END_ROD);
+        buildCrystalGarden(world, -18, y, 18, Material.AMETHYST_BLOCK, Material.CRYING_OBSIDIAN, Material.END_ROD);
+        buildCrystalGarden(world, 18, y, -18, Material.AMETHYST_BLOCK, Material.CRYING_OBSIDIAN, Material.END_ROD);
+        buildCrystalGarden(world, -18, y, -18, Material.AMETHYST_BLOCK, Material.CRYING_OBSIDIAN, Material.END_ROD);
+
+        // Grand arch announcing the path into Realm 100.
+        buildSkyArch(world, 0, y, -34, Material.POLISHED_BLACKSTONE_BRICKS, Material.PURPUR_BLOCK, Material.MAGENTA_STAINED_GLASS);
+    }
+
+    private void buildCauseway(World world, int y, Material floor, Material trim) {
+        for (int x = -76; x <= 76; x++) {
+            for (int z = -3; z <= 3; z++) {
+                world.getBlockAt(x, y - 1, z).setType(Material.DEEPSLATE, false);
+                world.getBlockAt(x, y, z).setType(Math.abs(z) == 3 ? trim : floor, false);
+                for (int h = 1; h <= 4; h++) world.getBlockAt(x, y + h, z).setType(Material.AIR, false);
+            }
+            if (x % 12 == 0 && Math.abs(x) > 12) {
+                buildLamp(world, x, y, -5, trim);
+                buildLamp(world, x, y, 5, trim);
+            }
+        }
+    }
+
+    private void buildLamp(World world, int x, int y, int z, Material post) {
+        for (int h = 1; h <= 4; h++) world.getBlockAt(x, y + h, z).setType(post, false);
+        world.getBlockAt(x, y + 5, z).setType(Material.SEA_LANTERN, false);
+    }
+
+    private void buildWatchtower(World world, int cx, int y, int cz, Material wall, Material accent, Material crown) {
+        int radius = 4;
+        for (int h = 0; h <= 13; h++) {
+            for (int x = -radius; x <= radius; x++) {
+                for (int z = -radius; z <= radius; z++) {
+                    boolean outer = Math.abs(x) == radius || Math.abs(z) == radius;
+                    if (outer) world.getBlockAt(cx + x, y + h, cz + z).setType(h % 4 == 0 ? accent : wall, false);
+                    else if (h > 0) world.getBlockAt(cx + x, y + h, cz + z).setType(Material.AIR, false);
+                }
+            }
+        }
+        for (int x = -5; x <= 5; x++) {
+            for (int z = -5; z <= 5; z++) {
+                if (Math.abs(x) == 5 || Math.abs(z) == 5) world.getBlockAt(cx + x, y + 14, cz + z).setType(accent, false);
+            }
+        }
+        world.getBlockAt(cx, y + 15, cz).setType(crown, false);
+        for (int h = 1; h <= 3; h++) world.getBlockAt(cx, y + h, cz - radius).setType(Material.AIR, false);
+    }
+
+    private void buildRealmShrine(World world, RealmType type, int cx, int y, int cz) {
+        int radius = 8;
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                double d = Math.sqrt((double)x * x + (double)z * z);
+                if (d <= radius) {
+                    world.getBlockAt(cx + x, y - 1, cz + z).setType(type.foundation, false);
+                    world.getBlockAt(cx + x, y, cz + z).setType(d > 6.5 ? type.trim : type.floor, false);
+                }
+            }
+        }
+        for (int i = 0; i < 8; i++) {
+            double a = Math.PI * 2 * i / 8;
+            int x = cx + (int)Math.round(Math.cos(a) * 6);
+            int z = cz + (int)Math.round(Math.sin(a) * 6);
+            for (int h = 1; h <= 5; h++) world.getBlockAt(x, y + h, z).setType(type.trim, false);
+            world.getBlockAt(x, y + 6, z).setType(i % 2 == 0 ? Material.SEA_LANTERN : type.centerpiece, false);
+        }
+        for (int h = 1; h <= 4; h++) world.getBlockAt(cx, y + h, cz).setType(type.trim, false);
+        world.getBlockAt(cx, y + 5, cz).setType(type.centerpiece, false);
+    }
+
+    private void buildRuins(World world, RealmType type, int cx, int y, int cz) {
+        for (int x = -6; x <= 6; x++) {
+            world.getBlockAt(cx + x, y, cz - 6).setType(x % 3 == 0 ? type.trim : type.floor, false);
+            if (x < 3) world.getBlockAt(cx + x, y, cz + 6).setType(type.floor, false);
+        }
+        for (int z = -6; z <= 6; z++) {
+            world.getBlockAt(cx - 6, y, cz + z).setType(type.floor, false);
+            if (z > -2) world.getBlockAt(cx + 6, y, cz + z).setType(type.trim, false);
+        }
+        int[][] columns = {{-6,-6},{6,-6},{-6,6},{6,6},{0,-6},{-6,0}};
+        for (int[] p : columns) {
+            int height = 3 + Math.abs((p[0] * 31 + p[1] * 17 + cx + cz) % 6);
+            for (int h = 1; h <= height; h++) world.getBlockAt(cx + p[0], y + h, cz + p[1]).setType(h % 3 == 0 ? type.trim : type.floor, false);
+        }
+        world.getBlockAt(cx, y + 1, cz).setType(type.centerpiece, false);
+    }
+
+    private void buildCrystalGarden(World world, int cx, int y, int cz, Material base, Material crystal, Material light) {
+        int[][] offsets = {{0,0},{4,2},{-4,-1},{2,-4},{-3,4},{6,-4},{-6,3}};
+        for (int i = 0; i < offsets.length; i++) {
+            int x = cx + offsets[i][0];
+            int z = cz + offsets[i][1];
+            world.getBlockAt(x, y, z).setType(base, false);
+            int height = 2 + (i % 5);
+            for (int h = 1; h <= height; h++) world.getBlockAt(x, y + h, z).setType(crystal, false);
+            world.getBlockAt(x, y + height + 1, z).setType(light, false);
+        }
+    }
+
+    private void buildSkyArch(World world, int cx, int y, int cz, Material frame, Material accent, Material glass) {
+        for (int h = 1; h <= 11; h++) {
+            world.getBlockAt(cx - 6, y + h, cz).setType(h % 4 == 0 ? accent : frame, false);
+            world.getBlockAt(cx + 6, y + h, cz).setType(h % 4 == 0 ? accent : frame, false);
+        }
+        for (int x = -6; x <= 6; x++) {
+            world.getBlockAt(cx + x, y + 11, cz).setType(Math.abs(x) % 3 == 0 ? accent : frame, false);
+            if (Math.abs(x) < 6) world.getBlockAt(cx + x, y + 9, cz).setType(glass, false);
+        }
+        world.getBlockAt(cx, y + 12, cz).setType(Material.SEA_LANTERN, false);
+    }
+
+    private void decorateBossArena(World world, RealmType type, int cx, int y, int cz) {
+        for (int i = 0; i < 12; i++) {
+            double a = Math.PI * 2 * i / 12.0;
+            int x = cx + (int)Math.round(Math.cos(a) * 20);
+            int z = cz + (int)Math.round(Math.sin(a) * 20);
+            world.getBlockAt(x, y + 1, z).setType(type.trim, false);
+            world.getBlockAt(x, y + 2, z).setType(type.centerpiece, false);
+        }
+        buildSkyArch(world, cx, y, cz - 22, type.floor, type.trim,
+                type == RealmType.FROST ? Material.LIGHT_BLUE_STAINED_GLASS :
+                        type == RealmType.INFERNAL ? Material.RED_STAINED_GLASS :
+                                type == RealmType.ABYSS ? Material.PURPLE_STAINED_GLASS :
+                                        type == RealmType.STORM ? Material.CYAN_STAINED_GLASS : Material.MAGENTA_STAINED_GLASS);
+    }
+
+    private void decorateFortress(World world, RealmType type, int cx, int y, int cz) {
+        // Throne dais / quest focal point.
+        for (int x = -5; x <= 5; x++) {
+            for (int z = -4; z <= 4; z++) {
+                if (Math.abs(x) <= 5 && Math.abs(z) <= 4) world.getBlockAt(cx + x, y + 1, cz + z).setType(type.floor, false);
+            }
+        }
+        for (int x = -3; x <= 3; x++) world.getBlockAt(cx + x, y + 2, cz + 4).setType(type.trim, false);
+        world.getBlockAt(cx, y + 3, cz + 4).setType(type.centerpiece, false);
+
+        // Interior light columns.
+        for (int[] p : new int[][]{{-8,-8},{8,-8},{-8,8},{8,8}}) {
+            for (int h = 1; h <= 5; h++) world.getBlockAt(cx + p[0], y + h, cz + p[1]).setType(type.trim, false);
+            world.getBlockAt(cx + p[0], y + 6, cz + p[1]).setType(Material.SEA_LANTERN, false);
         }
     }
 
