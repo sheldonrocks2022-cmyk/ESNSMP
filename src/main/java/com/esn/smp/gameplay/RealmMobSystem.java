@@ -31,6 +31,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
     private final NamespacedKey realmKey;
     private final NamespacedKey essenceKey;
     private final NamespacedKey sigilKey;
+    private final NamespacedKey difficultyKey;
     private final Map<UUID, Long> sigilCooldown = new HashMap<>();
     private final Map<String, Long> nextInvasion = new HashMap<>();
     private final Map<UUID, String> selectedEventRealm = new HashMap<>();
@@ -41,6 +42,7 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
         this.realmKey = new NamespacedKey(plugin, "realm_id");
         this.essenceKey = new NamespacedKey(plugin, "realm_essence");
         this.sigilKey = new NamespacedKey(plugin, "realm_sigil");
+        this.difficultyKey = new NamespacedKey(plugin, "realm_difficulty");
     }
 
     public void start() {
@@ -529,8 +531,16 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
                 if (nearest != null) m.setTarget(nearest);
             }
 
-            double health = profile.health * (elite ? 1.75 : 1.0);
-            double damage = profile.damage * (elite ? 1.35 : 1.0);
+            Player nearestDifficulty = location.getWorld().getPlayers().stream()
+                    .min(Comparator.comparingDouble(p -> p.getLocation().distanceSquared(location))).orElse(null);
+            double difficultyScale=1.0;
+            if(nearestDifficulty!=null){
+                String diff=nearestDifficulty.getPersistentDataContainer().get(difficultyKey,PersistentDataType.STRING);
+                if("HEROIC".equals(diff))difficultyScale=1.5;
+                else if("MYTHIC".equals(diff))difficultyScale=2.0;
+            }
+            double health = profile.health * (elite ? 1.75 : 1.0) * difficultyScale;
+            double damage = profile.damage * (elite ? 1.35 : 1.0) * Math.sqrt(difficultyScale);
             setAttribute(mob, Attribute.MAX_HEALTH, health);
             mob.setHealth(Math.min(health, maxHealth(mob)));
             setAttribute(mob, Attribute.ATTACK_DAMAGE, damage);
@@ -547,6 +557,9 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void hit(EntityDamageByEntityEvent event) {
+        if(event.getEntity() instanceof LivingEntity boss && boss.getScoreboardTags().contains("esnRealmMiniBoss")){
+            checkBossPhase(boss,event.getFinalDamage());
+        }
         LivingEntity attacker = resolveAttacker(event.getDamager());
         if (attacker == null || !attacker.getScoreboardTags().contains("esnRealmMob")) return;
         if (!(event.getEntity() instanceof Player player)) return;
@@ -617,6 +630,49 @@ public final class RealmMobSystem implements Listener, CommandExecutor {
             knockAway(attacker, player, 1.1);
             player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_BREAK_BLOCK, 0.65f, 1.2f);
         }
+    }
+
+    private void checkBossPhase(LivingEntity boss,double incoming){
+        double max=maxHealth(boss);
+        double remaining=Math.max(0,boss.getHealth()-incoming);
+        double pct=max<=0?0:remaining/max;
+        String realm=boss.getPersistentDataContainer().get(realmKey,PersistentDataType.STRING);
+        if(realm==null)return;
+
+        if(pct<=0.75&&!boss.getScoreboardTags().contains("esnPhase75")){
+            boss.addScoreboardTag("esnPhase75");
+            boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,20*120,0,false,false,false));
+            announcePhase(boss,realm,"PHASE II","The boss accelerates and the arena destabilizes!");
+            boss.getWorld().spawnParticle(Particle.PORTAL,boss.getLocation().add(0,1,0),50,2,1.5,2,0.08);
+        }
+        if(pct<=0.50&&!boss.getScoreboardTags().contains("esnPhase50")){
+            boss.addScoreboardTag("esnPhase50");
+            boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,20*120,0,false,false,false));
+            announcePhase(boss,realm,"PHASE III","Reinforcements pour into the battle!");
+            for(int i=0;i<4;i++){
+                Location at=boss.getLocation().clone().add(ThreadLocalRandom.current().nextInt(-6,7),0,ThreadLocalRandom.current().nextInt(-6,7));
+                spawnMob(realm,chooseProfile(realm),at,true);
+            }
+        }
+        if(pct<=0.25&&!boss.getScoreboardTags().contains("esnPhase25")){
+            boss.addScoreboardTag("esnPhase25");
+            boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,20*120,1,false,false,false));
+            boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,20*120,1,false,false,false));
+            boss.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,20*120,0,false,false,false));
+            announcePhase(boss,realm,"FINAL PHASE","ENRAGED — survive the realm's final assault!");
+            boss.getWorld().strikeLightningEffect(boss.getLocation());
+            boss.getWorld().playSound(boss.getLocation(),Sound.ENTITY_WITHER_SPAWN,1f,1.25f);
+        }
+    }
+
+    private void announcePhase(LivingEntity boss,String realm,String phase,String subtitle){
+        for(Player p:boss.getWorld().getPlayers()){
+            p.sendTitle(ChatColor.DARK_RED+phase,colorForRealm(realm)+subtitle,5,45,10);
+        }
+    }
+
+    private ChatColor colorForRealm(String realm){
+        return realmColor(realm);
     }
 
     @EventHandler
