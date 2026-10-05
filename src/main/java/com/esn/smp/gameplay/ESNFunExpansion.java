@@ -260,7 +260,7 @@ public final class ESNFunExpansion implements Listener, CommandExecutor, AutoClo
                 a("Server Shop", Material.GOLD_INGOT, "shop")
             );
             case "Social" -> List.of(
-                a("Guilds / Clans", Material.BANNER_PATTERN, "guild"),
+                a("Guilds / Clans", Material.WHITE_BANNER, "guild"),
                 a("Guild HQ", Material.BEACON, "guildhq"),
                 a("Party System", Material.PLAYER_HEAD, "party"),
                 a("Community Goals", Material.BELL, "community"),
@@ -276,7 +276,7 @@ public final class ESNFunExpansion implements Listener, CommandExecutor, AutoClo
                 a("Weekend Modifier", Material.CAKE, "weekend"),
                 a("Season World Theme", Material.RECOVERY_COMPASS, "seasonworld"),
                 a("Season Finale", Material.DRAGON_EGG, "seasonfinale"),
-                a("Event Calendar", Material.CALENDAR, "calendar")
+                a("Event Calendar", Material.CLOCK, "calendar")
             );
         };
         for (int i = 0; i < actions.size() && i < slots.length; i++) {
@@ -306,9 +306,9 @@ public final class ESNFunExpansion implements Listener, CommandExecutor, AutoClo
         resetDailyIfNeeded(p);
         int kills = getInt(p, "daily_kills"), ores = getInt(p, "daily_ores"), fish = getInt(p, "daily_fish"), claimed = getInt(p, "daily_claimed");
         Inventory v = Bukkit.createInventory(null, 27, DAILY);
-        v.setItem(10, item(Material.IRON_SWORD, ChatColor.RED + "Monster Contract", ChatColor.GRAY + kills + "/40 hostile kills"));
-        v.setItem(12, item(Material.DIAMOND_PICKAXE, ChatColor.AQUA + "Mining Contract", ChatColor.GRAY + ores + "/64 ore blocks"));
-        v.setItem(14, item(Material.FISHING_ROD, ChatColor.BLUE + "Fishing Contract", ChatColor.GRAY + fish + "/12 catches"));
+        v.setItem(10, item(Material.IRON_SWORD, ChatColor.RED + "Monster Contract", ChatColor.GRAY + "" + kills + "/40 hostile kills"));
+        v.setItem(12, item(Material.DIAMOND_PICKAXE, ChatColor.AQUA + "Mining Contract", ChatColor.GRAY + "" + ores + "/64 ore blocks"));
+        v.setItem(14, item(Material.FISHING_ROD, ChatColor.BLUE + "Fishing Contract", ChatColor.GRAY + "" + fish + "/12 catches"));
         boolean ready = kills >= 40 && ores >= 64 && fish >= 12 && claimed == 0;
         v.setItem(16, item(ready ? Material.CHEST : Material.BARRIER,
             ready ? ChatColor.GREEN + "CLAIM DAILY REWARD" : claimed == 1 ? ChatColor.GOLD + "CLAIMED" : ChatColor.RED + "Not Complete",
@@ -320,7 +320,7 @@ public final class ESNFunExpansion implements Listener, CommandExecutor, AutoClo
     private void openArcade(Player p) {
         Inventory v = Bukkit.createInventory(null, 27, ARCADE);
         v.setItem(10, item(Material.GOLD_NUGGET, ChatColor.GOLD + "Coin Flip • 100 Coins", ChatColor.GRAY + "50/50 • Win 190 Coins"));
-        v.setItem(12, item(Material.DICE_POTTERY_SHERD, ChatColor.AQUA + "High Roll • 250 Coins", ChatColor.GRAY + "Roll 5-6 to win 700 Coins"));
+        v.setItem(12, item(Material.AMETHYST_SHARD, ChatColor.AQUA + "High Roll • 250 Coins", ChatColor.GRAY + "Roll 5-6 to win 700 Coins"));
         v.setItem(14, item(Material.CHEST, ChatColor.LIGHT_PURPLE + "Treasure Pick • 500 Coins", ChatColor.GRAY + "Chance for 1,500 Coins or a key"));
         v.setItem(22, item(Material.ARROW, ChatColor.YELLOW + "Back"));
         p.openInventory(v);
@@ -1354,7 +1354,7 @@ public final class ESNFunExpansion implements Listener, CommandExecutor, AutoClo
         }
         for(int z=-8;z<=-6;z++) for(int y=1;y<=3;y++) w.getBlockAt(o.getBlockX(),o.getBlockY()+y,o.getBlockZ()+z).setType(Material.AIR);
         w.getBlockAt(o.getBlockX(),o.getBlockY()+1,o.getBlockZ()+2).setType(Material.GOLD_BLOCK);
-        w.getBlockAt(o.getBlockX(),o.getBlockY()+2,o.getBlockZ()+2).setType(Material.ENDER_EYE);
+        w.getBlockAt(o.getBlockX(),o.getBlockY()+2,o.getBlockZ()+2).setType(Material.END_PORTAL_FRAME);
     }
 
     private void buildDuelArena(Location o) {
