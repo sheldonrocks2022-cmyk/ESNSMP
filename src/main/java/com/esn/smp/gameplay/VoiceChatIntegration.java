@@ -19,13 +19,18 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 public final class VoiceChatIntegration implements Listener, CommandExecutor {
-    private static final String TITLE = ChatColor.DARK_AQUA + "ESN Voice Chat";
+    private static final String TITLE = "ESN Voice Chat";
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
     private static final Pattern CODE = Pattern.compile("[A-Za-z0-9_-]{2,64}");
 
     private final JavaPlugin plugin;
@@ -72,7 +77,7 @@ public final class VoiceChatIntegration implements Listener, CommandExecutor {
 
     public void open(Player player) {
         boolean ready = backendReady();
-        Inventory menu = Bukkit.createInventory(null, 45, TITLE);
+        Inventory menu = Bukkit.createInventory(null, 45, Component.text(TITLE));
 
         menu.setItem(10, item(Material.JUKEBOX,
                 ChatColor.GREEN + "Connect Voice Chat",
@@ -116,14 +121,16 @@ public final class VoiceChatIntegration implements Listener, CommandExecutor {
 
     @EventHandler
     public void click(InventoryClickEvent event) {
-        if (!event.getView().getTitle().equals(TITLE)) return;
+        if (!PLAIN.serialize(event.getView().title()).equals(TITLE)) return;
         event.setCancelled(true);
         if (!(event.getWhoClicked() instanceof Player player)) return;
         ItemStack current = event.getCurrentItem();
-        if (current == null || !current.hasItemMeta() || !current.getItemMeta().hasDisplayName()) return;
+        if (current == null || !current.hasItemMeta()) return;
+        ItemMeta currentMeta = current.getItemMeta();
+        Component currentName = currentMeta.displayName();
+        if (currentName == null) return;
 
-        String name = ChatColor.stripColor(current.getItemMeta().getDisplayName());
-        if (name == null) return;
+        String name = PLAIN.serialize(currentName);
 
         switch (name) {
             case "Connect Voice Chat", "Reconnect" -> {
@@ -274,8 +281,8 @@ public final class VoiceChatIntegration implements Listener, CommandExecutor {
     private ItemStack item(Material material, String name, String... lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(name);
-        meta.setLore(Arrays.asList(lore));
+        meta.displayName(LEGACY.deserialize(name));
+        meta.lore(Arrays.stream(lore).map(LEGACY::deserialize).toList());
         item.setItemMeta(meta);
         return item;
     }
