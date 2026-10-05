@@ -202,18 +202,48 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
             return;
         }
 
-        if (title.startsWith(QUESTS)) handleRealmPage(p, name, "quests");
+        if (title.startsWith(QUESTS)) {
+            if (title.contains("Select Realm")) handleRealmPage(p, name, "quests");
+            else if (name.equals("Back")) openRealmPicker(p, QUESTS, "quests");
+        }
         else if (title.equals(FACTIONS)) handleFactionClick(p, name);
         else if (title.equals(MASTERY)) handleMasteryClick(p, name);
-        else if (title.startsWith(SKILLS)) handleRealmPage(p, name, "skills");
-        else if (title.startsWith(DUNGEONS)) handleRealmPage(p, name, "dungeons");
-        else if (title.startsWith(RAIDS)) handleRealmPage(p, name, "raids");
+        else if (title.startsWith(SKILLS)) {
+            if (title.contains("Select Realm")) handleRealmPage(p, name, "skills");
+            else handleSkillTree(p, name);
+        }
+        else if (title.startsWith(DUNGEONS)) {
+            if (title.contains("Select Realm")) handleRealmPage(p, name, "dungeons");
+            else {
+                String realm=selectedRealm.get(p.getUniqueId());
+                if(realm!=null){checkProgressionActions(p,realm,name); if(name.equals("Back"))openRealmPicker(p,DUNGEONS,"dungeons");}
+            }
+        }
+        else if (title.startsWith(RAIDS)) {
+            if (title.contains("Select Realm")) handleRealmPage(p, name, "raids");
+            else {
+                String realm=selectedRealm.get(p.getUniqueId());
+                if(realm!=null){checkProgressionActions(p,realm,name); if(name.equals("Back"))openRealmPicker(p,RAIDS,"raids");}
+            }
+        }
         else if (title.equals(DIFFICULTY)) handleDifficulty(p, name);
-        else if (title.startsWith(CRAFTING)) handleRealmPage(p, name, "crafting");
+        else if (title.startsWith(CRAFTING)) {
+            if (title.contains("Select Realm")) handleRealmPage(p, name, "crafting");
+            else {
+                String realm=selectedRealm.get(p.getUniqueId());
+                if(realm!=null){checkProgressionActions(p,realm,name); if(name.equals("Back"))openRealmPicker(p,CRAFTING,"crafting");}
+            }
+        }
         else if (title.equals(COLLECTIONS)) handleCollectionClick(p, name);
         else if (title.equals(LORE)) handleLoreClick(p, name);
         else if (title.equals(EVENTS)) handleEventClick(p, name);
-        else if (title.startsWith(PVP)) handleRealmPage(p, name, "pvp");
+        else if (title.startsWith(PVP)) {
+            if (title.contains("Select Realm")) handleRealmPage(p, name, "pvp");
+            else {
+                String realm=selectedRealm.get(p.getUniqueId());
+                if(realm!=null){checkProgressionActions(p,realm,name); if(name.equals("Back"))openRealmPicker(p,PVP,"pvp");}
+            }
+        }
         else if (title.equals(GUILDS)) handleGuildClick(p, name);
         else if (title.equals(CARAVANS)) handleCaravanClick(p, name);
         else if (title.equals(PETS)) handlePetClick(p, name);
@@ -607,7 +637,7 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         v.setItem(11, item(Material.SHIELD, ChatColor.AQUA + "2v2"));
         v.setItem(12, item(Material.TNT, ChatColor.RED + "Free For All"));
         v.setItem(13, item(Material.NETHER_STAR, ChatColor.GOLD + "Ranked"));
-        v.setItem(14, item(Material.BANNER_PATTERN, ChatColor.LIGHT_PURPLE + "Realm vs Realm"));
+        v.setItem(14, item(Material.WHITE_BANNER, ChatColor.LIGHT_PURPLE + "Realm vs Realm"));
         v.setItem(22, item(Material.ENDER_PEARL, ChatColor.YELLOW + "Enter Arena",
                 ChatColor.GRAY + "Teleport to the physical realm arena"));
         v.setItem(31, item(Material.ARROW, ChatColor.YELLOW + "Back"));
@@ -620,7 +650,7 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         int i = 0;
         for (String realm : realms()) {
             String owner = data.getString("territory." + realm, "Unclaimed");
-            v.setItem(slots[i++], item(Material.BANNER_PATTERN, color(realm) + display(realm),
+            v.setItem(slots[i++], item(Material.WHITE_BANNER, color(realm) + display(realm),
                     ChatColor.GRAY + "Territory holder: " + ChatColor.WHITE + owner,
                     ChatColor.YELLOW + "Click to claim for your scoreboard team"));
         }
@@ -1145,6 +1175,25 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
         p.sendMessage(ChatColor.GOLD + "FORGED: " + gear.getItemMeta().getDisplayName());
     }
 
+    private void upgradeHeldGear(Player p,String realm){
+        ItemStack held=p.getInventory().getItemInMainHand();
+        if(held.getType()==Material.AIR||!held.hasItemMeta()){
+            p.sendMessage(ChatColor.RED+"Hold Realm gear in your main hand.");
+            return;
+        }
+        String tag=held.getItemMeta().getPersistentDataContainer().get(realmGearKey,PersistentDataType.STRING);
+        if(tag==null||!tag.startsWith(realm+":")){
+            p.sendMessage(ChatColor.RED+"That item is not "+display(realm)+" Realm gear.");
+            return;
+        }
+        Integer current=held.getItemMeta().getPersistentDataContainer().get(rarityKey,PersistentDataType.INTEGER);
+        int rarity=current==null?1:current;
+        if(rarity>=7){p.sendMessage(ChatColor.GOLD+"That item is already Ancient rarity.");return;}
+        String piece=tag.substring((realm+":").length());
+        p.getInventory().setItemInMainHand(rolledGear(realm,piece,rarity+1));
+        p.sendMessage(ChatColor.GREEN+"Realm gear upgraded to "+rarityName(rarity+1)+"!");
+    }
+
     private ItemStack rolledGear(String realm, String piece, int rarity) {
         Material material = switch (piece) {
             case "Helmet" -> Material.DIAMOND_HELMET;
@@ -1338,11 +1387,16 @@ public final class RealmProgressionSystem implements Listener, CommandExecutor, 
 
     private void checkProgressionActions(Player p,String realm,String name){
         if(name.startsWith("Forge "))forgeGear(p,realm,name.substring("Forge ".length()));
+        else if(name.equals("Upgrade Held Realm Gear")) upgradeHeldGear(p,realm);
         else if(name.equals("Enter Dungeon")){teleportSite(p,realm,250,realmY(realm)+2,0);increment(p,realm,"dungeons",1);addMasteryXp(p,realm,100);}
         else if(name.equals("Elite Dungeon")&&masteryLevel(p,realm)>=15){teleportSite(p,realm,250,realmY(realm)+2,0);increment(p,realm,"dungeons",1);addMasteryXp(p,realm,180);}
         else if(name.equals("Enter Raid")){teleportSite(p,realm,-250,realmY(realm)+2,0);increment(p,realm,"raids",1);addMasteryXp(p,realm,220);}
         else if(name.equals("Mythic Raid")&&masteryLevel(p,realm)>=35&&getString(p,"difficulty","NORMAL").equals("MYTHIC")){teleportSite(p,realm,-250,realmY(realm)+2,0);increment(p,realm,"raids",1);addMasteryXp(p,realm,400);}
-        else if(name.equals("Enter Arena"))teleportSite(p,realm,0,realmY(realm)+2,250);
+        else if(name.equals("Enter Arena")||name.equals("1v1")||name.equals("2v2")||name.equals("Free For All")||name.equals("Ranked")||name.equals("Realm vs Realm")){
+            setString(p,"pvp-mode",name);
+            teleportSite(p,realm,0,realmY(realm)+2,250);
+            p.sendMessage(ChatColor.RED+"Realm PvP mode: "+name);
+        }
     }
 
     private String realmSummary(Player p,String realm,String mode){
