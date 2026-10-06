@@ -26,8 +26,19 @@ jobs:
           java-version: '25'
           cache: maven
 
+      - name: Validate plugin descriptor
+        shell: bash
+        run: |
+          ruby -e 'require "yaml"; y=YAML.load_file("src/main/resources/plugin.yml"); abort "plugin.yml missing commands" unless y.is_a?(Hash) && y["commands"].is_a?(Hash); abort "realmprogress command missing" unless y["commands"].key?("realmprogress"); puts "plugin.yml OK: #{y["commands"].size} commands declared"'
+
       - name: Compile and verify
         run: mvn -B -ntp clean verify
+
+      - name: Validate packaged plugin descriptor
+        shell: bash
+        run: |
+          unzip -p target/ESNSMP.jar plugin.yml > /tmp/esnsmp-plugin.yml
+          ruby -e 'require "yaml"; y=YAML.load_file("/tmp/esnsmp-plugin.yml"); abort "Packaged plugin.yml invalid" unless y.is_a?(Hash) && y["commands"].is_a?(Hash) && y["commands"].key?("realmprogress"); puts "Packaged plugin.yml OK"'
 
       - name: Upload ESNSMP JAR
         uses: actions/upload-artifact@v4
@@ -59,7 +70,7 @@ jobs:
           BUILT_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           cat > release/ESNSMP-build.json <<EOF
           {
-            "version": "v2.15.0",
+            "version": "v2.15.1",
             "filename": "ESNSMP.jar",
             "sizeBytes": ${SIZE},
             "sha256": "${SHA256}",
@@ -85,4 +96,4 @@ jobs:
             gh release create latest-main release/ESNSMP.jar release/ESNSMP-build.json --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Latest ESNSMP Main Build" --notes "Automatically updated from the newest verified main-branch build. This rolling prerelease powers the ESN website's latest ESNSMP.jar download." --prerelease
           fi
 
-# v2.15.0 Realm Ascension build trigger
+# v2.15.1 Realm Ascension emergency hotfix
