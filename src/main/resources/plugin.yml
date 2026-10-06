@@ -1,5 +1,5 @@
 name: ESNSMP
-version: '2.15.0'
+version: '2.15.1'
 main: com.esn.smp.ESNSMPPlugin
 api-version: '26.2'
 author: ESN
@@ -517,7 +517,8 @@ commands:
   realms:
     aliases: [realmsmenu, realmnexus]
     description: 'Open ESN Realms and travel between generated realm worlds'
-    usage: '/realms [nexus|storm|abyss|frost|infernal|verdant|celestial|bloodmoon|100|shattered]'  realmprogress:
+    usage: '/realms [nexus|storm|abyss|frost|infernal|verdant|celestial|bloodmoon|100|shattered]'
+  realmprogress:
     aliases: [realmcareer, realmhub, ascensionrealms]
     description: 'Open the complete ESN Realm Ascension progression hub'
     usage: '/realmprogress [realm]'
