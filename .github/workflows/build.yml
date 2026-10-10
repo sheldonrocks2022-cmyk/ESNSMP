@@ -46,7 +46,8 @@ jobs:
           name: ESNSMP
           path: target/ESNSMP.jar
           if-no-files-found: error
-          retention-days: 30
+          compression-level: 9
+          retention-days: 7
 
   publish-latest-main:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
